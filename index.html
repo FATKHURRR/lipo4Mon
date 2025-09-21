@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BMS MultiBrand</title>
+  <title>BMS Online Monitoring</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -109,7 +109,7 @@
         <div class="bg-white/20 p-2 rounded-lg mr-3">
           <i class="fas fa-car-battery text-2xl"></i>
         </div>
-        <h1 class="text-2xl font-bold">BMS MultiBrand Monitor</h1>
+        <h1 class="text-2xl font-bold">LiFEPo4 BMS Monitor</h1>
       </div>
       <div class="flex items-center space-x-4">
         <div class="hidden md:flex items-center space-x-2 text-sm bg-white/10 px-3 py-1 rounded-full">
@@ -382,135 +382,6 @@
     const emptyState = document.getElementById("empty-state");
     let currentAddr = null;
 
-    // Render cards
-    // function renderCards(datane) {
-    //   if (batteries.length === 0) {
-    //     grid.classList.add('hidden');
-    //     emptyState.classList.remove('hidden');
-    //     document.getElementById('total-batteries').textContent = '0';
-    //     return;
-    //   }
-      
-    //   grid.classList.remove('hidden');
-    //   emptyState.classList.add('hidden');
-    //   document.getElementById('total-batteries').textContent = batteries.length.toString();
-      
-    //   // Create a document fragment to improve performance
-    //   const fragment = document.createDocumentFragment();
-      
-    //   batteries.forEach(batt => {
-    //     let card = document.getElementById(`card-${batt.typeBattery}-${batt.addr}`);
-        
-    //     if (!card) {
-    //       card = document.createElement("div");
-    //       card.id = `card-${batt.typeBattery}-${batt.addr}`;
-    //       card.className = "battery-card bg-white rounded-xl shadow-sm p-5 cursor-pointer hover:shadow-md fade-in";
-    //       card.dataset.addr = String(batt.addr);
-    //       card.innerHTML = `
-    //         <div class="flex items-center justify-between mb-4">
-    //           <h3 class="text-lg font-semibold text-gray-800">${batt.typeBattery} <span class="text-blue-600">#${batt.addr}</span></h3>
-    //           <div  class="led" id="led-card-${batt.typeBattery}-${batt.addr}" ></div>
-    //         </div>
-            
-    //         <div class="mb-4">
-    //           <div class="flex justify-between items-center mb-1">
-    //             <span class="text-sm text-gray-600">SOC</span>
-    //             <span class="font-semibold" id="soc-value-${batt.typeBattery}-${batt.addr}">${batt.soc}%</span>
-    //           </div>
-    //           <div class="progress-bar">
-    //             <div id="soc-bar-${batt.typeBattery}-${batt.addr}" class="progress-fill" style="width: ${batt.soc}%"></div>
-    //           </div>
-    //         </div>
-            
-    //         <div class="grid grid-cols-2 gap-4 text-sm">
-    //           <div class="space-y-2">
-    //             <div class="flex items-center">
-    //               <i class="fas fa-bolt text-yellow-500 mr-2"></i>
-    //               <div>
-    //                 <div class="text-gray-500">Voltage</div>
-    //                 <div id="voltage-${batt.typeBattery}-${batt.addr}" class="font-semibold">${batt.voltage} V</div>
-    //               </div>
-    //             </div>
-    //             <div class="flex items-center">
-    //               <i class="fas fa-minus-circle text-red-500 mr-2"></i>
-    //               <div>
-    //                 <div class="text-gray-500">Min Cell</div>
-    //                 <div id="cellmin-${batt.typeBattery}-${batt.addr}"  class="font-semibold">${batt.cell_vmin} V</div>
-    //               </div>
-    //             </div>
-    //           </div>
-              
-    //           <div class="space-y-2">
-    //             <div class="flex items-center">
-    //               <i class="fas fa-tachometer-alt text-blue-500 mr-2"></i>
-    //               <div>
-    //                 <div class="text-gray-500">Current</div>
-    //                 <div id="current-${batt.typeBattery}-${batt.addr}" class="font-semibold">${batt.current} A</div>
-    //               </div>
-    //             </div>
-    //             <div class="flex items-center">
-    //               <i class="fas fa-plus-circle text-green-500 mr-2"></i>
-    //               <div>
-    //                 <div class="text-gray-500">Max Cell</div>
-    //                 <div id="cellmax-${batt.typeBattery}-${batt.addr}" class="font-semibold">${batt.cell_vmax} V</div>
-    //               </div>
-    //             </div>
-    //           </div>
-    //         </div>
-            
-    //         <div class="mt-4 pt-3 border-t border-gray-100 text-xs text-gray-500 flex justify-between">
-    //           <span>Cycles: ${batt.cycles}</span>
-    //           <span><i class="far fa-clock mr-1"></i>${batt.time}</span>
-    //         </div>
-    //       `;
-          
-    //       card.onclick = () => openModal(batt.addr);
-    //       fragment.appendChild(card);
-    //     } else {
-    //       if (datane.typeBattery === batt.typeBattery && datane.addr === batt.addr){
-    //          console.log(new Date(), batt);
-    //       // Update existing card
-    //         document.getElementById(`soc-value-${batt.typeBattery}-${batt.addr}`).textContent = `${batt.soc}%`;
-    //         document.getElementById(`soc-bar-${batt.typeBattery}-${batt.addr}`).style.width = `${batt.soc}%`;
-    //         document.getElementById(`voltage-${batt.typeBattery}-${batt.addr}`).innerHTML = `${batt.voltage} V`;
-    //         document.getElementById(`current-${batt.typeBattery}-${batt.addr}`).innerHTML = `${batt.current} A`;
-    //         document.getElementById(`cellmin-${batt.typeBattery}-${batt.addr}`).innerHTML = `${batt.cell_vmin} V`;
-    //         document.getElementById(`cellmax-${batt.typeBattery}-${batt.addr}`).innerHTML = `${batt.cell_vmax} V`;
-    //         // Update other values as needed
-    //         const socBar = document.getElementById(`soc-bar-${batt.typeBattery}-${batt.addr}`);
-    //         if (batt.soc > 70) socBar.className = 'progress-fill bg-green-500';
-    //         else if (batt.soc > 30) socBar.className = 'progress-fill bg-yellow-500';
-    //         else socBar.className = 'progress-fill bg-red-500';
-            
-    //         // Update last update time
-    //         card.querySelector('.text-gray-500 span:last-child').innerHTML = `<i class="far fa-clock mr-1"></i>${batt.time}`;
-          
-          
-    //         // blinkLed(`led-card-${batt.typeBattery}-${batt.addr}`);
-    //         const led = document.getElementById(`led-card-${batt.typeBattery}-${batt.addr}`);
-    //         led.classList.add("active");
-    //         setTimeout(() => led.classList.remove("active"), 250);
-    //       }
-
-         
-    //     }
-    //     // Update SOC bar color based on value
-    //     const socBar = document.getElementById(`soc-bar-${batt.addr}`);
-    //     if (socBar) {
-    //       if (batt.soc > 70) socBar.className = 'progress-fill bg-green-500';
-    //       else if (batt.soc > 30) socBar.className = 'progress-fill bg-yellow-500';
-    //       else socBar.className = 'progress-fill bg-red-500';
-    //     }
-    //   });
-      
-    //   // Only append new cards
-    //   if (fragment.childNodes.length > 0) {
-    //     grid.appendChild(fragment);
-    //   }
-    // }
-
-
-    // simpan timer per card
 const cardTimers = {};
 
 function renderCards(datane) {
@@ -550,7 +421,7 @@ function renderCards(datane) {
               <div id="soc-bar-${batt.typeBattery}-${batt.addr}" class="progress-fill" style="width: ${batt.soc}%"></div>
             </div>
           </div>
-          <div class="grid grid-cols-2 gap-4 text-sm">
+          <div class="grid grid-cols-2 gap-5 text-sm">
             <div class="space-y-2">
               <div class="flex items-center">
                 <i class="fas fa-bolt text-yellow-500 mr-2"></i>
@@ -559,6 +430,14 @@ function renderCards(datane) {
                   <div id="voltage-${batt.typeBattery}-${batt.addr}" class="font-semibold">${batt.voltage} V</div>
                 </div>
               </div>
+               <div class="flex items-center">
+                <i class="fas fa-minus-circle  text-blue-500 mr-2"></i>
+                <div>
+                  <div class="text-gray-500">Diff Cell</div>
+                  <div id="voltagedif-${batt.typeBattery}-${batt.addr}" class="font-semibold">${batt.cell_vdif} mV</div>
+                </div>
+              </div>
+
               <div class="flex items-center">
                 <i class="fas fa-minus-circle text-red-500 mr-2"></i>
                 <div>
@@ -573,6 +452,13 @@ function renderCards(datane) {
                 <div>
                   <div class="text-gray-500">Current</div>
                   <div id="current-${batt.typeBattery}-${batt.addr}" class="font-semibold">${batt.current} A</div>
+                </div>
+              </div>
+               <div class="flex items-center">
+                <i class="fas fa-bolt text-red-500 mr-2"></i>
+                <div>
+                  <div class="text-gray-500">Power</div>
+                  <div id="power-${batt.typeBattery}-${batt.addr}" class="font-semibold">${(batt.voltage*batt.current).toFixed(1)} WA</div>
                 </div>
               </div>
               <div class="flex items-center">
@@ -599,6 +485,8 @@ function renderCards(datane) {
           document.getElementById(`current-${batt.typeBattery}-${batt.addr}`).innerHTML = `${batt.current} A`;
           document.getElementById(`cellmin-${batt.typeBattery}-${batt.addr}`).innerHTML = `${batt.cell_vmin} V`;
           document.getElementById(`cellmax-${batt.typeBattery}-${batt.addr}`).innerHTML = `${batt.cell_vmax} V`;
+          document.getElementById(`power-${batt.typeBattery}-${batt.addr}`).innerHTML = `${(batt.voltage*batt.current).toFixed(1)} W`;
+          document.getElementById(`voltagedif-${batt.typeBattery}-${batt.addr}`).innerHTML = `${batt.cell_vdif} mV`;
 
           const socBar = document.getElementById(`soc-bar-${batt.typeBattery}-${batt.addr}`);
           if (batt.soc > 70) socBar.className = 'progress-fill bg-green-500';
