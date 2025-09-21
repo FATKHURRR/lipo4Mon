@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Serial Port Cloud Bridge</title>
+  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    let port, reader, writer;
+    let mqttClient;
+    let mqttMainTopic;
+    let mqttRxTopic;
+    let mqttTxTopic;
+
+    const mqttBroker = "wss://public.cloud.shiftr.io";
+    const mqttUser = "public";
+    const mqttPass = "public";
+
+    function getQueryParam(name) {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get(name);
+    }
+
+    function logStatus(msg) {
+      const log = document.getElementById("status");
+      log.textContent = msg;
+    }
+
+    async function connectSerial() {
+      try {
+        port = await navigator.serial.requestPort();
+        const baudRate = parseInt(document.getElementById("baudrate").value);
+        await port.open({ baudRate });
+        writer = port.writable.getWriter();
+        reader = port.readable.getReader();
+        logStatus("Serial connected");
+        readSerialLoop();
+      } catch (e) {
+        logStatus("Serial connection failed: " + e);
+      }
+    }
+
+    async function readSerialLoop() {
+      try {
+        while (port.readable) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          if (mqttClient?.connected && mqttTxTopic) {
+            mqttClient.publish(mqttTxTopic, new Uint8Array(value));
+            flashIndicator("mqtt-out");
+          }
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function flashIndicator(id) {
+      const el = document.getElementById(id);
+      el.classList.add("bg-green-500");
+      setTimeout(() => el.classList.remove("bg-green-500"), 100);
+    }
+
+    function connectMQTT() {
+      mqttClient = mqtt.connect(mqttBroker, {
+        username: mqttUser,
+        password: mqttPass
+      });
+
+      mqttClient.on("connect", () => {
+        document.getElementById("mqtt-status").textContent = "Connected";
+        mqttClient.subscribe(mqttRxTopic);
+        console.log("Topic subscribed:", mqttRxTopic);
+      });
+
+      mqttClient.on("message", (topic, payload) => {
+        if(topic === mqttRxTopic) {
+          flashIndicator("mqtt-in");
+          if (writer){
+            console.log("Serial Oke", payload);
+            writer.write(payload);
+          } else {
+            console.log("Serial not connected", payload);
+          }
+        }
+      });
+
+      mqttClient.on("error", err => {
+        document.getElementById("mqtt-status").textContent = "MQTT Error: " + err;
+      });
+
+      mqttClient.on("close", () => {
+        document.getElementById("mqtt-status").textContent = "Disconnected";
+      });
+    }
+
+    // auto-run saat page dibuka
+    window.addEventListener("DOMContentLoaded", () => {
+      mqttMainTopic = getQueryParam("maintopic") || "defaultTopic";
+      mqttRxTopic = mqttMainTopic + "/TX";
+      mqttTxTopic = mqttMainTopic + "/RX";
+      console.log("Using MainTopic:", mqttMainTopic);
+      connectMQTT();
+    });
+  </script>
+</head>
+<body class="p-4 font-mono">
+  <h2 class="text-xl font-bold mb-2">Serial Port ↔ Cloud Bridge</h2>
+  <div class="mb-2">
+    <label class="block">Baudrate:</label>
+    <input id="baudrate" type="number" value="9600" class="border p-1">
+    <button onclick="connectSerial()" class="bg-blue-500 text-white px-2 py-1 rounded">Open Serial</button>
+    <span id="status" class="ml-2">Not connected</span>
+  </div>
+
+  <div class="mb-2">
+    <span id="mqtt-status" class="ml-2">Not connected</span>
+  </div>
+  <div class="flex gap-4">
+    <div id="mqtt-in" class="w-4 h-4 bg-gray-300 rounded-full"></div>
+    <span>Cloud IN</span>
+    <div id="mqtt-out" class="w-4 h-4 bg-gray-300 rounded-full"></div>
+    <span>Cloud OUT</span>
+  </div>
+</body>
+</html>
