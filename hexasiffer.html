@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Hex Reader — MQTT / Manual</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+</head>
+<body class="bg-slate-50 min-h-screen p-6">
+  <div class="max-w-6xl mx-auto">
+    <h1 class="text-2xl font-semibold mb-4">Hex Reader (MQTT & Manual)</h1>
+
+    <!-- control panel -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+      <div class="p-4 bg-white rounded shadow" hidden>
+        <label class="block text-sm font-medium" hidden>Broker (wss)</label>
+        <input id="broker" class="mt-1 w-full border rounded p-2" value="wss://public.cloud.shiftr.io"  hidden/>
+        <label class="block text-sm font-medium mt-3" hidden>Username</label>
+        <input id="username" class="mt-1 w-full border rounded p-2" value="public" hidden/>
+        <label class="block text-sm font-medium mt-3" hidden>Password</label>
+        <input id="password" type="password" class="mt-1 w-full border rounded p-2" value="public" />
+        <label class="block text-sm font-medium mt-3">Topic (dari URL ?topic=...)</label>
+        <input id="topic" class="mt-1 w-full border rounded p-2" placeholder="topic/diisi/dari-url" />
+        <div class="mt-3 flex gap-2">
+          <button id="connectBtn" class="px-3 py-2 bg-green-600 text-white rounded">Connect & Subscribe</button>
+          <button id="disconnectBtn" class="px-3 py-2 bg-red-500 text-white rounded">Disconnect</button>
+        </div>
+        <p id="connStatus" class="mt-2 text-sm text-slate-600">Status: disconnected</p>
+      </div>
+
+      <div class="p-4 bg-white rounded shadow md:col-span-2">
+        <label class="block text-sm font-medium">Min length (bytes)</label>
+        <input id="minLen" type="number" min="1" class="mt-1 w-32 border rounded p-2" value="11" />
+        <div class="mt-3 flex gap-3 items-center flex-wrap">
+          <label class="inline-flex items-center"><input id="stripFrame" type="checkbox" class="mr-2">Strip start/stop (0x7E .. 0xD0)</label>
+          <label class="inline-flex items-center"><input id="asciiHexMode" type="checkbox" class="mr-2">ASCIIHEX → Hex</label>
+          <label class="inline-flex items-center"><input id="hexToAscii" type="checkbox" class="mr-2">Hex → ASCII (preview)</label>
+        </div>
+
+        <label class="block text-sm font-medium mt-4">Manual input / Received hex</label>
+        <textarea id="manualInput" rows="3" class="w-full mt-1 border rounded p-2" placeholder="Contoh: 3F 55 68 0C DD 0C ..."></textarea>
+        <div class="mt-2 flex gap-2">
+          <button id="processManual" class="px-3 py-2 bg-blue-600 text-white rounded">Proses Manual</button>
+          <button id="simulate" class="px-3 py-2 bg-slate-500 text-white rounded">Simulate Random</button>
+        </div>
+
+        <p id="warn" class="mt-2 text-sm text-red-600 hidden"></p>
+      </div>
+    </div>
+
+    <!-- table result -->
+    <div class="bg-white rounded shadow p-4 mb-6">
+      <div class="flex justify-between items-center mb-3">
+        <h2 class="text-lg font-medium">Preview</h2>
+        <div class="text-sm text-slate-600">Length: <span id="dataLen">0</span> bytes</div>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="min-w-full border-collapse text-sm">
+          <thead>
+            <tr class="bg-slate-100">
+              <th class="px-3 py-2 border">Offset</th>
+              <th class="px-3 py-2 border">Hex</th>
+              <th class="px-3 py-2 border">Decimal</th>
+              <th class="px-3 py-2 border">Uint16 BE</th>
+              <th class="px-3 py-2 border">Int16 BE</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+
+      <div id="asciiPreview" class="mt-4 text-sm font-mono hidden">
+        <strong>ASCII:</strong> <span id="asciiText"></span>
+      </div>
+
+      <div class="mt-3">
+        <strong>Raw hex:</strong>
+        <div id="rawHex" class="mt-1 font-mono text-sm text-slate-700 break-words"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const hexByte = (n) => ('0' + (n & 0xFF).toString(16).toUpperCase()).slice(-2);
+    const isPrintable = (ch) => ch >= 0x20 && ch <= 0x7E;
+
+    const brokerEl = document.getElementById('broker');
+    const userEl = document.getElementById('username');
+    const passEl = document.getElementById('password');
+    const topicEl = document.getElementById('topic');
+    const connectBtn = document.getElementById('connectBtn');
+    const disconnectBtn = document.getElementById('disconnectBtn');
+    const connStatus = document.getElementById('connStatus');
+    const manualInput = document.getElementById('manualInput');
+    const processManual = document.getElementById('processManual');
+    const simulateBtn = document.getElementById('simulate');
+    const tableBody = document.getElementById('tableBody');
+    const dataLenEl = document.getElementById('dataLen');
+    const rawHexEl = document.getElementById('rawHex');
+    const asciiPreview = document.getElementById('asciiPreview');
+    const asciiText = document.getElementById('asciiText');
+    const minLenEl = document.getElementById('minLen');
+    const warnEl = document.getElementById('warn');
+    const stripFrameEl = document.getElementById('stripFrame');
+    const hexToAsciiEl = document.getElementById('hexToAscii');
+    const asciiHexModeEl = document.getElementById('asciiHexMode');
+
+    let client = null;
+    const urlParams = new URLSearchParams(location.search);
+    const urlTopic = urlParams.get('topic');
+    if (urlTopic) {
+        topicEl.value = urlTopic;
+        connectMQTT();
+    }
+
+    function setStatus(s, color='text-slate-600') {
+      connStatus.textContent = 'Status: ' + s;
+      connStatus.className = 'mt-2 text-sm ' + color;
+    }
+
+    function connectMQTT() {
+      const broker = brokerEl.value.trim();
+      const username = userEl.value.trim();
+      const password = passEl.value;
+      const topic = topicEl.value.trim();
+      if (!broker || !topic) {
+        alert('Broker dan topic harus diisi.');
+        return;
+      }
+      setStatus('connecting...', 'text-yellow-600');
+      client = mqtt.connect(broker, { username, password, reconnectPeriod: 5000 });
+      client.on('connect', () => {
+        setStatus('connected', 'text-green-600');
+        client.subscribe(topic);
+      });
+      client.on('message', (t, payload) => {
+        let bytes = decodePayload(payload);
+        if (bytes) handleIncoming(bytes);
+      });
+      client.on('error', e => setStatus('error: ' + e.message, 'text-red-600'));
+    }
+    function disconnectMQTT(){ if(client){client.end(true);} setStatus('disconnected'); }
+    connectBtn.onclick=connectMQTT; disconnectBtn.onclick=disconnectMQTT;
+
+    function parseHexStringToBytes(s){
+      let cleaned = s.replace(/0x/gi,'').replace(/[^0-9A-Fa-f]/g,'');
+      if (cleaned.length%2===1) cleaned = cleaned.slice(0,-1);
+      const out=[]; for(let i=0;i<cleaned.length;i+=2){ out.push(parseInt(cleaned.substr(i,2),16)); }
+      return out;
+    }
+    function decodePayload(payload){
+      if (asciiHexModeEl.checked){
+        const s=(typeof payload==='string')?payload:new TextDecoder().decode(payload);
+        return parseHexStringToBytes(s);
+      }
+      if (payload instanceof Uint8Array) return Array.from(payload);
+      if (typeof payload==='string') return parseHexStringToBytes(payload);
+      return null;
+    }
+
+    function handleIncoming(bytes){
+      // modifikasi sesuai checkbox
+      if (stripFrameEl.checked && bytes.length>=2){
+        if (bytes[0]===0x7E && bytes[bytes.length-1]===0xD0){
+          bytes=bytes.slice(1,-1);
+        }
+      }
+
+      const minLen=parseInt(minLenEl.value)||1;
+      if (bytes.length<minLen){
+        warnEl.textContent=`Data length ${bytes.length} < min length ${minLen}`;
+        warnEl.classList.remove('hidden');
+        return;
+      } else warnEl.classList.add('hidden');
+
+      updateTable(bytes);
+    }
+
+    function updateTable(bytes){
+      tableBody.innerHTML='';
+      dataLenEl.textContent=bytes.length;
+      rawHexEl.textContent=bytes.map(hexByte).join(' ');
+
+      if (hexToAsciiEl.checked){
+        asciiPreview.classList.remove('hidden');
+        asciiText.textContent=bytes.map(b=>isPrintable(b)?String.fromCharCode(b):'.').join('');
+      } else asciiPreview.classList.add('hidden');
+
+      for (let i=0;i<bytes.length;i++){
+        const tr=document.createElement('tr');
+
+        const tdOff=document.createElement('td'); tdOff.className='px-3 py-1 border'; tdOff.textContent=i; tr.appendChild(tdOff);
+        const tdHex=document.createElement('td'); tdHex.className='px-3 py-1 border font-mono'; tdHex.textContent=hexByte(bytes[i]); tr.appendChild(tdHex);
+        const tdDec=document.createElement('td'); tdDec.className='px-3 py-1 border'; tdDec.textContent=bytes[i]; tr.appendChild(tdDec);
+
+        // Uint16 BE
+        const tdU16=document.createElement('td'); tdU16.className='px-3 py-1 border font-mono';
+        if (i+1<bytes.length){ const val=(bytes[i]<<8)|bytes[i+1]; tdU16.textContent=val; } else tdU16.textContent='-';
+        tr.appendChild(tdU16);
+
+        // Int16 BE
+        const tdI16=document.createElement('td'); tdI16.className='px-3 py-1 border font-mono';
+        if (i+1<bytes.length){
+          let val=(bytes[i]<<8)|bytes[i+1]; if (val&0x8000) val-=0x10000; tdI16.textContent=val;
+        } else tdI16.textContent='-';
+        tr.appendChild(tdI16);
+
+        tableBody.appendChild(tr);
+      }
+    }
+
+    processManual.onclick=()=>{ let txt=manualInput.value.trim(); if(!txt)return;
+      let bytes=parseHexStringToBytes(txt); handleIncoming(bytes); };
+    simulateBtn.onclick=()=>{ let n=Math.max(12,parseInt(minLenEl.value)||12); const arr=[]; for(let i=0;i<n;i++) arr.push(Math.floor(Math.random()*256));
+      arr.unshift(0x7E); arr.push(0xD0); manualInput.value=arr.map(hexByte).join(' '); handleIncoming(arr); };
+  </script>
+</body>
+</html>
