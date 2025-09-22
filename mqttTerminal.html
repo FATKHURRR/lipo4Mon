@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>MQTT Terminal</title>
+  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+  <style>
+    body { font-family: monospace; background: #111; color: #eee; }
+    #log { border: 1px solid #444; padding: 10px; height: 300px; overflow-y: auto; background: #000; }
+    .msg { margin: 2px 0; }
+    .rx { color: #0f0; }
+    .tx { color: #0af; }
+  </style>
+</head>
+<body>
+  <h2>MQTT Terminal</h2>
+  <div id="log"></div>
+
+  <div>
+    <input id="msg" type="text" placeholder="ketik pesan..." style="width:300px;">
+    <button onclick="sendMsg('test/in')">Send to test/in</button>
+    <button onclick="sendMsg('txtopic')">Send to txtopic</button>
+  </div>
+
+  <script>
+    const logDiv = document.getElementById('log');
+
+    function log(msg, cls="") {
+      const el = document.createElement('div');
+      el.className = "msg " + cls;
+      el.textContent = msg;
+      logDiv.appendChild(el);
+      logDiv.scrollTop = logDiv.scrollHeight;
+    }
+
+    // connect ke broker via websocket
+    const options = {
+      clientId: "espClient-" + Math.random().toString(16).substr(2, 8),
+      username: "public",
+      password: "public"
+    };
+    const client = mqtt.connect("wss://public.cloud.shiftr.io", options);
+
+    client.on("connect", () => {
+      log("Connected to broker", "tx");
+      client.subscribe("test/out", (err) => {
+        if (!err) {
+          log("Subscribed to test/out", "tx");
+        }
+      });
+    });
+
+    client.on("message", (topic, payload) => {
+      log(`RX [${topic}] ${payload.toString()}`, "rx");
+    });
+
+    function sendMsg(topic) {
+      const msg = document.getElementById("msg").value;
+      if (!msg) return;
+      client.publish(topic, msg);
+      log(`TX [${topic}] ${msg}`, "tx");
+      document.getElementById("msg").value = "";
+    }
+  </script>
+</body>
+</html>
