@@ -133,7 +133,8 @@
       client = mqtt.connect(broker, { username, password, reconnectPeriod: 5000 });
       client.on('connect', () => {
         setStatus('connected', 'text-green-600');
-        client.subscribe(topic);
+        client.subscribe(topic+"/TX");
+        client.subscribe("sysMon/"+topic+"/VERBOSE/#");
       });
       client.on('message', (t, payload) => {
         let bytes = decodePayload(payload);
@@ -218,3 +219,4 @@
   </script>
 </body>
 </html>
+
