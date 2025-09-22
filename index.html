@@ -275,8 +275,8 @@
     let client;
     let batteries = [];
     
-    document.getElementById("id_monitoring").innerText = id_logger;
-    document.getElementById("id_monitoring_footer").innerText = id_logger;
+    //document.getElementById("id_monitoring").innerText = id_logger;
+    //document.getElementById("id_monitoring_footer").innerText = id_logger;
 
     function startMQTT(){
       client = mqtt.connect("wss://public.cloud.shiftr.io", {
@@ -296,8 +296,8 @@
       client.on("message", (topic, message) => {
         if(topic == "sysMon/"+id_logger+"/info" ){
           let a = message.toString().split(",");
-          document.getElementById("id_monitoring").innerText = id_logger +" 🌐 " + a[0] + " 📶"+a[1];
-          document.getElementById("id_monitoring_footer").innerText =" 🪪 " + id_logger +" 🌐 " + a[0] + " 📶"+a[1];
+          document.getElementById("id_monitoring").innerText = " 🌐 " + a[0] + " 📶"+a[1];
+          document.getElementById("id_monitoring_footer").innerText =" 🌐 " + a[0] + " 📶"+a[1];
         } else {
           try {
             const raw = JSON.parse(message.toString());
