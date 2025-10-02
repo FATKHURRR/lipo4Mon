@@ -1,9 +1,10 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BMS Online Monitoring</title>
+  <title>LiFePo4 BMS ONLINE</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -39,13 +40,23 @@
     }
     
     .battery-card {
+      background-color: var(--card-lapis);
+      color: var(--card-text);
       transition: all 0.3s ease;
-      border-left: 4px solid var(--primary);
+      border-left: 5px solid var(--card-bg);
     }
-    
+
+    .battery-card h3 {
+      color: var(--card-text);
+    }
+
+    .battery-card span {
+      color: var(--card-subtext);
+    }
+
     .battery-card:hover {
       transform: translateY(-5px);
-      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 15px 25px -5px rgba(0, 0, 0, 0.1);
     }
     
     .progress-bar {
@@ -98,36 +109,95 @@
       from { opacity: 0; transform: translateY(10px); }
       to { opacity: 1; transform: translateY(0); }
     }
+    #id_monitoring_footer {
+  display: none;
+}
+body {
+  background-color: #ffffff;
+  color: #000000;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+body[data-theme="dark"] {
+  background-color: #111;
+  color: #222;
+}
+
+/* Header ikut dark mode */
+header {
+  background-color: #0455D1;
+  color: #000000;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+body[data-theme="dark"] header {
+  background-color: #1f1f1f;
+  color: #ffffff;
+}
+
+.battery-card i {
+  /* tidak usah pakai var() */
+}
+
+/* khusus dark kita override */
+body.dark .battery-card i {
+
+}
   </style>
 </head>
 <body class="bg-gray-50 min-h-screen flex flex-col">
-
-  <!-- Header -->
-  <header class="bg-gradient-to-r from-blue-600 to-blue-800 text-white shadow-lg w-full">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex justify-between items-center">
-      <div class="flex items-center">
-        <div class="bg-white/20 p-2 rounded-lg mr-3">
-          <i class="fas fa-car-battery text-2xl"></i>
-        </div>
-        <h1 class="text-2xl font-bold">LiFEPo4 BMS Monitor</h1>
+<!-- Header -->
+<header id="mainHeader" class="bg-gradient-to-r text-white shadow-lg w-full relative">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 py-2 flex justify-between items-center">
+    <div class="flex items-center">
+      <div class="bg-white/20 p-2 rounded-lg mr-3">
+        <i class="fas fa-car-battery text-2xl"></i>
       </div>
-      <div class="flex items-center space-x-4">
-        <div class="hidden md:flex items-center space-x-2 text-sm bg-white/10 px-3 py-1 rounded-full">
-          <i class="fas fa-satellite-dish"></i>
-          <span id="id_monitoring">-</span>
-        </div>
-        <button class="bg-white/10 hover:bg-white/20 p-2 rounded-full transition">
+      <h1 class="text-2xl font-bold">LiFePo4 BMS MONITORING</h1>
+    </div>
+
+    <div class="flex items-center space-x-4">
+      <div class="hidden md:flex items-center space-x-2 text-sm bg-white/10 px-3 py-1 rounded-full">
+        <i class="fas fa-satellite-dish"></i>
+        <span id="id_monitoring">-</span>
+      </div>
+
+      <!-- Tombol Settings dengan Dropdown -->
+      <div class="relative">
+        <!-- Ikon Roda Gigi -->
+        <button id="settingsBtn" class="bg-white/10 hover:bg-white/20 p-2 rounded-full transition">
           <i class="fas fa-cog"></i>
         </button>
+
+        <!-- Dropdown Menu -->
+        <div id="dropdownMenu"
+          class="absolute right-0 mt-2 w-44 bg-white text-gray-800 rounded-lg shadow-lg hidden">
+            <a id="networkBtn" href="#" class="block px-4 py-2 hover:bg-gray-100">📡 Network</a>
+            <a id="pollingState" href="#" class="block px-4 py-2 hover:bg-gray-100">PollingState</a>
+          <hr class="my-1">
+          <a id="themeToggleLink" href="#" class="block px-4 py-2 hover:bg-gray-100">🌙 Dark Mode</a>
+        </div>
       </div>
     </div>
-  </header>
+  </div>
+</header>
+<!-- Modal Network -->
+<div id="networkModal" class="fixed inset-0 bg-black/50 flex items-center justify-center hidden z-50">
+  <div class="bg-white rounded-lg shadow-lg w-96 p-6 relative">
+    <button id="closeNetwork" class="absolute top-2 right-2 text-gray-500 hover:text-gray-700">
+      ✖
+    </button>
+    <h2 class="text-xl font-bold mb-4">Network Info</h2>
+    <p id="network_ip" class="mb-2">IP Address: -</p>
+    <p id="network_signal">Signal: -</p>
+  </div>
+</div>
 
   <!-- Main content -->
   <main class="flex-1 p-4 sm:p-6 w-full">
     <div class="max-w-7xl mx-auto">
       <div class="mb-6 flex justify-between items-center">
-        <h2 class="text-xl font-semibold text-gray-800">Battery Systems</h2>
+        <h2 class="text-xl font-semibold text-gray-500">Battery Systems</h2>
         <div class="text-sm text-gray-500">
           <span id="total-batteries">0</span> batteries connected
         </div>
@@ -146,16 +216,17 @@
   </main>
 
   <!-- Footer -->
-  <footer class="bg-gray-800 text-gray-300 py-4 w-full">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row justify-between items-center">
-      <div class="text-sm mb-2 sm:mb-0">
-        © 2025 BMS Monitor System |<a href="https://wa.me/628972309993"> Hubungi Developer</a> |  <label id="id_monitoring_footer"></label></div>
-      </div>
-      <div class="text-xs flex items-center">
-       
-      </div>
+<footer class="bg-gray-800 text-gray-300 py-4 w-full">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col items-center text-center">
+    <div class="text-sm">
+      © 2025 BMS Monitor System |
+      <a href="https://wa.me/628972309993" class="no-underline hover:text-white">
+        Hubungi Developer
+      </a>
+      <label id="id_monitoring_footer" style="display:block;"></label>
     </div>
-  </footer>
+  </div>
+</footer>
 
   <!-- Modal -->
   <div id="batteryModal" class="fixed inset-0 hidden bg-black/50 flex items-center justify-center z-50 p-4">
@@ -274,6 +345,8 @@
     let id_logger = "-";
     let client;
     let batteries = [];
+    let pollingSts = false;
+    let timer_poll;
     
     //document.getElementById("id_monitoring").innerText = id_logger;
     //document.getElementById("id_monitoring_footer").innerText = id_logger;
@@ -288,16 +361,47 @@
         console.log("Connected to MQTT");
         client.subscribe("sysMon/"+id_logger+"/AutoPoll/#");
         client.subscribe("sysMon/"+id_logger+"/info/#");
-        
         // Update connection status
+        client.publish(id_logger+"/seting","POLL1",0);
+        // timer_poll = setInterval(()=>{
+        //     client.publish(id_logger+"/seting","POLL1",0);
+        // },15000);
         updateConnectionStatus(true);
+
       });
 
       client.on("message", (topic, message) => {
         if(topic == "sysMon/"+id_logger+"/info" ){
-          let a = message.toString().split(",");
-          document.getElementById("id_monitoring").innerText = " 🌐 " + a[0] + " 📶"+a[1];
-          document.getElementById("id_monitoring_footer").innerText =" 🌐 " + a[0] + " 📶"+a[1];
+            let a = message.toString().split(",");
+            // 🔥 Update Network Modal lebih dulu
+            document.getElementById("network_ip").innerText = "IP Address: " + a[0];
+            document.getElementById("network_signal").innerText = "Signal: " + a[1];
+            let varpol = document.getElementById("pollingState");
+            let text_head = " 🌐 " + a[0] + " 📶"+a[1];
+             if(a[3] === "1"){
+                varpol.innerHTML= "▶️ Active";
+                pollingSts =true;
+                text_head += " ▶️ "
+            }
+            else{
+                varpol.innerHTML= "⏹️ Passive";
+                pollingSts=false;
+                text_head += " ⏹️ "
+            }
+            document.getElementById("id_monitoring").innerText =text_head;
+            document.getElementById("id_monitoring_footer").innerText =text_head;
+           
+           
+          
+      // 🔥 update link Battery Config sesuai IP dari MQTT
+//   let batteryLink = document.getElementById("batteryConfigLink");
+//   if (batteryLink) {
+//     batteryLink.href = "http://" + a[0] + "/";
+//   }
+//             let timerLink = document.getElementById("timerLink");
+//   if (timerLink) {
+//     timerLink.href = "http://" + a[0] + "/timer";
+//   }
         } else {
           try {
             const raw = JSON.parse(message.toString());
@@ -381,7 +485,6 @@
     const modal = document.getElementById("batteryModal");
     const emptyState = document.getElementById("empty-state");
     let currentAddr = null;
-    let currentType =null;
 
 const cardTimers = {};
 
@@ -406,7 +509,7 @@ function renderCards(datane) {
       if (!card) {
         card = document.createElement("div");
         card.id = cardId;
-        card.className = "battery-card bg-white rounded-xl shadow-sm p-5 cursor-pointer hover:shadow-md fade-in";
+        card.className = "battery-card rounded-xl shadow-sm p-5 cursor-pointer hover:shadow-md fade-in";
         card.dataset.addr = String(batt.addr);
         card.innerHTML = `
           <div class="flex items-center justify-between mb-4">
@@ -476,7 +579,7 @@ function renderCards(datane) {
             <span class="last-update"><i class="far fa-clock mr-1"></i>${batt.time}</span>
           </div>
         `;
-        card.onclick = () => openModal(batt.typeBattery, batt.addr);
+        card.onclick = () => openModal(batt.addr);
         fragment.appendChild(card);
       } else {
         if (datane.typeBattery === batt.typeBattery && datane.addr === batt.addr) {
@@ -520,9 +623,8 @@ function renderCards(datane) {
   }
 
     // Open modal
-    function openModal(type, addr) {
+    function openModal(addr) {
       currentAddr = addr;
-      currentType =type;
       updateModal();
       modal.classList.remove("hidden");
       document.body.style.overflow = 'hidden';
@@ -531,7 +633,7 @@ function renderCards(datane) {
     // Update modal content
     function updateModal() {
       if (currentAddr === null) return;
-      const batt = batteries.find(b => b.addr === currentAddr && b.typeBattery === currentType);
+      const batt = batteries.find(b => b.addr === currentAddr);
       if (!batt) return;
 
       document.getElementById("modalTitle").textContent = `${batt.typeBattery} #${batt.addr}`;
@@ -630,7 +732,7 @@ function renderCards(datane) {
 
    
 
-    // Initialize on load
+      // Initialize on load
     window.onload = function() {
       const params = new URLSearchParams(window.location.search);
       
@@ -668,5 +770,94 @@ function renderCards(datane) {
       }
     };
   </script>
+  <!-- Script -->
+<script>
+  // === Dropdown Toggle ===
+  const btn = document.getElementById("settingsBtn");
+  const menu = document.getElementById("dropdownMenu");
+
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    menu.classList.toggle("hidden");
+  });
+
+  window.addEventListener("click", () => {
+    menu.classList.add("hidden");
+  });
+
+//   === Network Modal Control ===
+  const pollingStateData = document.getElementById("pollingState");
+
+  pollingStateData.addEventListener("click",(e) => {
+    if(pollingSts === true ){
+        client.publish(id_logger+"/seting", "POLL0",0);
+        console.log("deactivate");
+    }
+    else{
+        client.publish(id_logger+"/seting", "POLL1",0);
+        console.log("activated")
+    }
+  });
+
+  const networkModal = document.getElementById("networkModal");
+  const closeNetwork = document.getElementById("closeNetwork");
+
+  networkBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    networkModal.classList.remove("hidden");
+  });
+
+  closeNetwork.addEventListener("click", () => {
+    networkModal.classList.add("hidden");
+  });
+
+  window.addEventListener("click", (e) => {
+    if (e.target === networkModal) {
+      networkModal.classList.add("hidden");
+    }
+  });
+</script>
+<script>
+const themeToggleLink = document.getElementById('themeToggleLink');
+const body = document.body;
+const header = document.getElementById('mainHeader');
+
+function setTheme(theme) {
+  body.setAttribute('data-theme', theme);
+  localStorage.setItem('theme', theme);
+
+  // Ubah menu link text
+  themeToggleLink.innerHTML = theme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode';
+
+  // Ubah class header Tailwind untuk dark mode
+  if (theme === 'dark') {
+    document.body.classList.add('dark');
+    document.documentElement.style.setProperty('--card-bg', '#525252');
+    document.documentElement.style.setProperty('--card-lapis', '#222');
+    document.documentElement.style.setProperty('--card-text', '#ddd');
+    document.documentElement.style.setProperty('--card-subtext', '#ccc');
+    document.documentElement.style.setProperty('--icon-voltage', '#666'); 
+    document.documentElement.style.setProperty('--icon-current', '#60a5fa');
+  } else {
+    document.body.classList.remove('dark');
+    document.documentElement.style.setProperty('--card-bg', '#0455D1');
+    document.documentElement.style.setProperty('--card-lapis', '#fff');
+    document.documentElement.style.setProperty('--card-text', '#1f2937');
+    document.documentElement.style.setProperty('--card-subtext', '#4b5563');
+    document.documentElement.style.setProperty('--icon-current', '#3b82f6');
+  }
+}
+
+// Load tema dari localStorage
+const savedTheme = localStorage.getItem('theme') || 'light';
+setTheme(savedTheme);
+
+// Event toggle
+themeToggleLink.addEventListener('click', (e) => {
+  e.preventDefault();
+  const newTheme = body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  setTheme(newTheme);
+});
+</script>
 </body>
 </html>
