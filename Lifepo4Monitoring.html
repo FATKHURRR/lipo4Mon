@@ -1,0 +1,863 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AE BMS ONLINE</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #2563eb;
+      --secondary: #10b981;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --dark: #1f2937;
+      --light: #f9fafb;
+    }
+     .led {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-left: 6px;
+      background: #ccc;
+      transition: background-color 0.3s ease;
+      box-shadow: 0 0 5px rgba(0,0,0,0.2);
+    }
+    
+    .led.active {
+      background: #10b981;
+      box-shadow: 0 0 8px #10b981;
+    }
+    
+    
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+    
+    .battery-card {
+      background-color: var(--card-lapis);
+      color: var(--card-text);
+      transition: all 0.3s ease;
+      border-left: 5px solid var(--card-bg);
+    }
+
+    .battery-card h3 {
+      color: var(--card-text);
+    }
+
+    .battery-card span {
+      color: var(--card-subtext);
+    }
+
+    .battery-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 15px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+    
+    .progress-bar {
+      height: 8px;
+      border-radius: 4px;
+      overflow: hidden;
+      background-color: #e5e7eb;
+    }
+    
+    .progress-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.5s ease;
+    }
+    
+    .cell-voltage {
+      position: relative;
+    }
+    
+    .cell-voltage::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      height: 70%;
+      width: 4px;
+      border-radius: 2px;
+    }
+    
+    .cell-normal::before { background-color: #10b981; }
+    .cell-warning::before { background-color: #f59e0b; }
+    .cell-danger::before { background-color: #ef4444; }
+    
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.5; }
+      100% { opacity: 1; }
+    }
+    
+    .pulse {
+      animation: pulse 2s infinite;
+    }
+    
+    .fade-in {
+      animation: fadeIn 0.5s ease-in;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    #id_monitoring_footer {
+  display: none;
+}
+body {
+  background-color: #ffffff;
+  color: #000000;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+body[data-theme="dark"] {
+  background-color: #111;
+  color: #222;
+}
+
+/* Header ikut dark mode */
+header {
+  background-color: #0455D1;
+  color: #000000;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+body[data-theme="dark"] header {
+  background-color: #1f1f1f;
+  color: #ffffff;
+}
+
+.battery-card i {
+  /* tidak usah pakai var() */
+}
+
+/* khusus dark kita override */
+body.dark .battery-card i {
+
+}
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen flex flex-col">
+<!-- Header -->
+<header id="mainHeader" class="bg-gradient-to-r text-white shadow-lg w-full relative">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 py-2 flex justify-between items-center">
+    <div class="flex items-center">
+      <div class="bg-white/20 p-2 rounded-lg mr-3">
+        <i class="fas fa-car-battery text-2xl"></i>
+      </div>
+      <h1 class="text-2xl font-bold">LiFePo4 BMS MONITORING</h1>
+    </div>
+
+    <div class="flex items-center space-x-4">
+      <div class="hidden md:flex items-center space-x-2 text-sm bg-white/10 px-3 py-1 rounded-full">
+        <i class="fas fa-satellite-dish"></i>
+        <span id="id_monitoring">-</span>
+      </div>
+
+      <!-- Tombol Settings dengan Dropdown -->
+      <div class="relative">
+        <!-- Ikon Roda Gigi -->
+        <button id="settingsBtn" class="bg-white/10 hover:bg-white/20 p-2 rounded-full transition">
+          <i class="fas fa-cog"></i>
+        </button>
+
+        <!-- Dropdown Menu -->
+        <div id="dropdownMenu"
+          class="absolute right-0 mt-2 w-44 bg-white text-gray-800 rounded-lg shadow-lg hidden">
+            <a id="networkBtn" href="#" class="block px-4 py-2 hover:bg-gray-100">📡 Network</a>
+            <a id="pollingState" href="#" class="block px-4 py-2 hover:bg-gray-100">PollingState</a>
+          <hr class="my-1">
+          <a id="themeToggleLink" href="#" class="block px-4 py-2 hover:bg-gray-100">🌙 Dark Mode</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+<!-- Modal Network -->
+<div id="networkModal" class="fixed inset-0 bg-black/50 flex items-center justify-center hidden z-50">
+  <div class="bg-white rounded-lg shadow-lg w-96 p-6 relative">
+    <button id="closeNetwork" class="absolute top-2 right-2 text-gray-500 hover:text-gray-700">
+      ✖
+    </button>
+    <h2 class="text-xl font-bold mb-4">Network Info</h2>
+    <p id="network_ip" class="mb-2">IP Address: -</p>
+    <p id="network_signal">Signal: -</p>
+  </div>
+</div>
+
+  <!-- Main content -->
+  <main class="flex-1 p-4 sm:p-6 w-full">
+    <div class="max-w-7xl mx-auto">
+      <div class="mb-6 flex justify-between items-center">
+        <h2 class="text-xl font-semibold text-gray-500">Battery Systems</h2>
+        <div class="text-sm text-gray-500">
+          <span id="total-batteries">0</span> batteries connected
+        </div>
+      </div>
+      
+      <div id="batteryGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5"></div>
+      
+      <div id="empty-state" class="hidden text-center py-12 bg-white rounded-xl shadow-sm">
+        <div class="text-blue-500 mb-4">
+          <i class="fas fa-car-battery text-5xl opacity-50"></i>
+        </div>
+        <h3 class="text-lg font-medium text-gray-700 mb-2">No batteries connected</h3>
+        <p class="text-gray-500 max-w-md mx-auto">Battery data will appear here once your BMS systems are connected and sending data.</p>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+<footer class="bg-gray-800 text-gray-300 py-4 w-full">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col items-center text-center">
+    <div class="text-sm">
+      © 2025 BMS Monitor System |
+      <a href="https://wa.me/628972309993" class="no-underline hover:text-white">
+        Hubungi Developer
+      </a>
+      <label id="id_monitoring_footer" style="display:block;"></label>
+    </div>
+  </div>
+</footer>
+
+  <!-- Modal -->
+  <div id="batteryModal" class="fixed inset-0 hidden bg-black/50 flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+      <!-- Header Modal -->
+      <div class="flex items-center justify-between px-6 py-4 border-b">
+        <div class="flex items-center">
+          <div id="led-modal" class="w-3 h-3 rounded-full bg-gray-300 mr-3"></div>
+          <h2 id="modalTitle" class="text-xl font-semibold text-gray-800"></h2>
+        </div>
+        <button id="closeModal" class="text-gray-500 hover:text-gray-700">
+          <i class="fas fa-times text-xl"></i>
+        </button>
+      </div>
+
+      <div class="overflow-y-auto flex-1 p-6">
+        <!-- Battery Status Overview -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+          <div class="bg-blue-50 p-4 rounded-lg">
+            <div class="flex justify-between items-start mb-2">
+              <div class="text-blue-700 font-medium">State of Charge</div>
+              <div class="text-2xl font-bold text-blue-700" id="modalSOC"></div>
+            </div>
+            <div class="progress-bar">
+              <div id="soc-progress" class="progress-fill bg-blue-500"></div>
+            </div>
+            <div class="text-xs text-gray-500 mt-1">Remaining: <span id="modalRemaining"></span> Ah</div>
+          </div>
+          
+          <div class="bg-green-50 p-4 rounded-lg">
+            <div class="flex justify-between items-start mb-2">
+              <div class="text-green-700 font-medium">State of Health</div>
+              <div class="text-2xl font-bold text-green-700" id="modalSOH"></div>
+            </div>
+            <div class="progress-bar">
+              <div id="soh-progress" class="progress-fill bg-green-500"></div>
+            </div>
+            <div class="text-xs text-gray-500 mt-1">Full Capacity: <span id="modalCapacity"></span> Ah</div>
+          </div>
+          
+          <div class="bg-purple-50 p-4 rounded-lg">
+            <div class="flex justify-between items-center mb-2">
+              <div class="text-purple-700 font-medium">Cycle Count</div>
+              <div class="text-2xl font-bold text-purple-700" id="modalCycles"></div>
+            </div>
+            <div class="text-xs text-gray-500 mt-1">Last updated: <span id="modalLastUpdate"></span></div>
+          </div>
+        </div>
+
+        <!-- 2 Kolom -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <!-- Left -->
+          <div class="space-y-4">
+            <div class="bg-gray-50 p-4 rounded-lg">
+              <h3 class="font-medium text-gray-700 mb-3 flex items-center">
+                <i class="fas fa-bolt text-yellow-500 mr-2"></i> Voltage Metrics
+              </h3>
+              <div class="space-y-3">
+                <div class="flex justify-between items-center">
+                  <span class="text-gray-600">Pack Voltage</span>
+                  <span class="font-semibold text-gray-800" id="modalVoltage"></span>
+                </div>
+                <div class="flex justify-between items-center">
+                  <span class="text-gray-600">Bus Voltage</span>
+                  <span class="font-semibold text-gray-800" id="modalBusVoltage"></span>
+                </div>
+                <div class="flex justify-between items-center">
+                  <span class="text-gray-600">Min Cell Voltage</span>
+                  <span class="font-semibold text-gray-800" id="modalcellmin"></span>
+                </div>
+                <div class="flex justify-between items-center">
+                  <span class="text-gray-600">Max Cell Voltage</span>
+                  <span class="font-semibold text-gray-800" id="modalcellmax"></span>
+                </div>
+                <div class="flex justify-between items-center">
+                  <span class="text-gray-600">Voltage Difference</span>
+                  <span class="font-semibold text-gray-800" id="modalcelldif"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right --> 
+          <div class="space-y-4">
+            <div class="bg-gray-50 p-4 rounded-lg">
+              <h3 class="font-medium text-gray-700 mb-3 flex items-center">
+                <i class="fas fa-tachometer-alt text-blue-500 mr-2"></i> Current Metrics
+              </h3>
+              <div class="space-y-3">
+                <div class="flex justify-between items-center">
+                  <span class="text-gray-600">Pack Current</span>
+                  <span class="font-semibold text-gray-800" id="modalCurrent"></span>
+                </div>
+               
+                <div class="flex justify-between items-center">
+                  <span class="text-gray-600">Power</span>
+                  <span class="font-semibold text-gray-800" id="modalPower"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Cell Voltages -->
+        <div class="bg-gray-50 p-4 rounded-lg">
+          <h3 class="font-medium text-gray-700 mb-4 flex items-center">
+            <i class="fas fa-battery-three-quarters text-green-500 mr-2"></i> Cell Voltages
+          </h3>
+          <div id="modalCells" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let id_logger = "-";
+    let client;
+    let batteries = [];
+    let pollingSts = false;
+    let timer_poll;
+    
+    //document.getElementById("id_monitoring").innerText = id_logger;
+    //document.getElementById("id_monitoring_footer").innerText = id_logger;
+
+    function startMQTT(){
+      client = mqtt.connect("wss://public.cloud.shiftr.io", {
+        username: "public",
+        password: "public"
+      });
+      
+      client.on("connect", () => {
+        console.log("Connected to MQTT");
+        client.subscribe("sysMon/"+id_logger+"/AutoPoll/#");
+        client.subscribe("sysMon/"+id_logger+"/info/#");
+        // Update connection status
+        client.publish(id_logger+"/seting","POLL1",0);
+        // timer_poll = setInterval(()=>{
+        //     client.publish(id_logger+"/seting","POLL1",0);
+        // },15000);
+        updateConnectionStatus(true);
+
+      });
+
+      client.on("message", (topic, message) => {
+        if(topic == "sysMon/"+id_logger+"/info" ){
+            let a = message.toString().split(",");
+            // 🔥 Update Network Modal lebih dulu
+            document.getElementById("network_ip").innerText = "IP Address: " + a[0];
+            document.getElementById("network_signal").innerText = "Signal: " + a[1];
+            let varpol = document.getElementById("pollingState");
+            let text_head = " 🌐 " + a[0] + " 📶"+a[1];
+             if(a[3] === "1"){
+                varpol.innerHTML= "▶️ Active";
+                pollingSts =true;
+                text_head += " ▶️ "
+            }
+            else{
+                varpol.innerHTML= "⏹️ Passive";
+                pollingSts=false;
+                text_head += " ⏹️ "
+            }
+            document.getElementById("id_monitoring").innerText =text_head;
+            document.getElementById("id_monitoring_footer").innerText =text_head;
+           
+           
+          
+      // 🔥 update link Battery Config sesuai IP dari MQTT
+//   let batteryLink = document.getElementById("batteryConfigLink");
+//   if (batteryLink) {
+//     batteryLink.href = "http://" + a[0] + "/";
+//   }
+//             let timerLink = document.getElementById("timerLink");
+//   if (timerLink) {
+//     timerLink.href = "http://" + a[0] + "/timer";
+//   }
+        } else {
+          try {
+            const raw = JSON.parse(message.toString());
+            const batt = normalizeFromMqtt(raw);
+
+            const idx = batteries.findIndex(b => (b.addr === batt.addr)&&(b.typeBattery === batt.typeBattery));
+            if (idx >= 0) {
+              batteries[idx] = batt; // update
+              // console.log("update")
+            } else {
+              batt.elementId = `battery-${batt.typeBattery}-${batt.addr}`;
+              batteries.push(batt); // kalau address baru
+              // console.log("create")
+            }
+
+            renderCards(batt);
+            updateModal();
+          } catch (e) {
+            console.error("Invalid JSON", e);
+          }
+        }
+      });
+      
+      client.on("close", () => {
+        updateConnectionStatus(false);
+      });
+      
+      client.on("error", (error) => {
+        console.error("MQTT Error:", error);
+        updateConnectionStatus(false);
+      });
+    }
+
+    function updateConnectionStatus(connected) {
+      const statusIndicator = document.getElementById('connection-status');
+      if (connected) {
+        document.body.classList.remove('disconnected');
+        document.body.classList.add('connected');
+      } else {
+        document.body.classList.remove('connected');
+        document.body.classList.add('disconnected');
+      }
+    }
+
+    function getCurrentTimeHHMMSS() {
+      const now = new Date();
+      let hours = now.getHours().toString().padStart(2, '0');
+      let minutes = now.getMinutes().toString().padStart(2, '0');
+      let seconds = now.getSeconds().toString().padStart(2, '0');
+      return `${hours}:${minutes}:${seconds}`;
+    }
+
+    function normalizeFromMqtt(data) {
+      const cells = data.cell_voltages.map(v => (v/1000).toFixed(3));
+      const cell_vmax = Math.max(...data.cell_voltages) / 1000;
+      const cell_vmin = Math.min(...data.cell_voltages) / 1000;
+      const cell_vdiff = (cell_vmax - cell_vmin) * 1000;
+      
+      return {
+        typeBattery: data.typeBattery,
+        addr: data.AddrBattery,
+        soc: data.SOC.toFixed(1),
+        soh: data.SOH.toFixed(1),
+        voltage: data.bat_voltage.toFixed(2),
+        busVoltage: data.bus_voltage.toFixed(2),
+        current: data.bat_current.toFixed(2),
+        capacity: data.full_capacity.toFixed(2),
+        remaining: data.rem_capacity.toFixed(2),
+        cycles: data.cycle_count,
+        cycle_count: data.cycle_count,
+        cells,
+        cell_vmax: cell_vmax.toFixed(3),
+        cell_vmin: cell_vmin.toFixed(3),
+        cell_vdif: cell_vdiff.toFixed(0),
+        time: getCurrentTimeHHMMSS(),
+        power: (data.bat_voltage * data.bat_current).toFixed(2)
+      };
+    }
+
+    const grid = document.getElementById("batteryGrid");
+    const modal = document.getElementById("batteryModal");
+    const emptyState = document.getElementById("empty-state");
+    let currentAddr = null;
+
+const cardTimers = {};
+
+function renderCards(datane) {
+    if (batteries.length === 0) {
+      grid.classList.add('hidden');
+      emptyState.classList.remove('hidden');
+      document.getElementById('total-batteries').textContent = '0';
+      return;
+    }
+
+    grid.classList.remove('hidden');
+    emptyState.classList.add('hidden');
+    document.getElementById('total-batteries').textContent = batteries.length.toString();
+
+    const fragment = document.createDocumentFragment();
+
+    batteries.forEach(batt => {
+      let cardId = `card-${batt.typeBattery}-${batt.addr}`;
+      let card = document.getElementById(cardId);
+
+      if (!card) {
+        card = document.createElement("div");
+        card.id = cardId;
+        card.className = "battery-card rounded-xl shadow-sm p-5 cursor-pointer hover:shadow-md fade-in";
+        card.dataset.addr = String(batt.addr);
+        card.innerHTML = `
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-gray-800">${batt.typeBattery} <span class="text-blue-600">#${batt.addr}</span></h3>
+            <div class="led" id="led-card-${batt.typeBattery}-${batt.addr}"></div>
+          </div>
+          <div class="mb-4">
+            <div class="flex justify-between items-center mb-1">
+              <span class="text-sm text-gray-600">SOC</span>
+              <span class="font-semibold" id="soc-value-${batt.typeBattery}-${batt.addr}">${batt.soc}%</span>
+            </div>
+            <div class="progress-bar">
+              <div id="soc-bar-${batt.typeBattery}-${batt.addr}" class="progress-fill" style="width: ${batt.soc}%"></div>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-5 text-sm">
+            <div class="space-y-2">
+              <div class="flex items-center">
+                <i class="fas fa-bolt text-yellow-500 mr-2"></i>
+                <div>
+                  <div class="text-gray-500">Voltage</div>
+                  <div id="voltage-${batt.typeBattery}-${batt.addr}" class="font-semibold">${batt.voltage} V</div>
+                </div>
+              </div>
+               <div class="flex items-center">
+                <i class="fas fa-minus-circle  text-blue-500 mr-2"></i>
+                <div>
+                  <div class="text-gray-500">Diff Cell</div>
+                  <div id="voltagedif-${batt.typeBattery}-${batt.addr}" class="font-semibold">${batt.cell_vdif} mV</div>
+                </div>
+              </div>
+
+              <div class="flex items-center">
+                <i class="fas fa-minus-circle text-red-500 mr-2"></i>
+                <div>
+                  <div class="text-gray-500">Min Cell</div>
+                  <div id="cellmin-${batt.typeBattery}-${batt.addr}" class="font-semibold">${batt.cell_vmin} V</div>
+                </div>
+              </div>
+            </div>
+            <div class="space-y-2">
+              <div class="flex items-center">
+                <i class="fas fa-tachometer-alt text-blue-500 mr-2"></i>
+                <div>
+                  <div class="text-gray-500">Current</div>
+                  <div id="current-${batt.typeBattery}-${batt.addr}" class="font-semibold">${batt.current} A</div>
+                </div>
+              </div>
+               <div class="flex items-center">
+                <i class="fas fa-bolt text-red-500 mr-2"></i>
+                <div>
+                  <div class="text-gray-500">Power</div>
+                  <div id="power-${batt.typeBattery}-${batt.addr}" class="font-semibold">${(batt.voltage*batt.current).toFixed(1)} WA</div>
+                </div>
+              </div>
+              <div class="flex items-center">
+                <i class="fas fa-plus-circle text-green-500 mr-2"></i>
+                <div>
+                  <div class="text-gray-500">Max Cell</div>
+                  <div id="cellmax-${batt.typeBattery}-${batt.addr}" class="font-semibold">${batt.cell_vmax} V</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="mt-4 pt-3 border-t border-gray-100 text-xs text-gray-500 flex justify-between">
+            <span>Cycles: ${batt.cycles}</span>
+            <span class="last-update"><i class="far fa-clock mr-1"></i>${batt.time}</span>
+          </div>
+        `;
+        card.onclick = () => openModal(batt.addr);
+        fragment.appendChild(card);
+      } else {
+        if (datane.typeBattery === batt.typeBattery && datane.addr === batt.addr) {
+          document.getElementById(`soc-value-${batt.typeBattery}-${batt.addr}`).textContent = `${batt.soc}%`;
+          document.getElementById(`soc-bar-${batt.typeBattery}-${batt.addr}`).style.width = `${batt.soc}%`;
+          document.getElementById(`voltage-${batt.typeBattery}-${batt.addr}`).innerHTML = `${batt.voltage} V`;
+          document.getElementById(`current-${batt.typeBattery}-${batt.addr}`).innerHTML = `${batt.current} A`;
+          document.getElementById(`cellmin-${batt.typeBattery}-${batt.addr}`).innerHTML = `${batt.cell_vmin} V`;
+          document.getElementById(`cellmax-${batt.typeBattery}-${batt.addr}`).innerHTML = `${batt.cell_vmax} V`;
+          document.getElementById(`power-${batt.typeBattery}-${batt.addr}`).innerHTML = `${(batt.voltage*batt.current).toFixed(1)} W`;
+          document.getElementById(`voltagedif-${batt.typeBattery}-${batt.addr}`).innerHTML = `${batt.cell_vdif} mV`;
+
+          const socBar = document.getElementById(`soc-bar-${batt.typeBattery}-${batt.addr}`);
+          if (batt.soc > 70) socBar.className = 'progress-fill bg-green-500';
+          else if (batt.soc > 30) socBar.className = 'progress-fill bg-yellow-500';
+          else socBar.className = 'progress-fill bg-red-500';
+
+          card.querySelector(".last-update").innerHTML = `<i class="far fa-clock mr-1"></i>${batt.time}`;
+
+          const led = document.getElementById(`led-card-${batt.typeBattery}-${batt.addr}`);
+          led.classList.add("active");
+          setTimeout(() => led.classList.remove("active"), 250);
+        }
+      }
+
+      // 🔹 RESET / SET timeout tiap update
+      if (cardTimers[cardId]) {
+        clearTimeout(cardTimers[cardId]);
+      }
+      cardTimers[cardId] = setTimeout(() => {
+        let c = document.getElementById(cardId);
+        if (c) c.remove();
+        delete cardTimers[cardId];
+      }, 10000); // 30 detik
+
+    });
+
+    if (fragment.childNodes.length > 0) {
+      grid.appendChild(fragment);
+    }
+  }
+
+    // Open modal
+    function openModal(addr) {
+      currentAddr = addr;
+      updateModal();
+      modal.classList.remove("hidden");
+      document.body.style.overflow = 'hidden';
+    }
+
+    // Update modal content
+    function updateModal() {
+      if (currentAddr === null) return;
+      const batt = batteries.find(b => b.addr === currentAddr);
+      if (!batt) return;
+
+      document.getElementById("modalTitle").textContent = `${batt.typeBattery} #${batt.addr}`;
+      document.getElementById("modalSOC").textContent = `${batt.soc}%`;
+      document.getElementById("modalSOH").textContent = `${batt.soh}%`;
+      document.getElementById("modalCycles").textContent = batt.cycles;
+      document.getElementById("modalVoltage").textContent = `${batt.voltage} V`;
+      document.getElementById("modalBusVoltage").textContent = `${batt.busVoltage} V`;
+      document.getElementById("modalCurrent").textContent = `${batt.current} A`;
+      document.getElementById("modalCapacity").textContent = `${batt.capacity} Ah`;
+      document.getElementById("modalRemaining").textContent = `${batt.remaining} Ah`;
+      document.getElementById("modalLastUpdate").textContent = batt.time;
+      document.getElementById("modalcellmin").textContent = `${batt.cell_vmin} V`;
+      document.getElementById("modalcellmax").textContent = `${batt.cell_vmax} V`;
+      document.getElementById("modalcelldif").textContent = `${batt.cell_vdif} mV`;
+      // document.getElementById("modalBusCurrent").textContent = `-`;
+      document.getElementById("modalPower").textContent = `${batt.power} W`;
+
+      // Update progress bars
+      document.getElementById("soc-progress").style.width = `${batt.soc}%`;
+      document.getElementById("soh-progress").style.width = `${batt.soh}%`;
+      
+      // Set progress bar colors
+      const socProgress = document.getElementById("soc-progress");
+      const sohProgress = document.getElementById("soh-progress");
+      
+      if (batt.soc > 70) socProgress.className = "progress-fill bg-blue-500";
+      else if (batt.soc > 30) socProgress.className = "progress-fill bg-yellow-500";
+      else socProgress.className = "progress-fill bg-red-500";
+      
+      if (batt.soh > 80) sohProgress.className = "progress-fill bg-green-500";
+      else if (batt.soh > 60) sohProgress.className = "progress-fill bg-yellow-500";
+      else sohProgress.className = "progress-fill bg-red-500";
+
+      // Render cell voltages
+      const cellsDiv = document.getElementById("modalCells");
+      cellsDiv.innerHTML = "";
+      
+      batt.cells.forEach((v, i) => {
+        const cellValue = parseFloat(v);
+        let statusClass = "cell-normal";
+        if (cellValue < 3.2) statusClass = "cell-danger";
+        else if (cellValue < 3.4) statusClass = "cell-warning";
+        
+        const cellBox = document.createElement("div");
+        cellBox.className = `cell-voltage ${statusClass} bg-white rounded-lg shadow-sm p-3 flex flex-col items-center`;
+        
+        const label = document.createElement("div");
+        label.className = "text-xs font-medium text-gray-500 mb-1";
+        label.textContent = `Cell ${i + 1}`;
+
+        const value = document.createElement("div");
+        value.className = "text-sm font-bold";
+        value.textContent = `${v} V`;
+        
+        if (statusClass === "cell-danger") value.className += " text-red-600";
+        else if (statusClass === "cell-warning") value.className += " text-yellow-600";
+        else value.className += " text-green-600";
+
+        cellBox.appendChild(label);
+        cellBox.appendChild(value);
+        cellsDiv.appendChild(cellBox);
+      });
+      
+      blinkLed("led-modal");
+    }
+
+    // Close modal
+    document.getElementById("closeModal").onclick = () => {
+      modal.classList.add("hidden");
+      document.body.style.overflow = 'auto';
+      currentAddr = null;
+    };
+    
+    modal.onclick = e => {
+      if (e.target === modal) {
+        modal.classList.add("hidden");
+        document.body.style.overflow = 'auto';
+        currentAddr = null;
+      }
+    };
+
+    function blinkLed(id) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      console.log(id);
+      
+      el.classList.remove("bg-gray-300");
+      el.classList.add("bg-green-500");
+      
+      setTimeout(() => {
+        el.classList.remove("bg-green-500");
+        el.classList.add("bg-gray-300");
+      }, 250);
+    }
+
+   
+
+      // Initialize on load
+    window.onload = function() {
+      const params = new URLSearchParams(window.location.search);
+      
+      if ([...params].length > 0) {
+        let queryData = {};
+        for (const [key, value] of params.entries()) {
+          queryData[key] = value;
+        }
+        
+        id_logger = queryData.id;
+        
+        if(id_logger === undefined){
+          let userInput = prompt("Masukkan ID Logger:");
+          if (userInput === null || userInput.trim() === "") {
+            alert("Error: Please reload and input a value!");
+          } else {
+            id_logger = userInput;
+            startMQTT();
+            renderCards();
+          }
+        } else {
+          startMQTT();
+          renderCards();
+        }
+      } else {
+        // If no URL parameters, ask for ID
+        let userInput = prompt("Masukkan ID Logger:");
+        if (userInput === null || userInput.trim() === "") {
+          alert("Error: Please reload and input a value!");
+        } else {
+          id_logger = userInput;
+          startMQTT();
+          renderCards();
+        }
+      }
+    };
+  </script>
+  <!-- Script -->
+<script>
+  // === Dropdown Toggle ===
+  const btn = document.getElementById("settingsBtn");
+  const menu = document.getElementById("dropdownMenu");
+
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    menu.classList.toggle("hidden");
+  });
+
+  window.addEventListener("click", () => {
+    menu.classList.add("hidden");
+  });
+
+//   === Network Modal Control ===
+  const pollingStateData = document.getElementById("pollingState");
+
+  pollingStateData.addEventListener("click",(e) => {
+    if(pollingSts === true ){
+        client.publish(id_logger+"/seting", "POLL0",0);
+        console.log("deactivate");
+    }
+    else{
+        client.publish(id_logger+"/seting", "POLL1",0);
+        console.log("activated")
+    }
+  });
+
+  const networkModal = document.getElementById("networkModal");
+  const closeNetwork = document.getElementById("closeNetwork");
+
+  networkBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    networkModal.classList.remove("hidden");
+  });
+
+  closeNetwork.addEventListener("click", () => {
+    networkModal.classList.add("hidden");
+  });
+
+  window.addEventListener("click", (e) => {
+    if (e.target === networkModal) {
+      networkModal.classList.add("hidden");
+    }
+  });
+</script>
+<script>
+const themeToggleLink = document.getElementById('themeToggleLink');
+const body = document.body;
+const header = document.getElementById('mainHeader');
+
+function setTheme(theme) {
+  body.setAttribute('data-theme', theme);
+  localStorage.setItem('theme', theme);
+
+  // Ubah menu link text
+  themeToggleLink.innerHTML = theme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode';
+
+  // Ubah class header Tailwind untuk dark mode
+  if (theme === 'dark') {
+    document.body.classList.add('dark');
+    document.documentElement.style.setProperty('--card-bg', '#525252');
+    document.documentElement.style.setProperty('--card-lapis', '#222');
+    document.documentElement.style.setProperty('--card-text', '#ddd');
+    document.documentElement.style.setProperty('--card-subtext', '#ccc');
+    document.documentElement.style.setProperty('--icon-voltage', '#666'); 
+    document.documentElement.style.setProperty('--icon-current', '#60a5fa');
+  } else {
+    document.body.classList.remove('dark');
+    document.documentElement.style.setProperty('--card-bg', '#0455D1');
+    document.documentElement.style.setProperty('--card-lapis', '#fff');
+    document.documentElement.style.setProperty('--card-text', '#1f2937');
+    document.documentElement.style.setProperty('--card-subtext', '#4b5563');
+    document.documentElement.style.setProperty('--icon-current', '#3b82f6');
+  }
+}
+
+// Load tema dari localStorage
+const savedTheme = localStorage.getItem('theme') || 'light';
+setTheme(savedTheme);
+
+// Event toggle
+themeToggleLink.addEventListener('click', (e) => {
+  e.preventDefault();
+  const newTheme = body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  setTheme(newTheme);
+});
+</script>
+</body>
+</html>
