@@ -601,7 +601,7 @@
       else if (topic.includes("newdata")) {} 
       else if (topic.includes("newcmd")) {} 
       else{
-          const sensorName = topic.substring(20);
+          const sensorName = topic.substring(22);
       // Find or create the data card for this sensor
       let card = document.querySelector(`.data-card[data-sensor="${sensorName}"]`);
       if (!card) {
