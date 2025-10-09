@@ -643,8 +643,8 @@ function renderCards(datane) {
       document.getElementById("modalVoltage").textContent = `${batt.voltage} V`;
       document.getElementById("modalBusVoltage").textContent = `${batt.busVoltage} V`;
       document.getElementById("modalCurrent").textContent = `${batt.current} A`;
-      document.getElementById("modalCapacity").textContent = `${batt.capacity} Ah`;
-      document.getElementById("modalRemaining").textContent = `${batt.remaining} Ah`;
+      document.getElementById("modalCapacity").textContent = `${batt.capacity}`;
+      document.getElementById("modalRemaining").textContent = `${batt.remaining}`;
       document.getElementById("modalLastUpdate").textContent = batt.time;
       document.getElementById("modalcellmin").textContent = `${batt.cell_vmin} V`;
       document.getElementById("modalcellmax").textContent = `${batt.cell_vmax} V`;
