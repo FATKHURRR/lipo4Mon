@@ -405,8 +405,8 @@
 
   <script>
 
-    let idalat = "3012036";
-    let topic_alat = "2462072//mpptlogger";
+    let idalat = "14751036";
+    let topic_alat = "14751036/mpptlogger";
     // Initialize Flatpickr
     const datePicker = flatpickr("#datePicker", {
       defaultDate: new Date(),
@@ -464,9 +464,9 @@
       
       // Update last update time
       updateTime();
-    //   console.log(topic,payload);
+      console.log(topic,payload);
 
-        if (topic == "2462072/mpptloggerlog") {
+        if (topic == "14751036/mpptloggerlog") {
           if(is_request_log == true){
             if (payload.indexOf("Time") >= 0) {
             console.log("start transfer logger");
@@ -719,7 +719,7 @@
       const selectedDate = datePicker.input.value;
       const command = `1#${selectedDate}`;
       console.log('Requesting data:', command);
-      client.send('2462072//mpptlogger/cmd', command);
+      client.send('14751036/mpptlogger/cmd', command);
       is_request_log = true;
       csv_like_data = "";
       showLoader();
