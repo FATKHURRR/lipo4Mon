@@ -134,7 +134,7 @@
       client.on('connect', () => {
         setStatus('connected', 'text-green-600');
         client.subscribe(topic+"/TX");
-        client.subscribe("sysMon/"+topic+"/VERBOSE/#");
+        client.subscribe("sysMon/"+topic);
       });
       client.on('message', (t, payload) => {
         let bytes = decodePayload(payload);
@@ -219,4 +219,5 @@
   </script>
 </body>
 </html>
+
 
