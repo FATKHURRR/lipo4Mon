@@ -359,9 +359,10 @@ body.dark .battery-card i {
       
       client.on("connect", () => {
         console.log("Connected to MQTT");
-        var xxx = id_logger.split(" ");
+        var xxx = id_logger.split("-");
         for(var a=0; a<xxx.length;a++){
             client.subscribe("sysMon/"+xxx[a]+"/AutoPoll/#");
+            console.log("Subscribed topic: ", xxx[a]);
         }
         // client.subscribe("sysMon/"+id_logger+"/AutoPoll/#");
         // client.subscribe("sysMon/"+id_logger+"/info/#");
