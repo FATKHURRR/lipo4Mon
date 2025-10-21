@@ -363,12 +363,13 @@ body.dark .battery-card i {
         for(var a=0; a<xxx.length;a++){
             client.subscribe("sysMon/"+xxx[a]+"/AutoPoll/#");
             console.log("Subscribed topic: ", xxx[a]);
+            client.publish(xxx[a]+"/seting","POLL1",0);
         }
         // client.subscribe("sysMon/"+id_logger+"/AutoPoll/#");
         // client.subscribe("sysMon/"+id_logger+"/info/#");
         client.subscribe("sysMon/"+xxx[0]+"/info/#");
         // Update connection status
-        client.publish(id_logger+"/seting","POLL1",0);
+        
         // timer_poll = setInterval(()=>{
         //     client.publish(id_logger+"/seting","POLL1",0);
         // },15000);
