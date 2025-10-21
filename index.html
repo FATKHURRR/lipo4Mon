@@ -347,6 +347,7 @@ body.dark .battery-card i {
     let batteries = [];
     let pollingSts = false;
     let timer_poll;
+    let xxx;
     
     //document.getElementById("id_monitoring").innerText = id_logger;
     //document.getElementById("id_monitoring_footer").innerText = id_logger;
@@ -359,7 +360,7 @@ body.dark .battery-card i {
       
       client.on("connect", () => {
         console.log("Connected to MQTT");
-        var xxx = id_logger.split("-");
+        xxx = id_logger.split("-");
         for(var a=0; a<xxx.length;a++){
             client.subscribe("sysMon/"+xxx[a]+"/AutoPoll/#");
             console.log("Subscribed topic: ", xxx[a]);
@@ -378,7 +379,7 @@ body.dark .battery-card i {
       });
 
       client.on("message", (topic, message) => {
-        if(topic == "sysMon/"+id_logger+"/info" ){
+        if(topic == "sysMon/"+xxx[0]+"/info" ){
             let a = message.toString().split(",");
             // 🔥 Update Network Modal lebih dulu
             document.getElementById("network_ip").innerText = "IP Address: " + a[0];
@@ -397,18 +398,6 @@ body.dark .battery-card i {
             }
             document.getElementById("id_monitoring").innerText =text_head;
             document.getElementById("id_monitoring_footer").innerText =text_head;
-           
-           
-          
-      // 🔥 update link Battery Config sesuai IP dari MQTT
-//   let batteryLink = document.getElementById("batteryConfigLink");
-//   if (batteryLink) {
-//     batteryLink.href = "http://" + a[0] + "/";
-//   }
-//             let timerLink = document.getElementById("timerLink");
-//   if (timerLink) {
-//     timerLink.href = "http://" + a[0] + "/timer";
-//   }
         } else {
           try {
             const raw = JSON.parse(message.toString());
