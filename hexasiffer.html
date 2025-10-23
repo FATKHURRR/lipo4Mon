@@ -7,77 +7,162 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
 </head>
-<body class="bg-slate-50 min-h-screen p-6">
-  <div class="max-w-6xl mx-auto">
-    <h1 class="text-2xl font-semibold mb-4">Hex Reader (MQTT & Manual)</h1>
+<body class="bg-gradient-to-br from-slate-50 to-slate-100 min-h-screen p-4 md:p-6">
+  <div class="max-w-7xl mx-auto">
+    <!-- Header dengan gradient -->
+    <div class="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-2xl shadow-xl p-6 mb-6">
+      <h1 class="text-3xl font-bold text-white mb-2 flex items-center gap-3">
+        <span class="text-4xl">🔍</span> Hex Reader
+      </h1>
+      <p class="text-blue-100 text-sm">MQTT Real-time Monitor & Manual Hex Analyzer</p>
+    </div>
 
-    <!-- control panel -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-      <div class="p-4 bg-white rounded shadow" hidden>
-        <label class="block text-sm font-medium" hidden>Broker (wss)</label>
-        <input id="broker" class="mt-1 w-full border rounded p-2" value="wss://public.cloud.shiftr.io"  hidden/>
-        <label class="block text-sm font-medium mt-3" hidden>Username</label>
-        <input id="username" class="mt-1 w-full border rounded p-2" value="public" hidden/>
-        <label class="block text-sm font-medium mt-3" hidden>Password</label>
-        <input id="password" type="password" class="mt-1 w-full border rounded p-2" value="public" />
-        <label class="block text-sm font-medium mt-3">Topic (dari URL ?topic=...)</label>
-        <input id="topic" class="mt-1 w-full border rounded p-2" placeholder="topic/diisi/dari-url" />
-        <div class="mt-3 flex gap-2">
-          <button id="connectBtn" class="px-3 py-2 bg-green-600 text-white rounded">Connect & Subscribe</button>
-          <button id="disconnectBtn" class="px-3 py-2 bg-red-500 text-white rounded">Disconnect</button>
+    <!-- Connection Panel (Collapsible) -->
+    <div class="bg-white rounded-2xl shadow-lg mb-6 overflow-hidden">
+      <div class="bg-gradient-to-r from-slate-700 to-slate-800 p-4 flex justify-between items-center cursor-pointer hover:from-slate-600 hover:to-slate-700 transition" onclick="document.getElementById('connPanel').classList.toggle('hidden')">
+        <div class="flex items-center gap-3">
+          <span class="text-2xl">🌐</span>
+          <h2 class="text-lg font-semibold text-white">MQTT Connection</h2>
         </div>
-        <p id="connStatus" class="mt-2 text-sm text-slate-600">Status: disconnected</p>
+        <div class="flex items-center gap-3">
+          <div id="connStatusBadge" class="px-3 py-1 bg-red-500 text-white text-xs font-medium rounded-full shadow-md">Disconnected</div>
+          <svg class="w-5 h-5 text-white transition-transform" id="connToggleIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+        </div>
       </div>
-
-      <div class="p-4 bg-white rounded shadow md:col-span-2">
-        <label class="block text-sm font-medium">Min length (bytes)</label>
-        <input id="minLen" type="number" min="1" class="mt-1 w-32 border rounded p-2" value="11" />
-        <div class="mt-3 flex gap-3 items-center flex-wrap">
-          <label class="inline-flex items-center"><input id="stripFrame" type="checkbox" class="mr-2">Strip start/stop (0x7E .. 0xD0)</label>
-          <label class="inline-flex items-center"><input id="asciiHexMode" type="checkbox" class="mr-2">ASCIIHEX → Hex</label>
-          <label class="inline-flex items-center"><input id="hexToAscii" type="checkbox" class="mr-2">Hex → ASCII (preview)</label>
+      <div id="connPanel" class="p-6 hidden">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-2">📡 Topic (dari URL ?topic=...)</label>
+            <input id="topic" class="w-full border-2 border-slate-300 rounded-lg p-3 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition" placeholder="topic/diisi/dari-url" />
+          </div>
+          <div class="flex items-end gap-2">
+            <button id="connectBtn" class="flex-1 px-4 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition shadow-md hover:shadow-lg flex items-center justify-center gap-2">
+              <span>▶</span> Connect
+            </button>
+            <button id="disconnectBtn" class="flex-1 px-4 py-3 bg-red-500 hover:bg-red-600 text-white font-medium rounded-lg transition shadow-md hover:shadow-lg flex items-center justify-center gap-2">
+              <span>⏹</span> Disconnect
+            </button>
+          </div>
         </div>
-
-        <label class="block text-sm font-medium mt-4">Manual input / Received hex</label>
-        <textarea id="manualInput" rows="3" class="w-full mt-1 border rounded p-2" placeholder="Contoh: 3F 55 68 0C DD 0C ..."></textarea>
-        <div class="mt-2 flex gap-2">
-          <button id="processManual" class="px-3 py-2 bg-blue-600 text-white rounded">Proses Manual</button>
-          <button id="simulate" class="px-3 py-2 bg-slate-500 text-white rounded">Simulate Random</button>
-        </div>
-
-        <p id="warn" class="mt-2 text-sm text-red-600 hidden"></p>
+        <input id="broker" class="hidden" value="wss://public.cloud.shiftr.io" />
+        <input id="username" class="hidden" value="public" />
+        <input id="password" type="password" class="hidden" value="public" />
       </div>
     </div>
 
-    <!-- table result -->
-    <div class="bg-white rounded shadow p-4 mb-6">
-      <div class="flex justify-between items-center mb-3">
-        <h2 class="text-lg font-medium">Preview</h2>
-        <div class="text-sm text-slate-600">Length: <span id="dataLen">0</span> bytes</div>
+    <!-- Control Panel -->
+    <div class="bg-white rounded-2xl shadow-lg p-6 mb-6">
+      <h2 class="text-xl font-semibold text-slate-800 mb-4 flex items-center gap-2">
+        <span class="text-2xl">⚙️</span> Data Processing & Filters
+      </h2>
+      
+      <!-- Length Filters -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 p-4 bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl border-2 border-slate-200">
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-2">📏 Filter Mode</label>
+          <select id="filterMode" class="w-full border-2 border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition bg-white">
+            <option value="min">Minimum Length</option>
+            <option value="exact">Exact Length</option>
+            <option value="range">Range Length</option>
+          </select>
+        </div>
+        <div id="minLenContainer">
+          <label class="block text-sm font-medium text-slate-700 mb-2">Min Length (bytes)</label>
+          <input id="minLen" type="number" min="1" class="w-full border-2 border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition" value="11" />
+        </div>
+        <div id="exactLenContainer" class="hidden">
+          <label class="block text-sm font-medium text-slate-700 mb-2">Exact Length (bytes)</label>
+          <input id="exactLen" type="number" min="1" class="w-full border-2 border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition" value="11" />
+        </div>
+        <div id="rangeLenContainer" class="hidden">
+          <label class="block text-sm font-medium text-slate-700 mb-2">Length Range (bytes)</label>
+          <div class="flex gap-2 items-center">
+            <input id="minRange" type="number" min="1" class="flex-1 border-2 border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition" value="10" placeholder="Min" />
+            <span class="text-slate-500 font-bold">—</span>
+            <input id="maxRange" type="number" min="1" class="flex-1 border-2 border-slate-300 rounded-lg p-2.5 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition" value="20" placeholder="Max" />
+          </div>
+        </div>
       </div>
 
-      <div class="overflow-x-auto">
-        <table class="min-w-full border-collapse text-sm">
-          <thead>
-            <tr class="bg-slate-100">
-              <th class="px-3 py-2 border">Offset</th>
-              <th class="px-3 py-2 border">Hex</th>
-              <th class="px-3 py-2 border">Decimal</th>
-              <th class="px-3 py-2 border">Uint16 BE</th>
-              <th class="px-3 py-2 border">Int16 BE</th>
-            </tr>
-          </thead>
-          <tbody id="tableBody"></tbody>
-        </table>
+      <!-- Processing Options -->
+      <div class="flex gap-3 flex-wrap mb-5">
+        <label class="inline-flex items-center px-4 py-2.5 bg-blue-50 rounded-lg hover:bg-blue-100 cursor-pointer transition-all hover:shadow-md border-2 border-blue-200">
+          <input id="stripFrame" type="checkbox" class="mr-2 w-4 h-4 text-blue-600 rounded">
+          <span class="text-sm font-medium text-slate-700">🔪 Strip start/stop (0x7E...0xD0)</span>
+        </label>
+        <label class="inline-flex items-center px-4 py-2.5 bg-purple-50 rounded-lg hover:bg-purple-100 cursor-pointer transition-all hover:shadow-md border-2 border-purple-200">
+          <input id="asciiHexMode" type="checkbox" class="mr-2 w-4 h-4 text-purple-600 rounded">
+          <span class="text-sm font-medium text-slate-700">🔄 ASCIIHEX → Hex</span>
+        </label>
+        <label class="inline-flex items-center px-4 py-2.5 bg-green-50 rounded-lg hover:bg-green-100 cursor-pointer transition-all hover:shadow-md border-2 border-green-200">
+          <input id="hexToAscii" type="checkbox" class="mr-2 w-4 h-4 text-green-600 rounded">
+          <span class="text-sm font-medium text-slate-700">👁️ Show ASCII Preview</span>
+        </label>
       </div>
 
-      <div id="asciiPreview" class="mt-4 text-sm font-mono hidden">
-        <strong>ASCII:</strong> <span id="asciiText"></span>
+      <!-- Manual Input -->
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-2">✍️ Manual Input / Received Hex</label>
+        <textarea id="manualInput" rows="3" class="w-full border-2 border-slate-300 rounded-lg p-3 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition font-mono text-sm bg-slate-50" placeholder="Contoh: 3F 55 68 0C DD 0C ... atau 7E3F55680CDD0CD0"></textarea>
+        <div class="mt-3 flex gap-2 flex-wrap">
+          <button id="processManual" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition shadow-md hover:shadow-lg flex items-center gap-2">
+            <span>▶</span> Process Manual
+          </button>
+          <button id="simulate" class="px-5 py-2.5 bg-slate-600 hover:bg-slate-700 text-white font-medium rounded-lg transition shadow-md hover:shadow-lg flex items-center gap-2">
+            <span>🎲</span> Simulate Random
+          </button>
+        </div>
       </div>
 
-      <div class="mt-3">
-        <strong>Raw hex:</strong>
-        <div id="rawHex" class="mt-1 font-mono text-sm text-slate-700 break-words"></div>
+      <div id="warn" class="mt-4 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm rounded-lg hidden shadow-md"></div>
+    </div>
+
+    <!-- Data Preview -->
+    <div class="bg-white rounded-2xl shadow-lg overflow-hidden mb-6">
+      <div class="bg-gradient-to-r from-indigo-600 to-purple-600 p-4 flex justify-between items-center flex-wrap gap-3">
+        <h2 class="text-xl font-semibold text-white flex items-center gap-2">
+          <span class="text-2xl">📊</span> Data Preview
+        </h2>
+        <div class="flex items-center gap-2 bg-white/20 backdrop-blur px-4 py-2 rounded-lg shadow-lg">
+          <span class="text-white text-sm font-medium">Length:</span>
+          <span id="dataLen" class="text-white text-xl font-bold">0</span>
+          <span class="text-white text-sm">bytes</span>
+        </div>
+      </div>
+
+      <div class="p-6">
+        <!-- Raw Hex Display -->
+        <div class="mb-4 p-4 bg-slate-50 rounded-xl border-2 border-slate-200 shadow-sm">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="text-sm font-semibold text-slate-700">🔤 RAW HEX:</span>
+            <button onclick="navigator.clipboard.writeText(document.getElementById('rawHex').textContent)" class="text-xs px-3 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition shadow-sm hover:shadow-md">📋 Copy</button>
+          </div>
+          <div id="rawHex" class="font-mono text-sm text-slate-800 break-all leading-relaxed p-2 bg-white rounded border border-slate-200"></div>
+        </div>
+
+        <!-- ASCII Preview -->
+        <div id="asciiPreview" class="mb-4 p-4 bg-green-50 rounded-xl border-2 border-green-300 hidden shadow-sm">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="text-sm font-semibold text-green-700">📝 ASCII:</span>
+          </div>
+          <div id="asciiText" class="font-mono text-sm text-green-800 break-all leading-relaxed p-2 bg-white rounded border border-green-200"></div>
+        </div>
+
+        <!-- Table -->
+        <div class="overflow-x-auto rounded-xl border-2 border-slate-200 shadow-md">
+          <table class="min-w-full text-sm">
+            <thead>
+              <tr class="bg-gradient-to-r from-slate-700 to-slate-600 text-white">
+                <th class="px-4 py-3 text-left font-semibold">Offset</th>
+                <th class="px-4 py-3 text-left font-semibold">Hex</th>
+                <th class="px-4 py-3 text-left font-semibold">Decimal</th>
+                <th class="px-4 py-3 text-left font-semibold">Uint16 BE</th>
+                <th class="px-4 py-3 text-left font-semibold">Int16 BE</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
@@ -92,7 +177,7 @@
     const topicEl = document.getElementById('topic');
     const connectBtn = document.getElementById('connectBtn');
     const disconnectBtn = document.getElementById('disconnectBtn');
-    const connStatus = document.getElementById('connStatus');
+    const connStatusBadge = document.getElementById('connStatusBadge');
     const manualInput = document.getElementById('manualInput');
     const processManual = document.getElementById('processManual');
     const simulateBtn = document.getElementById('simulate');
@@ -102,6 +187,10 @@
     const asciiPreview = document.getElementById('asciiPreview');
     const asciiText = document.getElementById('asciiText');
     const minLenEl = document.getElementById('minLen');
+    const exactLenEl = document.getElementById('exactLen');
+    const minRangeEl = document.getElementById('minRange');
+    const maxRangeEl = document.getElementById('maxRange');
+    const filterModeEl = document.getElementById('filterMode');
     const warnEl = document.getElementById('warn');
     const stripFrameEl = document.getElementById('stripFrame');
     const hexToAsciiEl = document.getElementById('hexToAscii');
@@ -112,12 +201,29 @@
     const urlTopic = urlParams.get('topic');
     if (urlTopic) {
         topicEl.value = urlTopic;
+        document.getElementById('connPanel').classList.remove('hidden');
         connectMQTT();
     }
 
-    function setStatus(s, color='text-slate-600') {
-      connStatus.textContent = 'Status: ' + s;
-      connStatus.className = 'mt-2 text-sm ' + color;
+    // Filter mode switcher
+    filterModeEl.onchange = () => {
+      document.getElementById('minLenContainer').classList.add('hidden');
+      document.getElementById('exactLenContainer').classList.add('hidden');
+      document.getElementById('rangeLenContainer').classList.add('hidden');
+      
+      if (filterModeEl.value === 'min') {
+        document.getElementById('minLenContainer').classList.remove('hidden');
+      } else if (filterModeEl.value === 'exact') {
+        document.getElementById('exactLenContainer').classList.remove('hidden');
+      } else if (filterModeEl.value === 'range') {
+        document.getElementById('rangeLenContainer').classList.remove('hidden');
+      }
+    };
+
+    function setStatus(s) {
+      connStatusBadge.textContent = s;
+      connStatusBadge.className = 'px-3 py-1 text-white text-xs font-medium rounded-full shadow-md transition-all ' + 
+        (s === 'Connected' ? 'bg-green-500' : s === 'Connecting...' ? 'bg-yellow-500' : 'bg-red-500');
     }
 
     function connectMQTT() {
@@ -129,10 +235,10 @@
         alert('Broker dan topic harus diisi.');
         return;
       }
-      setStatus('connecting...', 'text-yellow-600');
+      setStatus('Connecting...');
       client = mqtt.connect(broker, { username, password, reconnectPeriod: 5000 });
       client.on('connect', () => {
-        setStatus('connected', 'text-green-600');
+        setStatus('Connected');
         client.subscribe(topic+"/TX");
         client.subscribe("sysMon/"+topic);
       });
@@ -140,17 +246,22 @@
         let bytes = decodePayload(payload);
         if (bytes) handleIncoming(bytes);
       });
-      client.on('error', e => setStatus('error: ' + e.message, 'text-red-600'));
+      client.on('error', e => setStatus('Error'));
     }
-    function disconnectMQTT(){ if(client){client.end(true);} setStatus('disconnected'); }
-    connectBtn.onclick=connectMQTT; disconnectBtn.onclick=disconnectMQTT;
+    function disconnectMQTT(){ if(client){client.end(true);} setStatus('Disconnected'); }
+    connectBtn.onclick=connectMQTT; 
+    disconnectBtn.onclick=disconnectMQTT;
 
     function parseHexStringToBytes(s){
       let cleaned = s.replace(/0x/gi,'').replace(/[^0-9A-Fa-f]/g,'');
       if (cleaned.length%2===1) cleaned = cleaned.slice(0,-1);
-      const out=[]; for(let i=0;i<cleaned.length;i+=2){ out.push(parseInt(cleaned.substr(i,2),16)); }
+      const out=[]; 
+      for(let i=0;i<cleaned.length;i+=2){ 
+        out.push(parseInt(cleaned.substr(i,2),16)); 
+      }
       return out;
     }
+
     function decodePayload(payload){
       if (asciiHexModeEl.checked){
         const s=(typeof payload==='string')?payload:new TextDecoder().decode(payload);
@@ -169,12 +280,33 @@
         }
       }
 
-      const minLen=parseInt(minLenEl.value)||1;
-      if (bytes.length<minLen){
-        warnEl.textContent=`Data length ${bytes.length} < min length ${minLen}`;
+      // Check filter mode
+      const filterMode = filterModeEl.value;
+      let passFilter = false;
+      let filterMsg = '';
+
+      if (filterMode === 'min') {
+        const minLen = parseInt(minLenEl.value) || 1;
+        passFilter = bytes.length >= minLen;
+        filterMsg = `Data length ${bytes.length} < min length ${minLen}`;
+      } else if (filterMode === 'exact') {
+        const exactLen = parseInt(exactLenEl.value) || 1;
+        passFilter = bytes.length === exactLen;
+        filterMsg = `Data length ${bytes.length} ≠ exact length ${exactLen}`;
+      } else if (filterMode === 'range') {
+        const minRange = parseInt(minRangeEl.value) || 1;
+        const maxRange = parseInt(maxRangeEl.value) || 100;
+        passFilter = bytes.length >= minRange && bytes.length <= maxRange;
+        filterMsg = `Data length ${bytes.length} outside range ${minRange}-${maxRange}`;
+      }
+
+      if (!passFilter) {
+        warnEl.innerHTML = `<strong>⚠️ Filtered:</strong> ${filterMsg}`;
         warnEl.classList.remove('hidden');
         return;
-      } else warnEl.classList.add('hidden');
+      } else {
+        warnEl.classList.add('hidden');
+      }
 
       updateTable(bytes);
     }
@@ -191,20 +323,40 @@
 
       for (let i=0;i<bytes.length;i++){
         const tr=document.createElement('tr');
+        tr.className = i % 2 === 0 ? 'bg-white hover:bg-blue-50' : 'bg-slate-50 hover:bg-blue-50';
+        tr.style.transition = 'background-color 0.2s';
 
-        const tdOff=document.createElement('td'); tdOff.className='px-3 py-1 border'; tdOff.textContent=i; tr.appendChild(tdOff);
-        const tdHex=document.createElement('td'); tdHex.className='px-3 py-1 border font-mono'; tdHex.textContent=hexByte(bytes[i]); tr.appendChild(tdHex);
-        const tdDec=document.createElement('td'); tdDec.className='px-3 py-1 border'; tdDec.textContent=bytes[i]; tr.appendChild(tdDec);
+        const tdOff=document.createElement('td'); 
+        tdOff.className='px-4 py-2.5 border-b border-slate-200 font-mono text-slate-600'; 
+        tdOff.textContent=i; 
+        tr.appendChild(tdOff);
+
+        const tdHex=document.createElement('td'); 
+        tdHex.className='px-4 py-2.5 border-b border-slate-200 font-mono font-semibold text-blue-700'; 
+        tdHex.textContent=hexByte(bytes[i]); 
+        tr.appendChild(tdHex);
+
+        const tdDec=document.createElement('td'); 
+        tdDec.className='px-4 py-2.5 border-b border-slate-200 text-slate-700'; 
+        tdDec.textContent=bytes[i]; 
+        tr.appendChild(tdDec);
 
         // Uint16 BE
-        const tdU16=document.createElement('td'); tdU16.className='px-3 py-1 border font-mono';
-        if (i+1<bytes.length){ const val=(bytes[i]<<8)|bytes[i+1]; tdU16.textContent=val; } else tdU16.textContent='-';
+        const tdU16=document.createElement('td'); 
+        tdU16.className='px-4 py-2.5 border-b border-slate-200 font-mono text-purple-700';
+        if (i+1<bytes.length){ 
+          const val=(bytes[i]<<8)|bytes[i+1]; 
+          tdU16.textContent=val; 
+        } else tdU16.textContent='-';
         tr.appendChild(tdU16);
 
         // Int16 BE
-        const tdI16=document.createElement('td'); tdI16.className='px-3 py-1 border font-mono';
+        const tdI16=document.createElement('td'); 
+        tdI16.className='px-4 py-2.5 border-b border-slate-200 font-mono text-indigo-700';
         if (i+1<bytes.length){
-          let val=(bytes[i]<<8)|bytes[i+1]; if (val&0x8000) val-=0x10000; tdI16.textContent=val;
+          let val=(bytes[i]<<8)|bytes[i+1]; 
+          if (val&0x8000) val-=0x10000; 
+          tdI16.textContent=val;
         } else tdI16.textContent='-';
         tr.appendChild(tdI16);
 
@@ -212,12 +364,32 @@
       }
     }
 
-    processManual.onclick=()=>{ let txt=manualInput.value.trim(); if(!txt)return;
-      let bytes=parseHexStringToBytes(txt); handleIncoming(bytes); };
-    simulateBtn.onclick=()=>{ let n=Math.max(12,parseInt(minLenEl.value)||12); const arr=[]; for(let i=0;i<n;i++) arr.push(Math.floor(Math.random()*256));
-      arr.unshift(0x7E); arr.push(0xD0); manualInput.value=arr.map(hexByte).join(' '); handleIncoming(arr); };
+    processManual.onclick=()=>{ 
+      let txt=manualInput.value.trim(); 
+      if(!txt)return;
+      let bytes=parseHexStringToBytes(txt); 
+      handleIncoming(bytes); 
+    };
+    
+    simulateBtn.onclick=()=>{ 
+      let n = 12;
+      if (filterModeEl.value === 'min') {
+        n = Math.max(12, parseInt(minLenEl.value) || 12);
+      } else if (filterModeEl.value === 'exact') {
+        n = parseInt(exactLenEl.value) || 12;
+      } else if (filterModeEl.value === 'range') {
+        const minR = parseInt(minRangeEl.value) || 10;
+        const maxR = parseInt(maxRangeEl.value) || 20;
+        n = Math.floor(Math.random() * (maxR - minR + 1)) + minR;
+      }
+      
+      const arr = [];
+      for(let i=0; i<n-2; i++) arr.push(Math.floor(Math.random()*256));
+      arr.unshift(0x7E); 
+      arr.push(0xD0); 
+      manualInput.value = arr.map(hexByte).join(' '); 
+      handleIncoming(arr); 
+    };
   </script>
 </body>
 </html>
-
-
