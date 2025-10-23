@@ -705,7 +705,7 @@ function renderCards(datane) {
       const batt = batteries.find(b => b.loggerId === currentLoggerId && b.addr === currentAddr && b.typeBattery === currentTypeBattery);
       if (!batt) return;
 
-      document.getElementById("modalTitle").textContent = `${batt.typeBattery} #${batt.addr} (${batt.loggerId})`;
+      document.getElementById("modalTitle").textContent = `${batt.typeBattery} #${batt.addr}`;
       document.getElementById("modalSOC").textContent = `${batt.soc}%`;
       document.getElementById("modalSOH").textContent = `${batt.soh}%`;
       document.getElementById("modalCycles").textContent = batt.cycles;
