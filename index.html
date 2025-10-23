@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -17,26 +16,30 @@
       --warning: #f59e0b;
       --dark: #1f2937;
       --light: #f9fafb;
+      --card-bg: #0455D1;
+      --card-lapis: #ffffff;
+      --card-text: #1f2937;
+      --card-subtext: #4b5563;
+      --icon-voltage: #eab308;
+      --icon-current: #3b82f6;
     }
-     .led {
-      display: inline-block;
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      margin-left: 6px;
-      background: #ccc;
-      transition: background-color 0.3s ease;
-      box-shadow: 0 0 5px rgba(0,0,0,0.2);
-    }
-    
-    .led.active {
-      background: #10b981;
-      box-shadow: 0 0 8px #10b981;
-    }
-    
     
     body {
       font-family: 'Inter', sans-serif;
+      background-color: var(--light);
+      color: var(--dark);
+      transition: background-color 0.3s, color 0.3s;
+    }
+    
+    body[data-theme="dark"] {
+      --card-bg: #525252;
+      --card-lapis: #222222;
+      --card-text: #dddddd;
+      --card-subtext: #cccccc;
+      --icon-voltage: #f59e0b;
+      --icon-current: #60a5fa;
+      background-color: #111827;
+      color: #f3f4f6;
     }
     
     .battery-card {
@@ -109,43 +112,60 @@
       from { opacity: 0; transform: translateY(10px); }
       to { opacity: 1; transform: translateY(0); }
     }
+
+    .led {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-left: 6px;
+      background: #ccc;
+      transition: background-color 0.3s ease;
+      box-shadow: 0 0 5px rgba(0,0,0,0.2);
+    }
+    
+    .led.active {
+      background: #10b981;
+      box-shadow: 0 0 8px #10b981;
+    }
+    
     #id_monitoring_footer {
-  display: none;
-}
-body {
-  background-color: #ffffff;
-  color: #000000;
-  transition: background-color 0.3s, color 0.3s;
-}
+      display: none;
+    }
 
-body[data-theme="dark"] {
-  background-color: #111;
-  color: #222;
-}
+    /* Header */
+    header {
+      background-color: #0455D1;
+      color: #ffffff;
+      transition: background-color 0.3s, color 0.3s;
+    }
 
-/* Header ikut dark mode */
-header {
-  background-color: #0455D1;
-  color: #000000;
-  transition: background-color 0.3s, color 0.3s;
-}
+    body[data-theme="dark"] header {
+      background-color: #1f2937;
+      color: #ffffff;
+    }
 
-body[data-theme="dark"] header {
-  background-color: #1f1f1f;
-  color: #ffffff;
-}
+    /* Footer */
+    footer {
+      background-color: #1f2937;
+      color: #9ca3af;
+      transition: background-color 0.3s, color 0.3s;
+    }
 
-.battery-card i {
-  /* tidak usah pakai var() */
-}
+    body[data-theme="dark"] footer {
+      background-color: #111827;
+      color: #d1d5db;
+    }
 
-/* khusus dark kita override */
-body.dark .battery-card i {
-
-}
+    /* Summary Card */
+    .summary-card {
+      background-color: var(--card-lapis);
+      color: var(--card-text);
+      border-left: 5px solid var(--primary);
+    }
   </style>
 </head>
-<body class="bg-gray-50 min-h-screen flex flex-col">
+<body class="min-h-screen flex flex-col">
 <!-- Header -->
 <header id="mainHeader" class="bg-gradient-to-r text-white shadow-lg w-full relative">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 py-2 flex justify-between items-center">
@@ -202,6 +222,35 @@ body.dark .battery-card i {
           <span id="total-batteries">0</span> batteries connected
         </div>
       </div>
+
+      <!-- Summary Section -->
+      <div id="summarySection" class="mb-8 hidden">
+        <h3 class="text-lg font-semibold text-gray-700 mb-4">Overall Summary</h3>
+        <div class="summary-card rounded-xl shadow-sm p-5">
+          <div class="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
+            <div class="space-y-1">
+              <div class="text-gray-600">Avg Pack Voltage</div>
+              <div id="avg-voltage" class="font-semibold text-white-800">-</div>
+            </div>
+            <div class="space-y-1">
+              <div class="text-gray-600">Avg SOC</div>
+              <div id="avg-soc" class="font-semibold text-white-800">-</div>
+            </div>
+            <div class="space-y-1">
+              <div class="text-gray-600">Avg SOH</div>
+              <div id="avg-soh" class="font-semibold text-white-800">-</div>
+            </div>
+            <div class="space-y-1">
+              <div class="text-gray-600">Total Current</div>
+              <div id="total-current" class="font-semibold text-white-800">-</div>
+            </div>
+            <div class="space-y-1">
+              <div class="text-gray-600">Total Power</div>
+              <div id="total-power" class="font-semibold text-white-800">-</div>
+            </div>
+          </div>
+        </div>
+      </div>
       
       <div id="batteryGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5"></div>
       
@@ -216,7 +265,7 @@ body.dark .battery-card i {
   </main>
 
   <!-- Footer -->
-<footer class="bg-gray-800 text-gray-300 py-4 w-full">
+<footer class="text-gray-300 py-4 w-full" style="background-color: #1f2937;">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col items-center text-center">
     <div class="text-sm">
       © 2025 BMS Monitor System |
@@ -349,9 +398,6 @@ body.dark .battery-card i {
     let timer_poll;
     let xxx;
     
-    //document.getElementById("id_monitoring").innerText = id_logger;
-    //document.getElementById("id_monitoring_footer").innerText = id_logger;
-
     function startMQTT(){
       client = mqtt.connect("wss://public.cloud.shiftr.io", {
         username: "public",
@@ -366,14 +412,7 @@ body.dark .battery-card i {
             console.log("Subscribed topic: ", xxx[a]);
             client.publish(xxx[a]+"/seting","POLL1",0);
         }
-        // client.subscribe("sysMon/"+id_logger+"/AutoPoll/#");
-        // client.subscribe("sysMon/"+id_logger+"/info/#");
         client.subscribe("sysMon/"+xxx[0]+"/info/#");
-        // Update connection status
-        
-        // timer_poll = setInterval(()=>{
-        //     client.publish(id_logger+"/seting","POLL1",0);
-        // },15000);
         updateConnectionStatus(true);
 
       });
@@ -381,7 +420,6 @@ body.dark .battery-card i {
       client.on("message", (topic, message) => {
         if(topic == "sysMon/"+xxx[0]+"/info" ){
             let a = message.toString().split(",");
-            // 🔥 Update Network Modal lebih dulu
             document.getElementById("network_ip").innerText = "IP Address: " + a[0];
             document.getElementById("network_signal").innerText = "Signal: " + a[1];
             let varpol = document.getElementById("pollingState");
@@ -401,19 +439,18 @@ body.dark .battery-card i {
         } else {
           try {
             const raw = JSON.parse(message.toString());
-            const batt = normalizeFromMqtt(raw);
+            const batt = normalizeFromMqtt(raw, topic);
 
-            const idx = batteries.findIndex(b => (b.addr === batt.addr)&&(b.typeBattery === batt.typeBattery));
+            const idx = batteries.findIndex(b => b.loggerId === batt.loggerId && b.addr === batt.addr && b.typeBattery === batt.typeBattery);
             if (idx >= 0) {
               batteries[idx] = batt; // update
-              // console.log("update")
             } else {
-              batt.elementId = `battery-${batt.typeBattery}-${batt.addr}`;
+              batt.elementId = `battery-${batt.loggerId}-${batt.typeBattery}-${batt.addr}`;
               batteries.push(batt); // kalau address baru
-              // console.log("create")
             }
 
             renderCards(batt);
+            updateSummary();
             updateModal();
           } catch (e) {
             console.error("Invalid JSON", e);
@@ -450,13 +487,14 @@ body.dark .battery-card i {
       return `${hours}:${minutes}:${seconds}`;
     }
 
-    function normalizeFromMqtt(data) {
+    function normalizeFromMqtt(data, topic) {
       const cells = data.cell_voltages.map(v => (v/1000).toFixed(3));
       const cell_vmax = Math.max(...data.cell_voltages) / 1000;
       const cell_vmin = Math.min(...data.cell_voltages) / 1000;
       const cell_vdiff = (cell_vmax - cell_vmin) * 1000;
       
       return {
+        loggerId: topic.split('/')[1], // Extract logger ID from topic
         typeBattery: data.typeBattery,
         addr: data.AddrBattery,
         soc: data.SOC.toFixed(1),
@@ -480,7 +518,10 @@ body.dark .battery-card i {
     const grid = document.getElementById("batteryGrid");
     const modal = document.getElementById("batteryModal");
     const emptyState = document.getElementById("empty-state");
+    const summarySection = document.getElementById("summarySection");
     let currentAddr = null;
+    let currentLoggerId = null;
+    let currentTypeBattery = null;
 
 const cardTimers = {};
 
@@ -488,37 +529,41 @@ function renderCards(datane) {
     if (batteries.length === 0) {
       grid.classList.add('hidden');
       emptyState.classList.remove('hidden');
+      summarySection.classList.add('hidden');
       document.getElementById('total-batteries').textContent = '0';
       return;
     }
 
     grid.classList.remove('hidden');
     emptyState.classList.add('hidden');
+    summarySection.classList.remove('hidden');
     document.getElementById('total-batteries').textContent = batteries.length.toString();
 
     const fragment = document.createDocumentFragment();
 
     batteries.forEach(batt => {
-      let cardId = `card-${batt.typeBattery}-${batt.addr}`;
+      let cardId = `card-${batt.loggerId}-${batt.typeBattery}-${batt.addr}`;
       let card = document.getElementById(cardId);
 
       if (!card) {
         card = document.createElement("div");
         card.id = cardId;
         card.className = "battery-card rounded-xl shadow-sm p-5 cursor-pointer hover:shadow-md fade-in";
+        card.dataset.loggerId = batt.loggerId;
         card.dataset.addr = String(batt.addr);
+        card.dataset.typeBattery = batt.typeBattery;
         card.innerHTML = `
           <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-semibold text-gray-800">${batt.typeBattery} <span class="text-blue-600">#${batt.addr}</span></h3>
-            <div class="led" id="led-card-${batt.typeBattery}-${batt.addr}"></div>
+            <h3 class="text-lg font-semibold text-gray-800">${batt.typeBattery} <span class="text-blue-600">#${batt.addr} </span></h3>
+            <div class="led" id="led-card-${batt.loggerId}-${batt.typeBattery}-${batt.addr}"></div>
           </div>
           <div class="mb-4">
             <div class="flex justify-between items-center mb-1">
               <span class="text-sm text-gray-600">SOC</span>
-              <span class="font-semibold" id="soc-value-${batt.typeBattery}-${batt.addr}">${batt.soc}%</span>
+              <span class="font-semibold" id="soc-value-${batt.loggerId}-${batt.typeBattery}-${batt.addr}">${batt.soc}%</span>
             </div>
             <div class="progress-bar">
-              <div id="soc-bar-${batt.typeBattery}-${batt.addr}" class="progress-fill" style="width: ${batt.soc}%"></div>
+              <div id="soc-bar-${batt.loggerId}-${batt.typeBattery}-${batt.addr}" class="progress-fill" style="width: ${batt.soc}%"></div>
             </div>
           </div>
           <div class="grid grid-cols-2 gap-5 text-sm">
@@ -527,14 +572,14 @@ function renderCards(datane) {
                 <i class="fas fa-bolt text-yellow-500 mr-2"></i>
                 <div>
                   <div class="text-gray-500">Voltage</div>
-                  <div id="voltage-${batt.typeBattery}-${batt.addr}" class="font-semibold">${batt.voltage} V</div>
+                  <div id="voltage-${batt.loggerId}-${batt.typeBattery}-${batt.addr}" class="font-semibold">${batt.voltage} V</div>
                 </div>
               </div>
                <div class="flex items-center">
                 <i class="fas fa-minus-circle  text-blue-500 mr-2"></i>
                 <div>
                   <div class="text-gray-500">Diff Cell</div>
-                  <div id="voltagedif-${batt.typeBattery}-${batt.addr}" class="font-semibold">${batt.cell_vdif} mV</div>
+                  <div id="voltagedif-${batt.loggerId}-${batt.typeBattery}-${batt.addr}" class="font-semibold">${batt.cell_vdif} mV</div>
                 </div>
               </div>
 
@@ -542,7 +587,7 @@ function renderCards(datane) {
                 <i class="fas fa-minus-circle text-red-500 mr-2"></i>
                 <div>
                   <div class="text-gray-500">Min Cell</div>
-                  <div id="cellmin-${batt.typeBattery}-${batt.addr}" class="font-semibold">${batt.cell_vmin} V</div>
+                  <div id="cellmin-${batt.loggerId}-${batt.typeBattery}-${batt.addr}" class="font-semibold">${batt.cell_vmin} V</div>
                 </div>
               </div>
             </div>
@@ -551,21 +596,21 @@ function renderCards(datane) {
                 <i class="fas fa-tachometer-alt text-blue-500 mr-2"></i>
                 <div>
                   <div class="text-gray-500">Current</div>
-                  <div id="current-${batt.typeBattery}-${batt.addr}" class="font-semibold">${batt.current} A</div>
+                  <div id="current-${batt.loggerId}-${batt.typeBattery}-${batt.addr}" class="font-semibold">${batt.current} A</div>
                 </div>
               </div>
                <div class="flex items-center">
                 <i class="fas fa-bolt text-red-500 mr-2"></i>
                 <div>
                   <div class="text-gray-500">Power</div>
-                  <div id="power-${batt.typeBattery}-${batt.addr}" class="font-semibold">${(batt.voltage*batt.current).toFixed(1)} WA</div>
+                  <div id="power-${batt.loggerId}-${batt.typeBattery}-${batt.addr}" class="font-semibold">${(batt.voltage*batt.current).toFixed(1)} WA</div>
                 </div>
               </div>
               <div class="flex items-center">
                 <i class="fas fa-plus-circle text-green-500 mr-2"></i>
                 <div>
                   <div class="text-gray-500">Max Cell</div>
-                  <div id="cellmax-${batt.typeBattery}-${batt.addr}" class="font-semibold">${batt.cell_vmax} V</div>
+                  <div id="cellmax-${batt.loggerId}-${batt.typeBattery}-${batt.addr}" class="font-semibold">${batt.cell_vmax} V</div>
                 </div>
               </div>
             </div>
@@ -575,33 +620,33 @@ function renderCards(datane) {
             <span class="last-update"><i class="far fa-clock mr-1"></i>${batt.time}</span>
           </div>
         `;
-        card.onclick = () => openModal(batt.addr);
+        card.onclick = () => openModal(batt.loggerId, batt.addr, batt.typeBattery);
         fragment.appendChild(card);
       } else {
-        if (datane.typeBattery === batt.typeBattery && datane.addr === batt.addr) {
-          document.getElementById(`soc-value-${batt.typeBattery}-${batt.addr}`).textContent = `${batt.soc}%`;
-          document.getElementById(`soc-bar-${batt.typeBattery}-${batt.addr}`).style.width = `${batt.soc}%`;
-          document.getElementById(`voltage-${batt.typeBattery}-${batt.addr}`).innerHTML = `${batt.voltage} V`;
-          document.getElementById(`current-${batt.typeBattery}-${batt.addr}`).innerHTML = `${batt.current} A`;
-          document.getElementById(`cellmin-${batt.typeBattery}-${batt.addr}`).innerHTML = `${batt.cell_vmin} V`;
-          document.getElementById(`cellmax-${batt.typeBattery}-${batt.addr}`).innerHTML = `${batt.cell_vmax} V`;
-          document.getElementById(`power-${batt.typeBattery}-${batt.addr}`).innerHTML = `${(batt.voltage*batt.current).toFixed(1)} W`;
-          document.getElementById(`voltagedif-${batt.typeBattery}-${batt.addr}`).innerHTML = `${batt.cell_vdif} mV`;
+        if (datane.loggerId === batt.loggerId && datane.typeBattery === batt.typeBattery && datane.addr === batt.addr) {
+          document.getElementById(`soc-value-${batt.loggerId}-${batt.typeBattery}-${batt.addr}`).textContent = `${batt.soc}%`;
+          document.getElementById(`soc-bar-${batt.loggerId}-${batt.typeBattery}-${batt.addr}`).style.width = `${batt.soc}%`;
+          document.getElementById(`voltage-${batt.loggerId}-${batt.typeBattery}-${batt.addr}`).innerHTML = `${batt.voltage} V`;
+          document.getElementById(`current-${batt.loggerId}-${batt.typeBattery}-${batt.addr}`).innerHTML = `${batt.current} A`;
+          document.getElementById(`cellmin-${batt.loggerId}-${batt.typeBattery}-${batt.addr}`).innerHTML = `${batt.cell_vmin} V`;
+          document.getElementById(`cellmax-${batt.loggerId}-${batt.typeBattery}-${batt.addr}`).innerHTML = `${batt.cell_vmax} V`;
+          document.getElementById(`power-${batt.loggerId}-${batt.typeBattery}-${batt.addr}`).innerHTML = `${(batt.voltage*batt.current).toFixed(1)} W`;
+          document.getElementById(`voltagedif-${batt.loggerId}-${batt.typeBattery}-${batt.addr}`).innerHTML = `${batt.cell_vdif} mV`;
 
-          const socBar = document.getElementById(`soc-bar-${batt.typeBattery}-${batt.addr}`);
+          const socBar = document.getElementById(`soc-bar-${batt.loggerId}-${batt.typeBattery}-${batt.addr}`);
           if (batt.soc > 70) socBar.className = 'progress-fill bg-green-500';
           else if (batt.soc > 30) socBar.className = 'progress-fill bg-yellow-500';
           else socBar.className = 'progress-fill bg-red-500';
 
           card.querySelector(".last-update").innerHTML = `<i class="far fa-clock mr-1"></i>${batt.time}`;
 
-          const led = document.getElementById(`led-card-${batt.typeBattery}-${batt.addr}`);
+          const led = document.getElementById(`led-card-${batt.loggerId}-${batt.typeBattery}-${batt.addr}`);
           led.classList.add("active");
           setTimeout(() => led.classList.remove("active"), 250);
         }
       }
 
-      // 🔹 RESET / SET timeout tiap update
+      // RESET / SET timeout tiap update
       if (cardTimers[cardId]) {
         clearTimeout(cardTimers[cardId]);
       }
@@ -618,9 +663,37 @@ function renderCards(datane) {
     }
   }
 
+    // Update Summary
+    function updateSummary() {
+      if (batteries.length === 0) return;
+
+      let totalVoltage = 0;
+      let totalSoc = 0;
+      let totalSoh = 0;
+      let totalCurrent = 0;
+      let totalPower = 0;
+
+      batteries.forEach(batt => {
+        totalVoltage += parseFloat(batt.voltage);
+        totalSoc += parseFloat(batt.soc);
+        totalSoh += parseFloat(batt.soh);
+        totalCurrent += parseFloat(batt.current);
+        totalPower += parseFloat(batt.power);
+      });
+
+      const count = batteries.length;
+      document.getElementById("avg-voltage").textContent = `${(totalVoltage / count).toFixed(2)} V`;
+      document.getElementById("avg-soc").textContent = `${(totalSoc / count).toFixed(1)}%`;
+      document.getElementById("avg-soh").textContent = `${(totalSoh / count).toFixed(1)}%`;
+      document.getElementById("total-current").textContent = `${totalCurrent.toFixed(2)} A`;
+      document.getElementById("total-power").textContent = `${totalPower.toFixed(2)} W`;
+    }
+
     // Open modal
-    function openModal(addr) {
+    function openModal(loggerId, addr, typeBattery) {
+      currentLoggerId = loggerId;
       currentAddr = addr;
+      currentTypeBattery = typeBattery;
       updateModal();
       modal.classList.remove("hidden");
       document.body.style.overflow = 'hidden';
@@ -628,11 +701,11 @@ function renderCards(datane) {
 
     // Update modal content
     function updateModal() {
-      if (currentAddr === null) return;
-      const batt = batteries.find(b => b.addr === currentAddr);
+      if (currentAddr === null || currentLoggerId === null || currentTypeBattery === null) return;
+      const batt = batteries.find(b => b.loggerId === currentLoggerId && b.addr === currentAddr && b.typeBattery === currentTypeBattery);
       if (!batt) return;
 
-      document.getElementById("modalTitle").textContent = `${batt.typeBattery} #${batt.addr}`;
+      document.getElementById("modalTitle").textContent = `${batt.typeBattery} #${batt.addr} (${batt.loggerId})`;
       document.getElementById("modalSOC").textContent = `${batt.soc}%`;
       document.getElementById("modalSOH").textContent = `${batt.soh}%`;
       document.getElementById("modalCycles").textContent = batt.cycles;
@@ -645,7 +718,6 @@ function renderCards(datane) {
       document.getElementById("modalcellmin").textContent = `${batt.cell_vmin} V`;
       document.getElementById("modalcellmax").textContent = `${batt.cell_vmax} V`;
       document.getElementById("modalcelldif").textContent = `${batt.cell_vdif} mV`;
-      // document.getElementById("modalBusCurrent").textContent = `-`;
       document.getElementById("modalPower").textContent = `${batt.power} W`;
 
       // Update progress bars
@@ -702,6 +774,8 @@ function renderCards(datane) {
       modal.classList.add("hidden");
       document.body.style.overflow = 'auto';
       currentAddr = null;
+      currentLoggerId = null;
+      currentTypeBattery = null;
     };
     
     modal.onclick = e => {
@@ -709,13 +783,14 @@ function renderCards(datane) {
         modal.classList.add("hidden");
         document.body.style.overflow = 'auto';
         currentAddr = null;
+        currentLoggerId = null;
+        currentTypeBattery = null;
       }
     };
 
     function blinkLed(id) {
       const el = document.getElementById(id);
       if (!el) return;
-      console.log(id);
       
       el.classList.remove("bg-gray-300");
       el.classList.add("bg-green-500");
@@ -828,19 +903,8 @@ function setTheme(theme) {
   // Ubah class header Tailwind untuk dark mode
   if (theme === 'dark') {
     document.body.classList.add('dark');
-    document.documentElement.style.setProperty('--card-bg', '#525252');
-    document.documentElement.style.setProperty('--card-lapis', '#222');
-    document.documentElement.style.setProperty('--card-text', '#ddd');
-    document.documentElement.style.setProperty('--card-subtext', '#ccc');
-    document.documentElement.style.setProperty('--icon-voltage', '#666'); 
-    document.documentElement.style.setProperty('--icon-current', '#60a5fa');
   } else {
     document.body.classList.remove('dark');
-    document.documentElement.style.setProperty('--card-bg', '#0455D1');
-    document.documentElement.style.setProperty('--card-lapis', '#fff');
-    document.documentElement.style.setProperty('--card-text', '#1f2937');
-    document.documentElement.style.setProperty('--card-subtext', '#4b5563');
-    document.documentElement.style.setProperty('--icon-current', '#3b82f6');
   }
 }
 
