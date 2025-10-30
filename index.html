@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -449,13 +450,16 @@
             const idx = batteries.findIndex(b => b.loggerId === batt.loggerId && b.addr === batt.addr && b.typeBattery === batt.typeBattery);
             if (idx >= 0) {
               batteries[idx] = batt; // update
+              update_cards(batt);
+               updateSummary();
             } else {
               batt.elementId = `battery-${batt.loggerId}-${batt.typeBattery}-${batt.addr}`;
               batteries.push(batt); // kalau address baru
+               renderCards(batt);
             }
 
-            renderCards(batt);
-            updateSummary();
+           
+           
             updateModal();
           } catch (e) {
             console.error("Invalid JSON", e);
@@ -544,6 +548,11 @@ function renderCards(datane) {
     summarySection.classList.remove('hidden');
     document.getElementById('total-batteries').textContent = batteries.length.toString();
 
+      batteries.sort((a, b) => {
+        if (a.typeBattery !== b.typeBattery) return a.typeBattery.localeCompare(b.typeBattery);
+        return a.addr - b.addr;
+      });
+      grid.innerHTML = "";
     const fragment = document.createDocumentFragment();
 
     batteries.forEach(batt => {
@@ -666,6 +675,49 @@ function renderCards(datane) {
     if (fragment.childNodes.length > 0) {
       grid.appendChild(fragment);
     }
+  }
+
+  function update_cards(datane){
+     
+      batteries.forEach(batt => {
+      let cardId = `card-${batt.loggerId}-${batt.typeBattery}-${batt.addr}`;
+      let card = document.getElementById(cardId);
+      
+        if (datane.loggerId === batt.loggerId && datane.typeBattery === batt.typeBattery && datane.addr === batt.addr) {
+          document.getElementById(`soc-value-${batt.loggerId}-${batt.typeBattery}-${batt.addr}`).textContent = `${batt.soc}%`;
+          document.getElementById(`soc-bar-${batt.loggerId}-${batt.typeBattery}-${batt.addr}`).style.width = `${batt.soc}%`;
+          document.getElementById(`voltage-${batt.loggerId}-${batt.typeBattery}-${batt.addr}`).innerHTML = `${batt.voltage} V`;
+          document.getElementById(`current-${batt.loggerId}-${batt.typeBattery}-${batt.addr}`).innerHTML = `${batt.current} A`;
+          document.getElementById(`cellmin-${batt.loggerId}-${batt.typeBattery}-${batt.addr}`).innerHTML = `${batt.cell_vmin} V`;
+          document.getElementById(`cellmax-${batt.loggerId}-${batt.typeBattery}-${batt.addr}`).innerHTML = `${batt.cell_vmax} V`;
+          document.getElementById(`power-${batt.loggerId}-${batt.typeBattery}-${batt.addr}`).innerHTML = `${(batt.voltage*batt.current).toFixed(1)} W`;
+          document.getElementById(`voltagedif-${batt.loggerId}-${batt.typeBattery}-${batt.addr}`).innerHTML = `${batt.cell_vdif} mV`;
+
+          const socBar = document.getElementById(`soc-bar-${batt.loggerId}-${batt.typeBattery}-${batt.addr}`);
+          if (batt.soc > 70) socBar.className = 'progress-fill bg-green-500';
+          else if (batt.soc > 30) socBar.className = 'progress-fill bg-yellow-500';
+          else socBar.className = 'progress-fill bg-red-500';
+
+          card.querySelector(".last-update").innerHTML = `<i class="far fa-clock mr-1"></i>${batt.time}`;
+
+          const led = document.getElementById(`led-card-${batt.loggerId}-${batt.typeBattery}-${batt.addr}`);
+          led.classList.add("active");
+          setTimeout(() => led.classList.remove("active"), 250);
+        }
+      
+
+      // RESET / SET timeout tiap update
+      if (cardTimers[cardId]) {
+        clearTimeout(cardTimers[cardId]);
+      }
+      cardTimers[cardId] = setTimeout(() => {
+        let c = document.getElementById(cardId);
+        if (c) c.remove();
+        delete cardTimers[cardId];
+      }, 10000); // 30 detik
+
+    });
+
   }
 
     // Update Summary
