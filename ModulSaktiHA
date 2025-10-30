@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>HA MQTT Discovery Generator (prefix + public broker)</title>
+<script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-900 text-white p-6 min-h-screen">
+  <div class="max-w-4xl mx-auto space-y-4">
+    <h1 class="text-2xl font-bold text-center">🔧 HA MQTT Discovery Generator</h1>
+
+    <div class="bg-gray-800 p-4 rounded space-y-3">
+      <div>
+        <label class="block font-semibold">Discovery Prefix:</label>
+        <input id="prefix" class="w-full p-2 rounded bg-gray-700 border border-gray-600" value="homeassistant">
+        <small class="text-gray-400">Contoh: <code>homeassistant</code> atau <code>ha_bms</code></small>
+      </div>
+
+      <div>
+        <label class="block font-semibold">MQTT Topic (state_topic):</label>
+        <input id="topic" class="w-full p-2 rounded bg-gray-700 border border-gray-600" value="bms/huawei/state">
+      </div>
+
+      <div>
+        <label class="block font-semibold">JSON Payload:</label>
+        <textarea id="jsonInput" rows="10" class="w-full p-2 rounded bg-gray-700 border border-gray-600 font-mono text-sm">
+{
+  "typeBattery":"Huawei",
+  "AddrBattery":214,
+  "cell_count":15,
+  "cell_voltages":[3330,3330,3330,3331,3331,3330,3332,3329,3330,3330,3329,3330,3329,3329,3330],
+  "cell_vmax":3332,
+  "cell_vmin":3329,
+  "cell_vdiff":3,
+  "bus_voltage":50.03,
+  "bat_voltage":49.95,
+  "bus_current":0.00,
+  "bat_current":6.97,
+  "full_capacity":0.00,
+  "rem_capacity":0.00,
+  "SOC":64.00,
+  "SOH":100.00,
+  "cycle_count":1761
+}
+        </textarea>
+      </div>
+
+      <div class="flex gap-3">
+        <button id="generateBtn" class="bg-blue-600 px-4 py-2 rounded">Generate</button>
+        <button id="publishBtn" class="bg-green-600 px-4 py-2 rounded">Publish to MQTT</button>
+      </div>
+    </div>
+
+    <div class="bg-gray-800 p-4 rounded space-y-2">
+      <h2 class="font-semibold">Broker MQTT (Public)</h2>
+      <div>
+        <label class="block">URL (WebSocket):</label>
+        <input id="mqttUrl" class="w-full p-2 rounded bg-gray-700 border border-gray-600" value="wss://public.cloud.shiftr.io">
+      </div>
+      <div class="grid grid-cols-2 gap-2">
+        <input id="mqttUser" class="p-2 rounded bg-gray-700 border border-gray-600" value="public">
+        <input id="mqttPass" type="password" class="p-2 rounded bg-gray-700 border border-gray-600" value="public">
+      </div>
+    </div>
+
+    <div class="bg-gray-800 p-4 rounded">
+      <h2 class="font-semibold mb-2">Generated discovery topics</h2>
+      <textarea id="output" rows="18" class="w-full p-2 rounded bg-gray-700 border border-gray-600 font-mono text-sm" readonly></textarea>
+    </div>
+  </div>
+
+<script>
+function getKeyCI(obj, key) {
+  const lower = key.toLowerCase();
+  for (const k of Object.keys(obj)) if (k.toLowerCase() === lower) return obj[k];
+  return undefined;
+}
+function slugify(s) {
+  return String(s).toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+}
+
+function generateDiscovery(jsonText, stateTopic, prefix) {
+  const raw = JSON.parse(jsonText);
+  const manufacturer = getKeyCI(raw,"typeBattery") || "battery";
+  const addr = getKeyCI(raw,"AddrBattery") || 0;
+  const deviceId = `${slugify(manufacturer)}_bms_${slugify(addr)}`;
+  const deviceName = `${manufacturer} ${addr}`;
+  const mappings = {
+    "SOC": "%",
+    "SOH": "%",
+    "bat_voltage": "V",
+    "bus_voltage": "V",
+    "bat_current": "A",
+    "bus_current": "A",
+    "cell_vmax": "mV",
+    "cell_vmin": "mV",
+    "cell_vdiff": "mV",
+    "cycle_count": null
+  };
+
+  const configs = [];
+  let humanText = "";
+
+  function makeEntity(name, key, unit) {
+    const uid = slugify(`${deviceId}_${name}`);
+    const topicCfg = `${prefix}/sensor/${deviceId}_${uid}/config`;
+    const cfg = {
+      name: `${deviceName} ${name}`,
+      state_topic: stateTopic,
+      value_template: `{{ value_json.${key} }}`,
+      unique_id: `${deviceId}_${uid}`,
+      device: {
+        identifiers: [String(deviceId)],
+        name: deviceName,
+        manufacturer: String(manufacturer)
+      }
+    };
+    if (unit) cfg.unit_of_measurement = unit;
+    configs.push({ topic: topicCfg, config: cfg });
+    humanText += `${topicCfg}:\n${JSON.stringify(cfg, null, 2)}\n\n`;
+  }
+
+  for (const [k,u] of Object.entries(mappings)) makeEntity(k, k, u);
+
+  const cells = getKeyCI(raw, "cell_voltages") || [];
+  if (Array.isArray(cells)) {
+    cells.forEach((_, i) => {
+      const uid = `cell_${String(i+1).padStart(2,"0")}`;
+      const topicCfg = `${prefix}/sensor/${deviceId}_${uid}/config`;
+      const cfg = {
+        name: `${deviceName} Cell ${i+1}`,
+        state_topic: stateTopic,
+        unit_of_measurement: "mV",
+        value_template: `{{ value_json.cell_voltages[${i}] }}`,
+        unique_id: `${deviceId}_${uid}`,
+        device: {
+          identifiers: [String(deviceId)],
+          name: deviceName,
+          manufacturer: String(manufacturer)
+        }
+      };
+      configs.push({ topic: topicCfg, config: cfg });
+      humanText += `${topicCfg}:\n${JSON.stringify(cfg, null, 2)}\n\n`;
+    });
+  }
+  return {configs,humanText,deviceId,deviceName,rawPayload:raw,stateTopic};
+}
+
+document.getElementById("generateBtn").onclick = () => {
+  try {
+    const json = document.getElementById("jsonInput").value;
+    const topic = document.getElementById("topic").value.trim();
+    const prefix = document.getElementById("prefix").value.trim();
+    const result = generateDiscovery(json, topic, prefix);
+    document.getElementById("output").value = result.humanText;
+  } catch(e){ alert("JSON error: "+e); }
+};
+
+document.getElementById("publishBtn").onclick = () => {
+  const json = document.getElementById("jsonInput").value;
+  const topic = document.getElementById("topic").value.trim();
+  const prefix = document.getElementById("prefix").value.trim();
+  const url = document.getElementById("mqttUrl").value.trim();
+  const user = document.getElementById("mqttUser").value.trim();
+  const pass = document.getElementById("mqttPass").value.trim();
+  if (!url) return alert("Isi URL broker dulu!");
+
+  let client;
+  try {
+    client = mqtt.connect(url, { username:user, password:pass });
+  } catch(e){ alert("MQTT connect error: "+e); return; }
+
+  let result;
+  try { result = generateDiscovery(json, topic, prefix); }
+  catch(e){ alert("JSON invalid: "+e); return; }
+
+  client.on("connect", () => {
+    alert("Terhubung ke broker MQTT, publish discovery...");
+    result.configs.forEach(({topic:t,config})=>{
+      client.publish(t, JSON.stringify(config), {retain:true});
+    });
+    // publish state payload satu kali
+    client.publish(result.stateTopic, JSON.stringify(result.rawPayload));
+    setTimeout(()=>{
+      alert("✅ Selesai publish — cek di HA -> MQTT devices");
+      client.end();
+    }, 1000);
+  });
+  client.on("error", err=>{
+    alert("MQTT Error: "+err);
+    client.end();
+  });
+};
+</script>
+</body>
+</html>
