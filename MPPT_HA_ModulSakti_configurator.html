@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MQTT Discovery Generator - Home Assistant</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/4.3.7/mqtt.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        .content {
+            padding: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        input[type="text"], input[type="password"],input[type="number"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        input[type="text"]:focus, input[type="password"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            width: 100%;
+            margin-top: 10px;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        .btn:active {
+            transform: translateY(0);
+        }
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 6px;
+            font-size: 14px;
+            display: none;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            display: block;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            display: block;
+        }
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+            display: block;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        .log {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            display: none;
+        }
+        .log.show {
+            display: block;
+        }
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 5px;
+            border-left: 3px solid #667eea;
+            padding-left: 10px;
+        }
+        .sensor-count {
+            text-align: center;
+            padding: 15px;
+            background: #f0f0f0;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-size: 18px;
+            font-weight: 600;
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 MPPT Monitoring Configurator</h1>
+            <p>Konfigurator Home Assistant untuk Solar MPPT Monitoring Module</p>
+        </div>
+        <div class="content">
+            <div class="sensor-count" id="sensorCount">
+                Auto Configure 27 Sensor Data
+            </div>
+
+            <div class="form-group">
+                <label for="haPrefix">Home Assistant Discovery Prefix</label>
+                <input type="text" id="haPrefix" value="homeassistant-" placeholder="homeassistant">
+            </div>
+
+            <div class="form-group">
+                <label for="deviceName">Nama Device</label>
+                <input type="text" id="deviceName" value="MPPT Monitoring" placeholder="Solar MPPT Controller">
+            </div>
+
+            <div class="form-group">
+                <label for="stateTopic">ID Modul</label>
+                <input id="stateTopic" value="" type="number" placeholder="1234567890">
+            </div>
+
+            <div class="form-group">
+                <label for="deviceId">Device ID (Unique)</label>
+                <input type="text" id="deviceId" value="solar_mppt_01" placeholder="solar_mppt_01">
+            </div>
+
+            <hr style="margin: 30px 0; border: none; border-top: 2px solid #e0e0e0;">
+
+            <div class="grid" hidden>
+                <div class="form-group" hidden>
+                    <label for="mqttHost">MQTT Host</label>
+                    <input type="text" id="mqttHost" value="public.cloud.shiftr.io" placeholder="public.cloud.shiftr.io">
+                </div>
+                <div class="form-group" hidden>
+                    <label for="mqttPort">Port</label>
+                    <input type="text" id="mqttPort" value="443" placeholder="443">
+                </div>
+            </div>
+
+            <div class="grid" hidden>
+                <div class="form-group" hidden>
+                    <label for="mqttUsername">Username</label>
+                    <input type="text" id="mqttUsername" value="public" placeholder="public">
+                </div>
+                <div class="form-group" hidden>
+                    <label for="mqttPassword">Password</label>
+                    <input type="password" id="mqttPassword" value="public" placeholder="public">
+                </div>
+            </div>
+
+            <button class="btn" id="publishBtn" onclick="publishDiscovery()">
+                ☢️ Configure!!! ☢️
+            </button>
+
+            <div class="status" id="status"></div>
+            <div class="log" id="log"></div>
+        </div>
+    </div>
+
+    <script>
+        let client = null;
+        let publishedCount = 0;
+        let totalSensors = 0;
+
+        const sensorConfigs = [
+            // Device Status
+            { key: 'device.uptime', name: 'Uptime', unit: 's', icon: 'mdi:timer', class: 'duration' },
+            { key: 'device.heap', name: 'Heap Memory', unit: 'B', icon: 'mdi:memory', class: 'data_size' },
+            { key: 'device.wifi', name: 'WiFi Signal', unit: 'dBm', icon: 'mdi:wifi', class: 'signal_strength' },
+            { key: 'device.ip', name: 'IP Address', icon: 'mdi:ip-network', class: null },
+            
+            // Current Measurements
+            { key: 'data.current', name: 'Current', unit: 'A', icon: 'mdi:current-ac', class: 'current' },
+            { key: 'data.volt_battery', name: 'Battery Voltage', unit: 'V', icon: 'mdi:battery-charging', class: 'voltage' },
+            { key: 'data.power', name: 'Power', unit: 'W', icon: 'mdi:flash', class: 'power' },
+            { key: 'data.peak_power', name: 'Peak Power', unit: 'W', icon: 'mdi:flash-triangle', class: 'power' },
+            { key: 'data.volt_pv', name: 'PV Voltage', unit: 'V', icon: 'mdi:solar-power', class: 'voltage' },
+            
+            // Temperature
+            { key: 'data.temp_envi', name: 'Environment Temperature', unit: '°C', icon: 'mdi:thermometer', class: 'temperature' },
+            { key: 'data.temp_mppt', name: 'MPPT Temperature', unit: '°C', icon: 'mdi:thermometer-alert', class: 'temperature' },
+            
+            // Energy
+            { key: 'data.total_energy', name: 'Total Energy', unit: 'kWh', icon: 'mdi:lightning-bolt', class: 'energy' },
+            { key: 'data.today_energy', name: 'Today Energy', unit: 'kWh', icon: 'mdi:solar-panel', class: 'energy' },
+            
+            // Status & Load
+            { key: 'data.status_code', name: 'Status Code', icon: 'mdi:information', class: null },
+            { key: 'data.load_percent', name: 'Load Percent', unit: '%', icon: 'mdi:gauge', class: null },
+            
+            // Binary Sensors - Status
+            { key: 'data.status.load_out', name: 'Load Output', icon: 'mdi:lightbulb', type: 'binary' },
+            { key: 'data.status.charging', name: 'Charging', icon: 'mdi:battery-charging', type: 'binary' },
+            { key: 'data.status.bat_full', name: 'Battery Full', icon: 'mdi:battery', type: 'binary' },
+            
+            // Binary Sensors - Alarms
+            { key: 'data.alarm.mcu_over_temp', name: 'MCU Over Temperature Alarm', icon: 'mdi:thermometer-alert', type: 'binary' },
+            { key: 'data.alarm.bat_over_temp', name: 'Battery Over Temperature Alarm', icon: 'mdi:battery-alert', type: 'binary' },
+            { key: 'data.alarm.bat_low', name: 'Battery Low Alarm', icon: 'mdi:battery-low', type: 'binary' },
+            { key: 'data.alarm.bat_over_volt', name: 'Battery Over Voltage Alarm', icon: 'mdi:flash-alert', type: 'binary' },
+            
+            // Binary Sensors - Faults
+            { key: 'data.fault.mcu_over_temp', name: 'MCU Over Temperature Fault', icon: 'mdi:alert-circle', type: 'binary' },
+            { key: 'data.fault.mppt_over_temp', name: 'MPPT Over Temperature Fault', icon: 'mdi:alert-circle', type: 'binary' },
+            { key: 'data.fault.bat_over_temp', name: 'Battery Over Temperature Fault', icon: 'mdi:alert-circle', type: 'binary' },
+            { key: 'data.fault.bat_temp_sensor_fault', name: 'Battery Temperature Sensor Fault', icon: 'mdi:thermometer-alert', type: 'binary' },
+            { key: 'data.fault.bat_volt_input_error', name: 'Battery Voltage Input Error', icon: 'mdi:alert-circle', type: 'binary' }
+        ];
+
+        totalSensors = sensorConfigs.length;
+
+        function addLog(message, type = 'info') {
+            const log = document.getElementById('log');
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            log.appendChild(entry);
+            log.scrollTop = log.scrollHeight;
+            log.classList.add('show');
+        }
+
+        function showStatus(message, type) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = `status ${type}`;
+        }
+
+        function getValueTemplate(key) {
+            return `{{ value_json.${key} }}`;
+        }
+
+        function createDiscoveryConfig(sensor, deviceName, deviceId, stateTopic) {
+            const uniqueId = `${deviceId}_${sensor.key.replace(/\./g, '_')}`;
+            const objectId = sensor.key.replace(/\./g, '_');
+            
+            const config = {
+                name: sensor.name,
+                unique_id: uniqueId,
+                object_id: objectId,
+                state_topic: stateTopic,
+                value_template: getValueTemplate(sensor.key),
+                device: {
+                    identifiers: [deviceId],
+                    name: deviceName,
+                    model: "MPPT Solar Charge Controller",
+                    manufacturer: "Custom",
+                    sw_version: "1.0"
+                }
+            };
+
+            if (sensor.unit) config.unit_of_measurement = sensor.unit;
+            if (sensor.icon) config.icon = sensor.icon;
+            if (sensor.class) config.device_class = sensor.class;
+            
+            if (sensor.type === 'binary') {
+                config.payload_on = "1";
+                config.payload_off = "0";
+            }
+
+            return config;
+        }
+		
+		
+        function publishDiscovery() {
+            const haPrefix = document.getElementById('haPrefix').value;
+            const deviceName = document.getElementById('deviceName').value;
+            const stateTopic = "mpptMon/" +document.getElementById('stateTopic').value +"/TX";
+            const deviceId =  document.getElementById('deviceId').value;
+            const mqttHost = document.getElementById('mqttHost').value;
+            const mqttPort = document.getElementById('mqttPort').value;
+            const mqttUsername = document.getElementById('mqttUsername').value;
+            const mqttPassword = document.getElementById('mqttPassword').value;
+
+            if (!haPrefix || !deviceName || !stateTopic || !deviceId) {
+                showStatus('⚠️ Semua field harus diisi!', 'error');
+                return;
+            }
+
+            const publishBtn = document.getElementById('publishBtn');
+            publishBtn.disabled = true;
+            publishBtn.textContent = '🔄 Connecting...';
+            
+            document.getElementById('log').innerHTML = '';
+            publishedCount = 0;
+
+            const wsUrl = `wss://${mqttHost}:${mqttPort}`;
+            addLog(`Connecting to ${wsUrl}...`);
+
+            client = mqtt.connect(wsUrl, {
+                username: mqttUsername,
+                password: mqttPassword,
+                reconnectPeriod: 0
+            });
+
+            client.on('connect', () => {
+                addLog('✅ Connected to MQTT broker');
+                showStatus('🔄 Publishing discovery configs...', 'info');
+                publishBtn.textContent = `📤 Publishing 0/${totalSensors}...`;
+
+                sensorConfigs.forEach((sensor, index) => {
+                    setTimeout(() => {
+                        const component = sensor.type === 'binary' ? 'binary_sensor' : 'sensor';
+                        const objectId = sensor.key.replace(/\./g, '_');
+                        const topic = `${haPrefix}/${component}/${deviceId}/${objectId}/config`;
+                        const config = createDiscoveryConfig(sensor, deviceName, deviceId, stateTopic);
+                        
+                        client.publish(topic, JSON.stringify(config), { retain: true }, (err) => {
+                            if (err) {
+                                addLog(`❌ Failed: ${sensor.name}`, 'error');
+                            } else {
+                                publishedCount++;
+                                addLog(`✅ Published: ${sensor.name}`);
+                                publishBtn.textContent = `📤 Publishing ${publishedCount}/${totalSensors}...`;
+                                
+                                if (publishedCount === totalSensors) {
+                                    showStatus(`✅ Berhasil publish ${publishedCount} sensor discovery!`, 'success');
+                                    publishBtn.textContent = '✅ Selesai!';
+                                    setTimeout(() => {
+                                        publishBtn.disabled = false;
+                                        publishBtn.textContent = '📤 Publish Discovery ke MQTT';
+                                        client.end();
+                                    }, 2000);
+                                }
+                            }
+                        });
+                    }, index * 100);
+                });
+            });
+
+            client.on('error', (err) => {
+                addLog(`❌ Connection error: ${err.message}`, 'error');
+                showStatus(`❌ Connection failed: ${err.message}`, 'error');
+                publishBtn.disabled = false;
+                publishBtn.textContent = '📤 Publish Discovery ke MQTT';
+            });
+
+            client.on('close', () => {
+                addLog('Connection closed');
+            });
+        }
+	const time = new Date();
+	document.getElementById("deviceId").value ="mppt-"+ (time.getTime()).toString();
+    </script>
+</body>
+</html>
