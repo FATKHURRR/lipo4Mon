@@ -716,6 +716,7 @@
             });
         }
 		let panjang_data_log;
+		
 
         // === Handle Log Chunk ===
         function handleLogChunk(chunk) {
@@ -727,7 +728,8 @@
                 updateLogStatus("Menerima data log...") ;
                 document.getElementById('loadBtn').disabled = true;
                 console.log("Log transfer started");
-                const startIdx = chunk.indexOf(START_MARKER) + START_MARKER.length;
+                const startIdx = chunk.indexOf("<<<") + 3;
+				
                 if (chunk.length > startIdx) logBuffer += chunk.substring(startIdx);
                 return;
             }
