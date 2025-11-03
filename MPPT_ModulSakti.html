@@ -626,7 +626,7 @@
 
         // === Update UI ===
         function updateUI(json) {
-			console.log(json);
+			//console.log(json);
             const d = json.data, dev = json.device;
 			var legal = dev.legal === 1 ? "Connected - Registered" : "Connected - Unregistered";
 			document.getElementById('connStatus').textContent = legal;
@@ -704,7 +704,7 @@
                     try { updateUI(JSON.parse(payload)); } catch (e) { console.error('JSON Error:', e); }
                 } 
                 else if (topic === `${deviceId}/TX/log`) {
-                    console.log(payload);
+                    //console.log(payload);
                     handleLogChunk(payload);
                 }
             });
@@ -724,7 +724,7 @@
 				panjang_data_log = match ? parseInt(match[1]) : null;
                 isCollectingLog = true;
                 logBuffer = "";
-                updateLogStatus("Menerima data log..." ;
+                updateLogStatus("Menerima data log...") ;
                 document.getElementById('loadBtn').disabled = true;
                 console.log("Log transfer started");
                 const startIdx = chunk.indexOf(START_MARKER) + START_MARKER.length;
@@ -749,7 +749,7 @@
             }
 
             logBuffer += chunk;
-            updateLogStatus(`Menerima data... (${(logBuffer.length/1024).toFixed(1)} KB) ${logBuffer/panjang_data_log*100%}%`);
+            updateLogStatus(`Menerima data... (${(logBuffer.length/1024).toFixed(1)} KB -> ${(logBuffer.length/panjang_data_log*100).toFixed(0)}% ) `);
         }
 
         function updateLogStatus(msg) {
@@ -982,4 +982,3 @@
     </script>
 </body>
 </html>
-
