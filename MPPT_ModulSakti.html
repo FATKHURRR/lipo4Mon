@@ -574,7 +574,7 @@
         // === Log Streaming State ===
         let isCollectingLog = false;
         let logBuffer = "";
-        const START_MARKER = ">>> START LOG <<<";
+        const START_MARKER = "START LOG";
         const END_MARKER = ">>> END LOG <<<";
 
         // === Chart Colors with Icons ===
@@ -715,13 +715,16 @@
                 document.getElementById('connStatus').textContent = 'Offline';
             });
         }
+		let panjang_data_log;
 
         // === Handle Log Chunk ===
         function handleLogChunk(chunk) {
             if (chunk.includes(START_MARKER)) {
+				const match = chunk.match(/\((\d+)\)/);
+				panjang_data_log = match ? parseInt(match[1]) : null;
                 isCollectingLog = true;
                 logBuffer = "";
-                updateLogStatus("Menerima data log...");
+                updateLogStatus("Menerima data log..." ;
                 document.getElementById('loadBtn').disabled = true;
                 console.log("Log transfer started");
                 const startIdx = chunk.indexOf(START_MARKER) + START_MARKER.length;
@@ -746,7 +749,7 @@
             }
 
             logBuffer += chunk;
-            updateLogStatus(`Menerima data... (${(logBuffer.length/1024).toFixed(1)} KB)`);
+            updateLogStatus(`Menerima data... (${(logBuffer.length/1024).toFixed(1)} KB) ${logBuffer/panjang_data_log*100%}%`);
         }
 
         function updateLogStatus(msg) {
@@ -979,3 +982,4 @@
     </script>
 </body>
 </html>
+
