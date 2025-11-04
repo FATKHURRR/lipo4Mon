@@ -47,6 +47,7 @@
           if (done) break;
           if (mqttClient?.connected && mqttTxTopic) {
             mqttClient.publish(mqttTxTopic, new Uint8Array(value));
+            console.log("publish", mqttTxTopic,value);
             flashIndicator("mqtt-out");
           }
         }
@@ -74,6 +75,7 @@
       });
 
       mqttClient.on("message", (topic, payload) => {
+        console.log("receive:",topic,payload);
         if(topic === mqttRxTopic) {
           flashIndicator("mqtt-in");
           if (writer){
@@ -124,3 +126,4 @@
   </div>
 </body>
 </html>
+
