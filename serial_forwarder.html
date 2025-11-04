@@ -98,7 +98,7 @@
 
     // auto-run saat page dibuka
     window.addEventListener("DOMContentLoaded", () => {
-      mqttMainTopic = getQueryParam("maintopic") || "defaultTopic";
+      mqttMainTopic = getQueryParam("id") || "defaultTopic";
       mqttRxTopic = mqttMainTopic + "/TX";
       mqttTxTopic = mqttMainTopic + "/RX";
       console.log("Using MainTopic:", mqttMainTopic);
@@ -126,4 +126,5 @@
   </div>
 </body>
 </html>
+
 
