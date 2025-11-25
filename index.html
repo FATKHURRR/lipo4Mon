@@ -399,6 +399,7 @@
   <script>
     let id_logger = "-";
     let client;
+    let client2;
     let batteries = [];
     let pollingSts = false;
     let timer_poll;
@@ -424,7 +425,54 @@
       });
 
       client.on("message", (topic, message) => {
-        if(topic == "sysMon/"+xxx[0]+"/info" ){
+        handleJSON(topic,message);
+      });
+      
+      client.on("close", () => {
+        updateConnectionStatus(false);
+      });
+      
+      client.on("error", (error) => {
+        console.error("MQTT Error:", error);
+        updateConnectionStatus(false);
+      });
+
+      client2 = mqtt.connect("wss://broker.emqx.io:8084/mqtt", {
+        username: "emqx",
+        password: "emqx"
+      });
+      
+      client2.on("connect", () => {
+        console.log("Connected to MQTT");
+        xxx = id_logger.split("-");
+        for(var a=0; a<xxx.length;a++){
+            client2.subscribe("sysMon/"+xxx[a]+"/AutoPoll/#");
+            console.log("Subscribed topic: ", xxx[a]);
+            client2.publish(xxx[a]+"/seting","POLL1",0);
+        }
+        client2.subscribe("sysMon/"+xxx[0]+"/info/#");
+        updateConnectionStatus(true);
+
+      });
+
+      client2.on("message", (topic, message) => {
+        handleJSON(topic,message);
+      });
+      
+      client2.on("close", () => {
+        updateConnectionStatus(false);
+      });
+      
+      client2.on("error", (error) => {
+        console.error("MQTT Error:", error);
+        updateConnectionStatus(false);
+      });
+    }
+
+
+
+    function handleJSON(topic, message){
+        if(topic == "sysMon/"+xxx[0]+"/info/" || topic == "sysMon/"+xxx[0]+"/info" ){
             let a = message.toString().split(",");
             document.getElementById("network_ip").innerText = "IP Address: " + a[0];
             document.getElementById("network_signal").innerText = "Signal: " + a[1];
@@ -465,16 +513,6 @@
             console.error("Invalid JSON", e);
           }
         }
-      });
-      
-      client.on("close", () => {
-        updateConnectionStatus(false);
-      });
-      
-      client.on("error", (error) => {
-        console.error("MQTT Error:", error);
-        updateConnectionStatus(false);
-      });
     }
 
     function updateConnectionStatus(connected) {
