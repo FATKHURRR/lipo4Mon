@@ -725,7 +725,7 @@
                 clean: true
             };
 
-            client2 = mqtt.connect('wss://broker.emqx.io:8084', options);
+            client2 = mqtt.connect('wss://broker.emqx.io:8084/mqtt', options2);
 
             client2.on('connect', () => {
                 console.log('MQTT Connected');
@@ -1022,4 +1022,5 @@
     </script>
 </body>
 </html>
+
 
