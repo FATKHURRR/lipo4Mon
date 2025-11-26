@@ -569,6 +569,7 @@
         let chart = null;
         let datasets = [];
         let client = null;
+		let client2 = null;
         let deviceId = null;
 
         // === Log Streaming State ===
@@ -711,6 +712,43 @@
 
             client.on('error', err => console.error('MQTT Error:', err));
             client.on('offline', () => {
+                document.getElementById('statusDot').classList.remove('connected');
+                document.getElementById('connStatus').textContent = 'Offline';
+            });
+
+			const options2 = {
+                clientId: 'web_' + Math.random().toString(16).slice(2, 10),
+                username: 'emqx',
+                password: 'emqx',
+                keepalive: 60,
+                reconnectPeriod: 1000,
+                clean: true
+            };
+
+            client2 = mqtt.connect('wss://broker.emqx.io:8084', options);
+
+            client2.on('connect', () => {
+                console.log('MQTT Connected');
+                client2.subscribe(`mpptMon/${deviceId}/TX`, err => { if (err) console.error(err); });
+                client2.subscribe(`${deviceId}/TX/log`, err => { if (err) console.error(err); });
+                document.getElementById('statusDot').classList.add('connected');
+                document.getElementById('connStatus').textContent = 'Connected';
+            });
+
+            client2.on('message', (topic, message) => {
+                const payload = message.toString();
+
+                if (topic === `mpptMon/${deviceId}/TX`) {
+                    try { updateUI(JSON.parse(payload)); } catch (e) { console.error('JSON Error:', e); }
+                } 
+                else if (topic === `${deviceId}/TX/log`) {
+                    //console.log(payload);
+                    handleLogChunk(payload);
+                }
+            });
+
+            client2.on('error', err => console.error('MQTT Error:', err));
+            client2.on('offline', () => {
                 document.getElementById('statusDot').classList.remove('connected');
                 document.getElementById('connStatus').textContent = 'Offline';
             });
@@ -984,3 +1022,4 @@
     </script>
 </body>
 </html>
+
