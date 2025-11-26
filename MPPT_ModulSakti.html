@@ -808,6 +808,7 @@
             const [y, m, d] = date.split('-');
             const msg = `log log/${y}/${m}/${d}.csv`;
             client.publish(`${deviceId}/RX`, msg);
+			client2.publish(`${deviceId}/RX`, msg);
             console.log('Log requested:', msg);
             updateLogStatus("Menunggu data dari perangkat...");
         }
@@ -1022,5 +1023,6 @@
     </script>
 </body>
 </html>
+
 
 
