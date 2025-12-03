@@ -103,7 +103,7 @@ function generate(doPublish = false, client = null) {
             name: `${devName} - ${cleanKey}`,
             unique_id: uniq,
             state_topic: stateTopic,
-            value_template: `{{ value_json.${key.replace(/_/g,".","")} }}`,
+            value_template: `{{ value_json.${key.replace(/_/g,"_","")} }}`,
             device: {
                 identifiers: [ id ],
                 name: devName,
@@ -131,7 +131,7 @@ function publishDiscovery() {
     const pass = document.getElementById("mqtt_pass").value.trim();
 
     // MQTT.js connect
-    const client = mqtt.connect(server + ":" + port, {
+    const client = mqtt.connect("wss://+"server + ":" + port+"/mqtt", {
         username: user,
         password: pass
     });
