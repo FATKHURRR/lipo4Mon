@@ -131,7 +131,7 @@ function publishDiscovery() {
     const pass = document.getElementById("mqtt_pass").value.trim();
 
     // MQTT.js connect
-    const client = mqtt.connect("wss://+"server + ":" + port+"/mqtt", {
+    const client = mqtt.connect("wss://"+server + ":" + port+"/mqtt", {
         username: user,
         password: pass
     });
