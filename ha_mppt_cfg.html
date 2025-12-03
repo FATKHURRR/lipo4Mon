@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>MPPT HA Discovery Auto Generator + MQTT Sender</title>
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    padding: 30px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+}
+
+.container {
+    max-width: 900px;
+    margin: 0 auto;
+    background: white;
+    padding: 40px;
+    border-radius: 15px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+
+h2 {
+    color: #333;
+    margin-bottom: 30px;
+    text-align: center;
+    font-size: 24px;
+}
+
+h3 {
+    color: #555;
+    margin-top: 30px;
+    margin-bottom: 15px;
+    font-size: 18px;
+    border-bottom: 2px solid #667eea;
+    padding-bottom: 10px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+label {
+    display: block;
+    font-weight: 600;
+    color: #444;
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+
+input[type="text"],
+input[type="password"],
+input[type="number"] {
+    width: 100%;
+    padding: 12px 15px;
+    font-size: 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    transition: all 0.3s;
+}
+
+input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+textarea {
+    width: 100%;
+    padding: 15px;
+    font-size: 13px;
+    font-family: 'Courier New', monospace;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    resize: vertical;
+    line-height: 1.5;
+}
+
+textarea:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+#jsonInput {
+    height: 300px;
+    margin-bottom: 20px;
+}
+
+#result {
+    height: 400px;
+    background: #f8f9fa;
+}
+
+.button-group {
+    display: flex;
+    gap: 15px;
+    margin-top: 25px;
+}
+
+button {
+    flex: 1;
+    padding: 15px 25px;
+    font-size: 16px;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+button:first-child {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+button:first-child:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+}
+
+button:last-child {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: white;
+}
+
+button:last-child:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(245, 87, 108, 0.4);
+}
+
+button:active {
+    transform: translateY(0);
+}
+
+.status {
+    margin-top: 15px;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 14px;
+    text-align: center;
+    display: none;
+}
+
+.status.success {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.status.error {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+</style>
+<script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+</head>
+<body>
+
+<div class="container">
+    <h2>🔆 MPPT Home Assistant Discovery Generator + MQTT Publisher</h2>
+
+    <div class="form-group">
+        <label>MQTT Server</label>
+        <input type="text" id="mqtt_server" value="192.168.1.123">
+    </div>
+
+    <div class="form-group">
+        <label>MQTT Port</label>
+        <input type="number" id="mqtt_port" value="8884">
+    </div>
+
+    <div class="form-group">
+        <label>MQTT Username</label>
+        <input type="text" id="mqtt_user" value="user">
+    </div>
+
+    <div class="form-group">
+        <label>MQTT Password</label>
+        <input type="password" id="mqtt_pass" value="pass">
+    </div>
+
+    <div class="form-group">
+        <label>HA Discovery Prefix</label>
+        <input type="text" id="prefix" value="homeassistant">
+    </div>
+
+    <div class="form-group">
+        <label>Device ID</label>
+        <input type="text" id="deviceId" value="12345678">
+    </div>
+
+    <div class="form-group">
+        <label>Device Name</label>
+        <input type="text" id="deviceName" value="custom Name">
+    </div>
+
+    <div class="form-group">
+        <label>JSON Payload (Sample Data)</label>
+        <textarea id="jsonInput">{
+  "device": {
+    "fw version": "MPPT-1.0.11",
+    "legal": 1,
+    "uptime": 126045,
+    "heap": 31216,
+    "wifi": -76,
+    "ip": "10.10.10.123"
+  },
+  "data": {
+    "status": {
+      "load_out": 0,
+      "charging": 1,
+      "bat_full": 0,
+      "limit_current": 0,
+      "warn": 0,
+      "fault": 0
+    },
+    "alarm": {
+      "mcu_over_temp": 0,
+      "mppt_over_temp": 0,
+      "bat_over_temp": 0,
+      "Solar_over_volt": 0,
+      "bat_extreme_low": 0,
+      "bat_low": 0,
+      "load_over": 0,
+      "bat_over_volt": 0,
+      "bat_volt_error": 0
+    },
+    "fault": {
+      "mcu_over_temp": 0,
+      "mppt_over_temp": 0,
+      "bat_over_temp": 0,
+      "load_out_lockout": 0,
+      "mppt_temp_sensor_fault": 0,
+      "bat_volt_too_high": 0,
+      "bat_temp_sensor_fault": 0,
+      "bat_low_temp_fault": 0,
+      "bat_volt_input_error": 0
+    },
+    "current": 15.40,
+    "volt_battery": 25.90,
+    "power": 398.86,
+    "peak_power": 406.63,
+    "volt_pv": 75,
+    "temp_envi": 25,
+    "temp_mppt": 49,
+    "total_energy": 3213.8,
+    "today_energy": 0.459,
+    "status_code": 20,
+    "load_percent": 0,
+    "year": 2025,
+    "month": 12,
+    "date": 3,
+    "hour": 7,
+    "minute": 58,
+    "second": 21
+  }
+}</textarea>
+    </div>
+
+    <div class="button-group">
+        <button onclick="generate()">Generate Only</button>
+        <button onclick="publishDiscovery()">Generate + Publish MQTT</button>
+    </div>
+
+    <div id="status" class="status"></div>
+
+    <h3>📄 Generated Output</h3>
+    <textarea id="result" placeholder="Output will appear here..."></textarea>
+</div>
+
+<script>
+function showStatus(message, type) {
+    const statusEl = document.getElementById('status');
+    statusEl.textContent = message;
+    statusEl.className = 'status ' + type;
+    statusEl.style.display = 'block';
+    setTimeout(() => {
+        statusEl.style.display = 'none';
+    }, 5000);
+}
+
+// Flatten JSON dengan menyimpan path asli (dot notation)
+function flatten(obj, prefix = '', result = {}) {
+    for (let key in obj) {
+        if (!obj.hasOwnProperty(key)) continue;
+        
+        const newKey = prefix ? `${prefix}.${key}` : key;
+        
+        if (typeof obj[key] === 'object' && obj[key] !== null && !Array.isArray(obj[key])) {
+            flatten(obj[key], newKey, result);
+        } else {
+            result[newKey] = obj[key];
+        }
+    }
+    return result;
+}
+
+function generate(doPublish = false, client = null) {
+    const prefix = document.getElementById("prefix").value.trim();
+    const id = document.getElementById("deviceId").value.trim();
+    const devName = document.getElementById("deviceName").value.trim();
+    const jsonStr = document.getElementById("jsonInput").value.trim();
+
+    const stateTopic = `mpptMon/${id}/TX`;
+
+    let json;
+    try {
+        json = JSON.parse(jsonStr);
+    } catch(e) {
+        showStatus('JSON tidak valid! Periksa format JSON Anda.', 'error');
+        return;
+    }
+
+    let flat = flatten(json);
+    let output = "";
+    let count = 0;
+
+    Object.keys(flat).forEach(dotPath => {
+        // Buat key untuk topic dengan underscore
+        let topicKey = dotPath.replace(/\./g, '_').replace(/[^a-zA-Z0-9_]/g, '');
+        let uniq = `${id}_${topicKey}`;
+
+        let topic = `${prefix}/sensor/${id}/${topicKey}/config`;
+
+        let payload = {
+            name: `${devName} ${topicKey}`,
+            unique_id: uniq,
+            state_topic: stateTopic,
+            value_template: `{{ value_json.${dotPath} }}`,
+            device: {
+                identifiers: [id],
+                name: devName,
+                manufacturer: "Modul Sakti",
+                model: "V1 MPPT"
+            }
+        };
+
+        output += `=== SENSOR ${++count} ===\n`;
+        output += `MQTT TOPIC:\n${topic}\n\n`;
+        output += `PAYLOAD:\n${JSON.stringify(payload, null, 2)}\n\n`;
+        output += `${'='.repeat(70)}\n\n`;
+
+        // Publish jika diminta
+        if (doPublish && client) {
+            client.publish(topic, JSON.stringify(payload), { retain: true });
+        }
+    });
+
+    document.getElementById("result").value = output;
+    
+    if (!doPublish) {
+        showStatus(`Berhasil generate ${count} sensor configs!`, 'success');
+    }
+}
+
+function publishDiscovery() {
+    const server = document.getElementById("mqtt_server").value.trim();
+    const port = document.getElementById("mqtt_port").value.trim();
+    const user = document.getElementById("mqtt_user").value.trim();
+    const pass = document.getElementById("mqtt_pass").value.trim();
+
+    if (!server || !port) {
+        showStatus('MQTT Server dan Port harus diisi!', 'error');
+        return;
+    }
+
+    showStatus('Connecting to MQTT broker...', 'success');
+
+    // MQTT.js connect with WebSocket
+    const client = mqtt.connect(`wss://${server}:${port}/mqtt`, {
+        username: user,
+        password: pass
+    });
+
+    client.on("connect", () => {
+        showStatus('Connected! Publishing discovery configs...', 'success');
+        generate(true, client);
+        
+        setTimeout(() => {
+            showStatus('MQTT Discovery configs published successfully!', 'success');
+            client.end();
+        }, 1000);
+    });
+
+    client.on("error", err => {
+        showStatus(`MQTT Error: ${err.message}`, 'error');
+        console.error('MQTT Error:', err);
+    });
+}
+</script>
+
+</body>
+</html>
