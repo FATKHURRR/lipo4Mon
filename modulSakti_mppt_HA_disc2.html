@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>MPPT HA Discovery Auto Generator + MQTT Sender</title>
+<style>
+body{font-family:Arial;padding:20px;background:#f5f5f5}
+input,button{padding:8px;font-size:15px;margin:5px}
+textarea{width:100%;height:260px;margin-top:10px;font-size:14px}
+.container{background:white;padding:20px;border-radius:10px;box-shadow:0 0 10px #ccc}
+label{font-weight:bold}
+</style>
+<script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+</head>
+<body>
+
+<div class="container">
+    <h2>MPPT Home Assistant Discovery Generator + MQTT Publisher</h2>
+
+    <label>MQTT Server</label><br>
+    <input id="mqtt_server" value="192.168.1.123"><br>
+
+    <label>MQTT Port</label><br>
+    <input id="mqtt_port" value="8884"><br>
+
+    <label>MQTT Username</label><br>
+    <input id="mqtt_user" value="user"><br>
+
+    <label>MQTT Password</label><br>
+    <input id="mqtt_pass" value="pass"><br><br>
+
+    <label>HA Discovery Prefix</label><br>
+    <input id="prefix" value="homeassistant"><br>
+
+    <label>ID Device</label><br>
+    <input id="deviceId" value="12345678"><br>
+
+    <label>Nama Custom Device</label><br>
+    <input id="deviceName" value="custom Name"><br>
+
+    <label>JSON Payload</label><br>
+    <textarea id="jsonInput">{
+"device":{"fw version":"MPPT-1.0.11","legal":1,"uptime":126045,"heap":31216,"wifi":-76,"ip":"10.10.10.123"},
+"data":{
+  "status":{"load_out":0,"charging":1,"bat_full":0,"limit_current":0,"warn":0,"fault":0},
+  "alarm":{"mcu_over_temp":0,"mppt_over_temp":0,"bat_over_temp":0,"Solar_over_volt":0,"bat_extreme_low":0,"bat_low":0,"load_over":0,"bat_over_volt":0,"bat_volt_error":0},
+  "fault":{"mcu_over_temp":0,"mppt_over_temp":0,"bat_over_temp":0,"load_out_lockout":0,"mppt_temp_sensor_fault":0,"bat_volt_too_high":0,"bat_temp_sensor_fault":0,"bat_low_temp_fault":0,"bat_volt_input_error":0},
+  "current":15.40,"volt_battery":25.90,"power":398.86,"peak_power":406.63,
+  "volt_pv":75,"temp_envi":25,"temp_mppt":49,
+  "total_energy":3213.8,"today_energy":0.459,
+  "status_code":20,"load_percent":0,
+  "year":2025,"month":12,"date":3,"hour":7,"minute":58,"second":21
+}}
+    </textarea><br>
+
+    <button onclick="generate()">Generate Only</button>
+    <button onclick="publishDiscovery()">Generate + Publish MQTT</button>
+
+    <h3>Output</h3>
+    <textarea id="result"></textarea>
+</div>
+
+<script>
+// Flatten JSON rekursif
+function flatten(obj, parent = "", res = {}) {
+    for (let key in obj) {
+        let prop = parent ? parent + "_" + key : key;
+        if (typeof obj[key] === "object" && obj[key] !== null) {
+            flatten(obj[key], prop, res);
+        } else {
+            res[prop] = obj[key];
+        }
+    }
+    return res;
+}
+
+function generate(doPublish = false, client = null) {
+    const prefix = document.getElementById("prefix").value.trim();
+    const id = document.getElementById("deviceId").value.trim();
+    const devName = document.getElementById("deviceName").value.trim();
+    const jsonStr = document.getElementById("jsonInput").value.trim();
+
+    const stateTopic = `mpptMon/${id}/TX`;
+
+    let json;
+    try {
+        json = JSON.parse(jsonStr);
+    } catch(e) {
+        alert("JSON tidak valid!");
+        return;
+    }
+
+    let flat = flatten(json);
+    let output = "";
+
+    Object.keys(flat).forEach(key => {
+        let cleanKey = key.replace(/[^a-zA-Z0-9_]/g, "");
+        let uniq = `${id}_${cleanKey}`;
+
+        let topic = `${prefix}/sensor/${id}/${cleanKey}/config`;
+
+        let payload = {
+            name: `${devName} - ${cleanKey}`,
+            unique_id: uniq,
+            state_topic: stateTopic,
+            value_template: `{{ value_json.${key.replace(/_/g,".","")} }}`,
+            device: {
+                identifiers: [ id ],
+                name: devName,
+                manufacturer: "Modul Sakti",
+                model: "V1 MPPT"
+            }
+        };
+
+        output += "MQTT TOPIC:\n" + topic + "\n";
+        output += "PAYLOAD:\n" + JSON.stringify(payload, null, 2) + "\n\n";
+
+        // publish langsung
+        if (doPublish && client) {
+            client.publish(topic, JSON.stringify(payload), { retain: true });
+        }
+    });
+
+    document.getElementById("result").value = output;
+}
+
+function publishDiscovery() {
+    const server = document.getElementById("mqtt_server").value.trim();
+    const port = document.getElementById("mqtt_port").value.trim();
+    const user = document.getElementById("mqtt_user").value.trim();
+    const pass = document.getElementById("mqtt_pass").value.trim();
+
+    // MQTT.js connect
+    const client = mqtt.connect(server + ":" + port, {
+        username: user,
+        password: pass
+    });
+
+    client.on("connect", () => {
+        generate(true, client);
+        alert("MQTT Discovery Published!");
+        client.end();
+    });
+
+    client.on("error", err => {
+        alert("MQTT Error: " + err.message);
+    });
+}
+</script>
+
+</body>
+</html>
