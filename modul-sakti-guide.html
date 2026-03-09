@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modul Sakti - Panduan Aktivasi & Konfigurasi</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #ec4899;
+            --accent: #f59e0b;
+            --success: #10b981;
+            --danger: #ef4444;
+            --bg-light: #f9fafb;
+            --bg-dark: #1f2937;
+            --text-dark: #111827;
+            --text-light: #9ca3af;
+            --border: #e5e7eb;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: var(--text-dark);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        header {
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            margin-bottom: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+            border-left: 6px solid var(--primary);
+            animation: slideDown 0.6s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .header-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            color: var(--text-dark);
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            color: var(--text-light);
+            font-size: 1.1em;
+        }
+
+        /* Main Content */
+        main {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        section {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            animation: fadeInUp 0.5s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        section:nth-child(1) { animation-delay: 0.1s; }
+        section:nth-child(2) { animation-delay: 0.2s; }
+        section:nth-child(3) { animation-delay: 0.3s; }
+        section:nth-child(4) { animation-delay: 0.4s; }
+
+        h2 {
+            font-size: 1.8em;
+            color: var(--primary);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        h3 {
+            font-size: 1.3em;
+            color: var(--text-dark);
+            margin-top: 20px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .step-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            background: var(--primary);
+            color: white;
+            border-radius: 50%;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+
+        /* Alert Box */
+        .alert {
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 4px solid;
+            display: flex;
+            gap: 15px;
+            align-items: flex-start;
+        }
+
+        .alert-warning {
+            background: #fef3c7;
+            border-left-color: var(--accent);
+            color: #92400e;
+        }
+
+        .alert-success {
+            background: #d1fae5;
+            border-left-color: var(--success);
+            color: #065f46;
+        }
+
+        .alert-danger {
+            background: #fee2e2;
+            border-left-color: var(--danger);
+            color: #7f1d1d;
+        }
+
+        .alert-icon {
+            font-size: 1.5em;
+            flex-shrink: 0;
+        }
+
+        /* Steps */
+        .steps {
+            display: grid;
+            gap: 20px;
+        }
+
+        .step {
+            background: var(--bg-light);
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid var(--primary);
+            position: relative;
+        }
+
+        .step-title {
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .step ol {
+            margin-left: 20px;
+        }
+
+        .step li {
+            margin-bottom: 8px;
+            color: var(--text-dark);
+        }
+
+        /* Table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        tr:hover {
+            background: var(--bg-light);
+        }
+
+        /* Features Grid */
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .feature-card {
+            background: linear-gradient(135deg, #f5f7fa, #ffffff);
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid var(--border);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .feature-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(99, 102, 241, 0.1);
+        }
+
+        .feature-title {
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 8px;
+            font-size: 1.05em;
+        }
+
+        .feature-desc {
+            color: var(--text-light);
+            font-size: 0.95em;
+        }
+
+        /* Checklist */
+        .checklist {
+            background: var(--bg-light);
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 15px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 6px;
+            transition: background 0.2s;
+        }
+
+        .checkbox-item:hover {
+            background: white;
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            accent-color: var(--primary);
+        }
+
+        .checkbox-item label {
+            cursor: pointer;
+            flex: 1;
+        }
+
+        .checkbox-item input[type="checkbox"]:checked + label {
+            color: var(--text-light);
+            text-decoration: line-through;
+        }
+
+        /* Code Block */
+        .code-block {
+            background: var(--bg-dark);
+            color: #e5e7eb;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        /* Support Section */
+        .support-steps {
+            background: linear-gradient(135deg, #f5f7fa, #ffffff);
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid var(--secondary);
+        }
+
+        .support-steps ol {
+            margin-left: 25px;
+        }
+
+        .support-steps li {
+            margin-bottom: 12px;
+            color: var(--text-dark);
+        }
+
+        /* Footer */
+        footer {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            color: var(--text-light);
+        }
+
+        .footer-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            margin-top: 10px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.8em;
+            }
+
+            header {
+                padding: 25px;
+            }
+
+            .header-content {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            section {
+                padding: 20px;
+            }
+
+            table {
+                font-size: 0.9em;
+            }
+
+            th, td {
+                padding: 10px;
+            }
+        }
+
+        /* Smooth scroll behavior */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* Interactive elements */
+        button {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 15px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(99, 102, 241, 0.3);
+        }
+
+        .icon {
+            display: inline-block;
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header>
+            <div class="header-content">
+                <div class="header-icon">⚙️</div>
+                <div>
+                    <h1>Modul Sakti</h1>
+                    <p class="subtitle">Panduan Lengkap Aktivasi & Konfigurasi</p>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main>
+            <!-- Prasyarat Section -->
+            <section>
+                <h2><span class="icon">⚠️</span>Prasyarat Penting</h2>
+                <div class="alert alert-warning">
+                    <div class="alert-icon">🔌</div>
+                    <div>
+                        <strong>GROUNDING SISTEM BATERAI</strong>
+                        <p>Sebelum mengaktifkan modul, pastikan sistem baterai sudah tergrounding dengan baik. Grounding yang buruk dapat menyebabkan:</p>
+                    </div>
+                </div>
+                <div class="features">
+                    <div class="feature-card">
+                        <div class="feature-title">⚡ Arus Liar</div>
+                        <div class="feature-desc">Arus yang tidak terkontrol dapat merusak komponen</div>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-title">🔴 Kerusakan Chip</div>
+                        <div class="feature-desc">Transceiver RS485 dapat rusak permanen</div>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-title">📊 Data Corruption</div>
+                        <div class="feature-desc">Kehilangan atau korrupsi data monitoring</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Aktivasi Section -->
+            <section>
+                <h2><span class="icon">🚀</span>Langkah Aktivasi Awal</h2>
+                
+                <div class="steps">
+                    <!-- Step 1 -->
+                    <div class="step">
+                        <div class="step-title"><span class="step-number">1</span> Koneksi ke WiFi Modul</div>
+                        <ol>
+                            <li>Cari jaringan WiFi dengan nama <strong>Modul Sakti</strong> (SSID bawaan modul)</li>
+                            <li>Hubungkan ke jaringan tersebut</li>
+                            <li>Masukkan password default: <code style="background: #f3f4f6; padding: 2px 6px; border-radius: 4px;">password12345</code></li>
+                        </ol>
+                    </div>
+
+                    <!-- Step 2 -->
+                    <div class="step">
+                        <div class="step-title"><span class="step-number">2</span> Akses Interface Konfigurasi</div>
+                        <ol>
+                            <li>Buka browser di perangkat Anda (PC, laptop, atau smartphone)</li>
+                            <li>Akses alamat IP: <strong style="color: var(--primary);">192.168.4.1</strong></li>
+                            <li>Tampilan dashboard konfigurasi akan terbuka</li>
+                        </ol>
+                    </div>
+
+                    <!-- Step 3 -->
+                    <div class="step">
+                        <div class="step-title"><span class="step-number">3</span> Konfigurasi WiFi Router</div>
+                        <p>Isi parameter berikut sesuai dengan jaringan WiFi rumah Anda:</p>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Parameter</th>
+                                    <th>Deskripsi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>WiFi Router SSID</strong></td>
+                                    <td>Nama SSID jaringan WiFi router rumah Anda</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>WiFi Router Password</strong></td>
+                                    <td>Password jaringan WiFi router rumah Anda</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Step 4 -->
+                    <div class="step">
+                        <div class="step-title"><span class="step-number">4</span> Simpan Perubahan</div>
+                        <ol>
+                            <li>Klik tombol <strong style="color: var(--primary);">Save & Reboot</strong></li>
+                            <li>Modul akan melakukan restart secara otomatis</li>
+                            <li>Proses ini biasanya memakan waktu <strong>2-3 menit</strong></li>
+                        </ol>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Verifikasi Section -->
+            <section>
+                <h2><span class="icon">✅</span>Verifikasi Koneksi Berhasil</h2>
+                
+                <div class="alert alert-success">
+                    <div class="alert-icon">✓</div>
+                    <div>
+                        <strong>Indikator Koneksi Sukses</strong>
+                        <p>Jika modul berhasil terhubung ke router rumah, <strong>WiFi SSID modul akan menghilang</strong> dari list jaringan yang tersedia.</p>
+                    </div>
+                </div>
+
+                <div class="alert alert-danger">
+                    <div class="alert-icon">✗</div>
+                    <div>
+                        <strong>WiFi Modul Masih Muncul?</strong>
+                        <p><strong>Ini berarti:</strong> Proses koneksi belum selesai atau konfigurasi gagal</p>
+                        <p><strong>Solusi:</strong></p>
+                        <ul style="margin-left: 20px; margin-top: 10px;">
+                            <li>Ulangi langkah 1-4 di atas</li>
+                            <li>Tunggu 2-3 menit setelah reboot sebelum memeriksa ulang</li>
+                            <li>Pastikan SSID dan password yang dimasukkan sudah benar</li>
+                            <li>Ulangi sampai WiFi modul tidak lagi muncul di list jaringan</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Monitoring Section -->
+            <section>
+                <h2><span class="icon">📊</span>Online Monitoring</h2>
+                <p>Setelah modul berhasil online, Anda dapat mengakses dashboard monitoring real-time dengan format URL berikut:</p>
+                
+                <div class="code-block">
+https://fatkhurrr.github.io/lipo4Mon/index.html?id=&lt;id_modul&gt;
+                </div>
+
+                <p><strong>Contoh:</strong></p>
+                <div class="code-block">
+https://fatkhurrr.github.io/lipo4Mon/index.html?id=1234567890
+                </div>
+
+                <div class="alert alert-success">
+                    <div class="alert-icon">💡</div>
+                    <div>
+                        <strong>Catatan Penting</strong>
+                        <p>Link dapat diakses dari perangkat apa pun (PC, laptop, smartphone) melalui browser, asalkan tersambung ke internet.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Catatan Penting Section -->
+            <section>
+                <h2><span class="icon">⚡</span>Catatan Penting & Perawatan</h2>
+                
+                <h3>🔌 Penanganan Port RS485</h3>
+                <div class="alert alert-warning">
+                    <div class="alert-icon">⚠️</div>
+                    <div>
+                        <strong>Untuk meminimalkan kerusakan akibat transient voltage:</strong>
+                        <ul style="margin-left: 20px; margin-top: 10px;">
+                            <li>Hindari mencabut/mecolok kabel RS485 saat modul dalam kondisi aktif/beroperasi</li>
+                            <li>Jika perlu melakukan perubahan koneksi, matikan modul terlebih dahulu</li>
+                            <li>Transient voltage dari perubahan koneksi dapat merusak chip transceiver RS485</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <h3>🔧 Grounding Khusus untuk Sistem Tertentu</h3>
+                <p>Beberapa modul memerlukan penanganan grounding khusus, terutama pada sistem yang menggunakan:</p>
+                <ul style="margin-left: 20px; margin-bottom: 15px;">
+                    <li><strong>Inverter HF</strong> (High Frequency)</li>
+                    <li>Sistem dengan <strong>Power Factor (PF) jelek</strong></li>
+                </ul>
+
+                <div style="background: #f0f9ff; padding: 15px; border-radius: 8px; border-left: 4px solid var(--primary); margin-bottom: 15px;">
+                    <strong style="color: var(--primary);">💡 Solusi:</strong>
+                    <p style="margin-top: 8px;">Lakukan grounding tambahan dengan menghubungkan <strong>minus modul ke minus sistem baterai</strong>. Hal ini membantu menstabilkan referensi potensial dan mencegah data corruption pada port RS485.</p>
+                </div>
+            </section>
+
+            <!-- Checklist Section -->
+            <section>
+                <h2><span class="icon">📋</span>Checklist Aktivasi</h2>
+                <div class="checklist">
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="check1">
+                        <label for="check1">Sistem baterai sudah tergrounding dengan baik</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="check2">
+                        <label for="check2">Modul terhubung ke power supply</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="check3">
+                        <label for="check3">Terkoneksi ke WiFi modul dengan password default</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="check4">
+                        <label for="check4">Berhasil akses 192.168.4.1 di browser</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="check5">
+                        <label for="check5">Masukkan SSID dan password router rumah</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="check6">
+                        <label for="check6">Klik Save & Reboot</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="check7">
+                        <label for="check7">Tunggu reboot selesai (2-3 menit)</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="check8">
+                        <label for="check8">Verifikasi WiFi modul hilang dari list jaringan</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="check9">
+                        <label for="check9">Akses link monitoring dengan ID modul</label>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Support Section -->
+            <section>
+                <h2><span class="icon">🆘</span>Dukungan & Bantuan</h2>
+                <p>Jika mengalami kendala, lakukan langkah-langkah berikut secara berurutan:</p>
+                <div class="support-steps">
+                    <ol>
+                        <li>Verifikasi kembali langkah-langkah aktivasi di atas</li>
+                        <li><strong>Pastikan sistem baterai sudah tergrounding dengan baik</strong> - ini adalah penyebab utama masalah</li>
+                        <li>Cek koneksi kabel RS485 dan pastikan tidak ada koneksi yang lepas</li>
+                        <li>Coba restart modul dengan cara disconnect dan reconnect power</li>
+                        <li>Jika masalah persisten, dokumentasikan detail error dan hubungi tim support</li>
+                    </ol>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer>
+            <p><strong>Dokumentasi Modul Sakti</strong></p>
+            <p style="margin: 10px 0; font-size: 0.9em;">Edisi 1.0 - Diperbarui secara berkala</p>
+            <div class="footer-badge">✓ Panduan Lengkap & Terpercaya</div>
+        </footer>
+    </div>
+
+    <script>
+        // Add scroll animation
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                }
+            });
+        });
+
+        document.querySelectorAll('section').forEach(section => {
+            observer.observe(section);
+        });
+
+        // Checklist persistence
+        document.querySelectorAll('.checkbox-item input').forEach(checkbox => {
+            checkbox.addEventListener('change', () => {
+                const state = Array.from(document.querySelectorAll('.checkbox-item input')).map(c => c.checked);
+                localStorage.setItem('sakti-checklist', JSON.stringify(state));
+            });
+        });
+
+        // Load checklist state
+        window.addEventListener('load', () => {
+            const saved = localStorage.getItem('sakti-checklist');
+            if (saved) {
+                const state = JSON.parse(saved);
+                document.querySelectorAll('.checkbox-item input').forEach((checkbox, index) => {
+                    checkbox.checked = state[index] || false;
+                });
+            }
+        });
+    </script>
+</body>
+</html>
