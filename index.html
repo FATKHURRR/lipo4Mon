@@ -93,6 +93,39 @@
     .cell-normal::before { background-color: #10b981; }
     .cell-warning::before { background-color: #f59e0b; }
     .cell-danger::before { background-color: #ef4444; }
+
+    /* FITUR BARU: Highlight untuk cell tertinggi dan terendah */
+    .cell-highest-voltage {
+      border: 2px solid #ef4444 !important;
+      box-shadow: 0 0 12px rgba(239, 68, 68, 0.5) !important;
+      animation: pulse-red 1.5s ease-in-out infinite;
+      background-color: rgba(239, 68, 68, 0.05) !important;
+    }
+
+    .cell-lowest-voltage {
+      border: 2px solid #fcd34d !important;
+      box-shadow: 0 0 12px rgba(252, 211, 77, 0.5) !important;
+      animation: pulse-yellow 1.5s ease-in-out infinite;
+      background-color: rgba(252, 211, 77, 0.05) !important;
+    }
+
+    @keyframes pulse-red {
+      0%, 100% {
+        box-shadow: 0 0 12px rgba(239, 68, 68, 0.5);
+      }
+      50% {
+        box-shadow: 0 0 20px rgba(239, 68, 68, 0.8);
+      }
+    }
+
+    @keyframes pulse-yellow {
+      0%, 100% {
+        box-shadow: 0 0 12px rgba(252, 211, 77, 0.5);
+      }
+      50% {
+        box-shadow: 0 0 20px rgba(252, 211, 77, 0.8);
+      }
+    }
     
     @keyframes pulse {
       0% { opacity: 1; }
@@ -174,6 +207,54 @@
     .sort-indicator i {
       font-size: 10px;
     }
+
+    /* FITUR BARU: Bus Metrics Card */
+    .bus-metrics-modal {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 15px;
+      padding: 15px;
+      background: linear-gradient(135deg, #f0f4ff 0%, #fff0f4 100%);
+      border-radius: 8px;
+      margin: 15px 0;
+      border-left: 4px solid #2563eb;
+    }
+
+    .bus-metric-item {
+      text-align: center;
+      padding: 10px;
+      background: white;
+      border-radius: 6px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    .bus-metric-item h4 {
+      font-size: 11px;
+      color: #6b7280;
+      font-weight: 600;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+      letter-spacing: 0.5px;
+    }
+
+    .bus-metric-item .value {
+      font-size: 20px;
+      font-weight: 700;
+      color: #1f2937;
+      font-family: 'Courier New', monospace;
+    }
+
+    .bus-metric-item .unit {
+      font-size: 10px;
+      color: #9ca3af;
+    }
+
+    @media (max-width: 768px) {
+      .bus-metrics-modal {
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+    }
   </style>
 </head>
 <body class="min-h-screen flex flex-col">
@@ -184,7 +265,7 @@
       <div class="bg-white/20 p-2 rounded-lg mr-3">
         <i class="fas fa-car-battery text-2xl"></i>
       </div>
-      <h1 class="text-2xl font-bold">LiFePo4 Monitoring</h1>
+      <h1 class="text-2xl font-bold">Lithium Monitoring</h1>
     </div>
 
     <div class="flex items-center space-x-4">
@@ -225,14 +306,10 @@
 <main class="flex-1 p-4 sm:p-6 w-full">
   <div class="max-w-7xl mx-auto">
     <div class="mb-6 flex justify-between items-center">
-      <h2 class="text-xl font-semibold text-gray-500">Overall Summary</h2>
+      <h2 class="text-xl font-semibold text-gray-500">Summary</h2>
       <div class="flex items-center gap-4">
         <div class="text-sm text-gray-500">
           <span id="total-batteries">0</span> batteries connected
-        </div>
-        <div class="sort-indicator" id="sortIndicator">
-          <span>Sorted by: Type & Address</span>
-          <i class="fas fa-sort-alpha-down"></i>
         </div>
       </div>
     </div>
@@ -304,6 +381,25 @@
     </div>
 
     <div class="overflow-y-auto flex-1 p-6">
+      <!-- FITUR BARU: Bus Metrics Section
+      <div class="bus-metrics-modal" id="busMetricsSection">
+        <div class="bus-metric-item">
+          <h4>📊 Bus Voltage</h4>
+          <div class="value" id="modalBusVoltageValue">-</div>
+          <div class="unit">V</div>
+        </div>
+        <div class="bus-metric-item">
+          <h4>⚡ Bus Current</h4>
+          <div class="value" id="modalBusCurrentValue">-</div>
+          <div class="unit">A</div>
+        </div>
+        <div class="bus-metric-item">
+          <h4>🔌 Bus Power</h4>
+          <div class="value" id="modalBusPowerValue">-</div>
+          <div class="unit">W</div>
+        </div>
+      </div>
+ -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         <div class="bg-blue-50 p-4 rounded-lg">
           <div class="flex justify-between items-start mb-2">
@@ -377,9 +473,21 @@
                 <span class="text-gray-600">Pack Current</span>
                 <span class="font-semibold text-gray-800" id="modalCurrent"></span>
               </div>
+               <div class="flex justify-between items-center">
+                <span class="text-gray-600">Bus Current</span>
+                <span class="font-semibold text-gray-800" id="modalBusCurrentValue"></span>
+              </div>
               <div class="flex justify-between items-center">
-                <span class="text-gray-600">Power</span>
+                <span class="text-gray-600">Pack Power</span>
                 <span class="font-semibold text-gray-800" id="modalPower"></span>
+              </div>
+               <div class="flex justify-between items-center">
+                <span class="text-gray-600">Bus Power</span>
+                <span class="font-semibold text-gray-800" id="modalBusPowerValue"></span>
+              </div>
+               <div class="flex justify-between items-center">
+                <span class="text-gray-600">Loss Power</span>
+                <span class="font-semibold text-gray-800" id="modalLossPower"></span>
               </div>
             </div>
           </div>
@@ -525,6 +633,9 @@
       led.classList.add("active");
       setTimeout(() => led.classList.remove("active"), 250);
 
+      // FITUR BARU: Highlight cell tertinggi dan terendah
+      highlightCellVoltages(batt.loggerId, batt.typeBattery, batt.addr);
+
       // Set timeout untuk remove card
       cardTimers[cardId] = setTimeout(() => {
         let c = document.getElementById(cardId);
@@ -538,6 +649,33 @@
     
     updateConnectionCount();
   }
+
+  // FITUR BARU: Fungsi untuk highlight cell tertinggi dan terendah di modal
+  function highlightCellVoltages(loggerId, typeBattery, addr) {
+    const batt = batteries.find(b => b.loggerId === loggerId && b.typeBattery === typeBattery && b.addr === addr);
+    if (!batt || !batt.cells) return;
+
+    const cellVoltages = batt.cells.map(v => parseFloat(v));
+    const maxVoltage = Math.max(...cellVoltages);
+    const minVoltage = Math.min(...cellVoltages);
+
+    // Highlight di modal jika modal sedang terbuka
+    if (currentLoggerId === loggerId && currentTypeBattery === typeBattery && currentAddr === addr) {
+      setTimeout(() => {
+        const cellBoxes = document.querySelectorAll('#modalCells .cell-voltage');
+        cellBoxes.forEach((box, idx) => {
+          const voltage = parseFloat(batt.cells[idx]);
+          box.classList.remove('cell-highest-voltage', 'cell-lowest-voltage');
+          
+          if (voltage === maxVoltage) {
+            box.classList.add('cell-highest-voltage');
+          } else if (voltage === minVoltage) {
+            box.classList.add('cell-lowest-voltage');
+          }
+        });
+      }, 100);
+    }
+  }
   
   function startMQTT(){
     client = mqtt.connect("wss://public.cloud.shiftr.io", {
@@ -546,11 +684,11 @@
     });
     
     client.on("connect", () => {
-      console.log("Connected to MQTT");
+      // console.log("Connected to MQTT");
       xxx = id_logger.split("-");
       for(var a=0; a<xxx.length;a++){
         client.subscribe("sysMon/"+xxx[a]+"/AutoPoll/#");
-        console.log("Subscribed topic: ", xxx[a]);
+        // console.log("Subscribed topic: ", xxx[a]);
         client.publish(xxx[a]+"/seting","POLL1",0);
       }
       client.subscribe("sysMon/"+xxx[0]+"/info/#");
@@ -566,7 +704,7 @@
     });
     
     client.on("error", (error) => {
-      console.error("MQTT Error:", error);
+      // console.error("MQTT Error:", error);
       updateConnectionStatus(false);
     });
 
@@ -576,11 +714,11 @@
     });
     
     client2.on("connect", () => {
-      console.log("Connected to MQTT 2");
+      // console.log("Connected to MQTT 2");
       xxx = id_logger.split("-");
       for(var a=0; a<xxx.length;a++){
         client2.subscribe("sysMon/"+xxx[a]+"/AutoPoll/#");
-        console.log("Subscribed topic: ", xxx[a]);
+        // console.log("Subscribed topic: ", xxx[a]);
         client2.publish(xxx[a]+"/seting","POLL1",0);
       }
       client2.subscribe("sysMon/"+xxx[0]+"/info/#");
@@ -596,7 +734,7 @@
     });
     
     client2.on("error", (error) => {
-      console.error("MQTT Error:", error);
+      // console.error("MQTT Error:", error);
       updateConnectionStatus(false);
     });
   }
@@ -639,7 +777,7 @@
         updateSummary();
         updateModal(); 
       } catch (e) {
-        console.error("Invalid JSON", e);
+        // console.error("Invalid JSON", e);
       }
     }
   }
@@ -678,6 +816,7 @@
       voltage: data.bat_voltage.toFixed(2),
       busVoltage: data.bus_voltage.toFixed(2),
       current: data.bat_current.toFixed(2),
+      bus_current: data.bus_current.toFixed(2),
       capacity: data.full_capacity.toFixed(2),
       remaining: data.rem_capacity.toFixed(2),
       cycles: data.cycle_count,
@@ -829,6 +968,12 @@
     document.getElementById("modalcelldif").textContent = `${batt.cell_vdif} mV`;
     document.getElementById("modalPower").textContent = `${batt.power} W`;
 
+    // FITUR BARU: Update Bus Metrics di Modal
+    //document.getElementById("modalBusVoltageValue").textContent = `${batt.busVoltage}`;
+    document.getElementById("modalBusCurrentValue").textContent = `${batt.bus_current} A`;
+    document.getElementById("modalBusPowerValue").textContent = `${(batt.busVoltage * batt.bus_current).toFixed(2)} W`;
+    document.getElementById("modalLossPower").textContent = `${Math.abs((batt.busVoltage * batt.bus_current)-batt.power).toFixed(2)} W`;
+
     document.getElementById("soc-progress").style.width = `${batt.soc}%`;
     document.getElementById("soh-progress").style.width = `${batt.soh}%`;
     
@@ -846,6 +991,11 @@
     const cellsDiv = document.getElementById("modalCells");
     cellsDiv.innerHTML = "";
     
+    // FITUR BARU: Highlight cell tertinggi dan terendah
+    const cellVoltages = batt.cells.map(v => parseFloat(v));
+    const maxVoltage = Math.max(...cellVoltages);
+    const minVoltage = Math.min(...cellVoltages);
+
     batt.cells.forEach((v, i) => {
       const cellValue = parseFloat(v);
       let statusClass = "cell-normal";
@@ -854,6 +1004,13 @@
       
       const cellBox = document.createElement("div");
       cellBox.className = `cell-voltage ${statusClass} bg-white rounded-lg shadow-sm p-3 flex flex-col items-center`;
+      
+      // FITUR BARU: Tambah highlight untuk cell tertinggi dan terendah
+      if (cellValue === maxVoltage) {
+        cellBox.classList.add('cell-highest-voltage');
+      } else if (cellValue === minVoltage) {
+        cellBox.classList.add('cell-lowest-voltage');
+      }
       
       const label = document.createElement("div");
       label.className = "text-xs font-medium text-gray-500 mb-1";
@@ -961,11 +1118,11 @@
   pollingStateData.addEventListener("click",(e) => {
     if(pollingSts === true ){
       client.publish(id_logger+"/seting", "POLL0",0);
-      console.log("deactivate");
+      // console.log("deactivate");
     }
     else{
       client.publish(id_logger+"/seting", "POLL1",0);
-      console.log("activated")
+      // console.log("activated")
     }
   });
 
