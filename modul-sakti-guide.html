@@ -457,7 +457,7 @@
                     </div>
                     <div class="feature-card">
                         <div class="feature-title">📊 Data Corruption</div>
-                        <div class="feature-desc">Kehilangan atau korrupsi data monitoring</div>
+                        <div class="feature-desc">Kehilangan atau rusaknya  data dari baterai</div>
                     </div>
                 </div>
             </section>
@@ -471,7 +471,7 @@
                     <div class="step">
                         <div class="step-title"><span class="step-number">1</span> Koneksi ke WiFi Modul</div>
                         <ol>
-                            <li>Cari jaringan WiFi dengan nama <strong>Modul Sakti</strong> (SSID bawaan modul)</li>
+                            <li>Cari jaringan WiFi dengan nama <strong>Remote_xxxxxxxxxx_AP</strong> (SSID bawaan modul, Berdasarkan ID Module)</li>
                             <li>Hubungkan ke jaringan tersebut</li>
                             <li>Masukkan password default: <code style="background: #f3f4f6; padding: 2px 6px; border-radius: 4px;">password12345</code></li>
                         </ol>
@@ -578,7 +578,7 @@ https://fatkhurrr.github.io/lipo4Mon/index.html?id=1234567890
             <section>
                 <h2><span class="icon">⚡</span>Catatan Penting & Perawatan</h2>
                 
-                <h3>🔌 Penanganan Port RS485</h3>
+                <h3>🔌 Penanganan Jalur Komunikasi RS485</h3>
                 <div class="alert alert-warning">
                     <div class="alert-icon">⚠️</div>
                     <div>
@@ -591,7 +591,7 @@ https://fatkhurrr.github.io/lipo4Mon/index.html?id=1234567890
                     </div>
                 </div>
 
-                <h3>🔧 Grounding Khusus untuk Sistem Tertentu</h3>
+                <h3>🔧 Grounding System</h3>
                 <p>Beberapa modul memerlukan penanganan grounding khusus, terutama pada sistem yang menggunakan:</p>
                 <ul style="margin-left: 20px; margin-bottom: 15px;">
                     <li><strong>Inverter HF</strong> (High Frequency)</li>
@@ -600,14 +600,14 @@ https://fatkhurrr.github.io/lipo4Mon/index.html?id=1234567890
 
                 <div style="background: #f0f9ff; padding: 15px; border-radius: 8px; border-left: 4px solid var(--primary); margin-bottom: 15px;">
                     <strong style="color: var(--primary);">💡 Solusi:</strong>
-                    <p style="margin-top: 8px;">Lakukan grounding tambahan dengan menghubungkan <strong>minus modul ke minus sistem baterai</strong>. Hal ini membantu menstabilkan referensi potensial dan mencegah data corruption pada port RS485.</p>
+                    <p style="margin-top: 8px;">Lakukan grounding tambahan dengan menghubungkan <strong>minus modul ke Grounding baterai atau minus sistem baterai</strong>. Hal ini membantu menstabilkan referensi potensial dan mencegah data corruption pada port RS485.</p>
                 </div>
             </section>
 
             <!-- Checklist Section -->
             <section>
                 <h2><span class="icon">📋</span>Checklist Aktivasi</h2>
-                <div class="checklist">
+                <div class="checklist" hidden>
                     <div class="checkbox-item">
                         <input type="checkbox" id="check1">
                         <label for="check1">Sistem baterai sudah tergrounding dengan baik</label>
