@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Modul Sakti Monitoring</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/5.0.5/mqtt.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --card-bg: #0455D1;
+      --card-lapis: #ffffff;
+      --card-text: #1f2937;
+      --card-subtext: #4b5563;
+      --section-border: #0455D1;
+      --metric-bg: rgba(59,130,246,0.06);
+      --metric-border: rgba(59,130,246,0.15);
+    }
+    body { font-family:'Inter',sans-serif; background-color:#f9fafb; color:#1f2937; transition:background-color 0.3s,color 0.3s; }
+    body[data-theme="dark"] {
+      --card-lapis:#1e2330; --card-text:#e2e8f0; --card-subtext:#94a3b8;
+      --section-border:#3b82f6; --metric-bg:rgba(59,130,246,0.1); --metric-border:rgba(59,130,246,0.2);
+      background-color:#0f1117; color:#e2e8f0;
+    }
+
+    /* ── Shared Section Card ── */
+    .section-card {
+      background-color:var(--card-lapis); border-left:5px solid var(--section-border);
+      border-radius:0.75rem; box-shadow:0 1px 4px rgba(0,0,0,0.08); padding:1.25rem; color:var(--card-text);
+    }
+    .section-title { font-size:15px; font-weight:600; color:var(--card-text); }
+    .section-subtitle { font-size:11px; font-family:'IBM Plex Mono',monospace; color:#6b7280; }
+
+    /* ── Shared Metric Card ── */
+    .metric-card { background:var(--metric-bg); border:1px solid var(--metric-border); border-radius:8px; padding:12px 14px; transition:border-color 0.3s; }
+    .metric-card .mc-label { font-size:11px; text-transform:uppercase; letter-spacing:0.06em; color:#6b7280; margin-bottom:5px; font-family:'IBM Plex Mono',monospace; }
+    .metric-card .mc-value { font-size:20px; font-weight:600; font-family:'IBM Plex Mono',monospace; color:var(--card-text); line-height:1; }
+    .metric-card .mc-unit  { font-size:11px; color:#9ca3af; margin-top:3px; font-family:'IBM Plex Mono',monospace; }
+    .mc-blue   { border-top:2px solid #3b82f6; }
+    .mc-green  { border-top:2px solid #10b981; }
+    .mc-amber  { border-top:2px solid #f59e0b; }
+    .mc-purple { border-top:2px solid #8b5cf6; }
+    .mc-pink   { border-top:2px solid #ec4899; }
+    .mc-cyan   { border-top:2px solid #06b6d4; }
+    .mc-orange { border-top:2px solid #f97316; }
+    .mc-indigo { border-top:2px solid #6366f1; }
+    .mc-rose   { border-top:2px solid #f43f5e; }
+
+    /* ── Status Badges ── */
+    .mqtt-badge { display:inline-flex;align-items:center;gap:5px;font-size:11px;font-family:'IBM Plex Mono',monospace;padding:3px 10px;border-radius:20px;background:rgba(128,128,128,0.1);border:1px solid rgba(128,128,128,0.2); }
+    .mqtt-dot { width:7px;height:7px;border-radius:50%;background:#6b7280;transition:background 0.4s;flex-shrink:0; }
+    .mqtt-dot.on  { background:#10b981;box-shadow:0 0 5px #10b981; }
+    .mqtt-dot.off { background:#ef4444; }
+    .mqtt-dot.blink { animation:blinkDot 1s infinite; }
+    @keyframes blinkDot { 0%,100%{opacity:1} 50%{opacity:0.3} }
+    .iotx-dot { width:7px;height:7px;border-radius:50%;background:#6b7280;transition:background 0.3s;display:inline-block; }
+    .sched-pill { font-size:10px;font-family:'IBM Plex Mono',monospace;padding:2px 8px;border-radius:4px;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.25);color:#3b82f6; }
+    .count-pill { display:inline-flex;align-items:center;gap:5px;font-size:11px;font-family:'IBM Plex Mono',monospace;padding:3px 10px;border-radius:20px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);color:#059669; }
+    body[data-theme="dark"] .count-pill { color:#34d399; }
+
+    /* ── Log Drawer ── */
+    .log-drawer { overflow:hidden;transition:max-height 0.4s cubic-bezier(0.4,0,0.2,1),opacity 0.3s;max-height:0;opacity:0; }
+    .log-drawer.open { max-height:200px;opacity:1; }
+    .log-body { font-size:11px;font-family:'IBM Plex Mono',monospace;max-height:170px;overflow-y:auto;line-height:1.9;scrollbar-width:thin; }
+    .log-toggle-btn { display:flex;align-items:center;gap:6px;font-size:11px;font-family:'IBM Plex Mono',monospace;padding:3px 10px;border-radius:4px;border:1px solid rgba(128,128,128,0.25);background:rgba(128,128,128,0.08);color:var(--card-subtext);cursor:pointer;transition:background 0.2s; }
+    .log-toggle-btn:hover { background:rgba(128,128,128,0.16); }
+    .log-toggle-icon { transition:transform 0.3s; }
+    .log-toggle-icon.rotated { transform:rotate(180deg); }
+
+    /* ── Battery Card ── */
+    .battery-card { background-color:var(--card-lapis);color:var(--card-text);transition:all 0.3s ease;border-left:5px solid var(--card-bg); }
+    .battery-card:hover { transform:translateY(-4px);box-shadow:0 12px 24px -6px rgba(0,0,0,0.12); }
+    .progress-bar { height:8px;border-radius:4px;overflow:hidden;background-color:#e5e7eb; }
+    body[data-theme="dark"] .progress-bar { background-color:#374151; }
+    .progress-fill { height:100%;border-radius:4px;transition:width 0.5s ease; }
+    .cell-voltage { position:relative; }
+    .cell-voltage::before { content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);height:70%;width:4px;border-radius:2px; }
+    .cell-normal::before  { background-color:#10b981; }
+    .cell-warning::before { background-color:#f59e0b; }
+    .cell-danger::before  { background-color:#ef4444; }
+    .cell-highest-voltage { border:2px solid #ef4444!important;box-shadow:0 0 12px rgba(239,68,68,0.5)!important;animation:pulse-red 1.5s ease-in-out infinite;background-color:rgba(239,68,68,0.05)!important; }
+    .cell-lowest-voltage  { border:2px solid #fcd34d!important;box-shadow:0 0 12px rgba(252,211,77,0.5)!important;animation:pulse-yellow 1.5s ease-in-out infinite;background-color:rgba(252,211,77,0.05)!important; }
+    @keyframes pulse-red    { 0%,100%{box-shadow:0 0 12px rgba(239,68,68,0.5)} 50%{box-shadow:0 0 20px rgba(239,68,68,0.8)} }
+    @keyframes pulse-yellow { 0%,100%{box-shadow:0 0 12px rgba(252,211,77,0.5)} 50%{box-shadow:0 0 20px rgba(252,211,77,0.8)} }
+
+    /* ── Misc ── */
+    .led { display:inline-block;width:12px;height:12px;border-radius:50%;margin-left:6px;background:#ccc;transition:background-color 0.3s;box-shadow:0 0 5px rgba(0,0,0,0.2); }
+    .led.active { background:#10b981;box-shadow:0 0 8px #10b981; }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+    .fade-in { animation:fadeIn 0.5s ease-in; }
+    @keyframes flashGreen { 0%{color:#10b981} 100%{color:var(--card-text)} }
+    .val-updated { animation:flashGreen 0.8s ease-out; }
+
+    header { background-color:#0455D1;color:#ffffff;transition:background-color 0.3s; }
+    body[data-theme="dark"] header { background-color:#1e2330; }
+    footer { background-color:#1f2937;color:#9ca3af; }
+    body[data-theme="dark"] footer { background-color:#0f1117;color:#6b7280; }
+    #id_monitoring_footer { display:none; }
+
+    /* modal dark */
+    body[data-theme="dark"] #batteryModal>div>div:last-child { background-color:#1e2330; }
+    body[data-theme="dark"] #batteryModal .bg-white { background-color:#1e2330; }
+    body[data-theme="dark"] #batteryModal .bg-blue-50   { background-color:rgba(59,130,246,0.12); }
+    body[data-theme="dark"] #batteryModal .bg-green-50  { background-color:rgba(16,185,129,0.12); }
+    body[data-theme="dark"] #batteryModal .bg-purple-50 { background-color:rgba(139,92,246,0.12); }
+    body[data-theme="dark"] #batteryModal .bg-gray-50   { background-color:rgba(255,255,255,0.04); }
+    body[data-theme="dark"] #batteryModal .text-gray-800,.text-gray-700 { color:#e2e8f0; }
+    body[data-theme="dark"] #batteryModal .text-gray-600 { color:#94a3b8; }
+    body[data-theme="dark"] #batteryModal .text-gray-500 { color:#64748b; }
+    body[data-theme="dark"] #batteryModal .border-b { border-color:rgba(255,255,255,0.08); }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+<!-- HEADER -->
+<header id="mainHeader" class="text-white shadow-lg w-full relative">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 py-2 flex justify-between items-center">
+    <div class="flex items-center">
+      <div class="bg-white/20 p-2 rounded-lg mr-3"><i class="fas fa-car-battery text-2xl"></i></div>
+      <h1 class="text-2xl font-bold">Lithium Monitoring</h1>
+    </div>
+    <div class="flex items-center space-x-4">
+      <div class="hidden md:flex items-center space-x-2 text-sm bg-white/10 px-3 py-1 rounded-full">
+        <i class="fas fa-satellite-dish"></i><span id="id_monitoring">-</span>
+      </div>
+      <div class="relative">
+        <button id="settingsBtn" class="bg-white/10 hover:bg-white/20 p-2 rounded-full transition"><i class="fas fa-cog"></i></button>
+        <div id="dropdownMenu" class="absolute right-0 mt-2 w-48 bg-white text-gray-800 rounded-lg shadow-lg hidden z-50">
+          <a id="networkBtn" href="#" class="block px-4 py-2 hover:bg-gray-100">📡 Jaringan</a>
+          <a id="pollingState" href="#" class="block px-4 py-2 hover:bg-gray-100">Status Polling</a>
+          <hr class="my-1">
+          <a id="themeToggleLink" href="#" class="block px-4 py-2 hover:bg-gray-100">🌙 Mode Gelap</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- Modal Jaringan -->
+<div id="networkModal" class="fixed inset-0 bg-black/50 flex items-center justify-center hidden z-50">
+  <div class="bg-white rounded-lg shadow-lg w-96 p-6 relative">
+    <button id="closeNetwork" class="absolute top-2 right-2 text-gray-500 hover:text-gray-700">✖</button>
+    <h2 class="text-xl font-bold mb-4">Info Jaringan</h2>
+    <p id="network_ip" class="mb-2">Alamat IP: -</p>
+    <p id="network_signal">Sinyal: -</p>
+  </div>
+</div>
+
+<!-- KONTEN UTAMA -->
+<main class="flex-1 p-4 sm:p-6 w-full">
+  <div class="max-w-7xl mx-auto space-y-5">
+
+    <!-- ══ DATA PV MPPT ══ -->
+    <div class="section-card" style="border-left: 5px solid #e74c3c;">
+      <div class="flex items-center justify-between mb-4 flex-wrap gap-3 px-5 py-4">
+        <div class="flex items-center gap-3">
+          <h2 class="section-title">☀️ PV Data</h2>
+          <div class="mqtt-badge">
+            <span class="mqtt-dot off" id="mppt-status-dot"></span>
+            <span>MPPT Monitor</span>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 flex-wrap">
+          <span id="mppt-ip" style="font-size:11px;font-family:'IBM Plex Mono',monospace;color:#6b7280;">—</span>
+          <span id="mppt-time" style="font-size:11px;color:#9ca3af;font-family:'IBM Plex Mono',monospace;">belum ada data</span>
+        </div>
+      </div>
+
+      <!-- Main metrics - single row -->
+      <div class="px-5 pb-5">
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          <div class="metric-card mc-rose">
+            <div class="mc-label">PV Voltage</div>
+            <div id="mppt-volt-pv" class="mc-value">— V</div>
+          </div>
+          <div class="metric-card mc-blue">
+            <div class="mc-label">Battery Voltage</div>
+            <div id="mppt-volt-bat" class="mc-value">— V</div>
+          </div>
+          <div class="metric-card mc-green">
+            <div class="mc-label">Current</div>
+            <div id="mppt-current" class="mc-value">— A</div>
+          </div>
+          <div class="metric-card mc-amber">
+            <div class="mc-label">Power</div>
+            <div id="mppt-power" class="mc-value">— W</div>
+          </div>
+          <div class="metric-card mc-purple">
+            <div class="mc-label">Peak Power</div>
+            <div id="mppt-peak-power" class="mc-value">— W</div>
+          </div>
+          <div class="metric-card mc-indigo">
+            <div class="mc-label">Energy Today</div>
+            <div id="mppt-energy-today" class="mc-value">— kWh</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ DATA BEBAN ══ -->
+    <div class="section-card">
+      <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
+        <div class="flex items-center gap-3">
+          <h2 class="section-title">Data Beban</h2>
+          <span class="section-subtitle">ID: 1613606304 &nbsp;/&nbsp; RS-485 MQTT</span>
+        </div>
+        <div class="flex items-center gap-2 flex-wrap">
+          <div class="mqtt-badge">
+            <span class="mqtt-dot blink" id="load-dot-mqtt"></span>
+            <span id="load-lbl-mqtt">Menghubungkan</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:5px;font-size:11px;font-family:'IBM Plex Mono',monospace;color:#6b7280;">
+            <span class="iotx-dot" id="load-dot-tx"></span>TX
+            <span class="iotx-dot" id="load-dot-rx" style="margin-left:3px"></span>RX
+          </div>
+          <span class="sched-pill" id="load-sched-badge">—</span>
+          <span id="load-last-update" style="font-size:11px;color:#9ca3af;font-family:'IBM Plex Mono',monospace;">belum ada data</span>
+          <button class="log-toggle-btn" onclick="toggleLog()">
+            <i class="fas fa-terminal" style="font-size:10px"></i>
+            <span>Log Serial</span>
+            <i class="fas fa-chevron-down log-toggle-icon" id="logToggleIcon"></i>
+          </button>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2 mb-3">
+        <div class="metric-card mc-blue"><div class="mc-label">Tegangan</div><div class="mc-value" id="load-volt">—</div><div class="mc-unit">Volt (V)</div></div>
+        <div class="metric-card mc-green"><div class="mc-label">Arus</div><div class="mc-value" id="load-current">—</div><div class="mc-unit">Ampere (A)</div></div>
+        <div class="metric-card mc-amber"><div class="mc-label">Daya Aktif</div><div class="mc-value" id="load-active">—</div><div class="mc-unit">Watt (W)</div></div>
+        <div class="metric-card mc-purple"><div class="mc-label">Daya Reaktif</div><div class="mc-value" id="load-reactive">—</div><div class="mc-unit">VAr</div></div>
+        <div class="metric-card mc-pink"><div class="mc-label">Faktor Daya</div><div class="mc-value" id="load-pf">—</div><div class="mc-unit">cos φ</div></div>
+        <div class="metric-card mc-cyan"><div class="mc-label">Frekuensi</div><div class="mc-value" id="load-freq">—</div><div class="mc-unit">Hertz (Hz)</div></div>
+        <div class="metric-card mc-orange"><div class="mc-label">Energi Ekspor</div><div class="mc-value" id="load-export">—</div><div class="mc-unit">kWh</div></div>
+      </div>
+      <div class="log-drawer" id="logDrawer">
+        <div style="border-top:1px solid rgba(128,128,128,0.15);padding-top:10px;margin-top:4px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <span style="font-size:10px;letter-spacing:0.08em;color:#9ca3af;font-family:'IBM Plex Mono',monospace;">LOG SERIAL</span>
+            <button onclick="document.getElementById('loadLog').innerHTML=''" style="font-size:10px;padding:2px 8px;border-radius:4px;border:1px solid rgba(128,128,128,0.2);background:transparent;color:#9ca3af;cursor:pointer;">Hapus</button>
+          </div>
+          <div class="log-body" id="loadLog"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ RINGKASAN BATERAI ══ -->
+    <div id="summarySection" class="section-card hidden">
+      <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
+        <div class="flex items-center gap-3">
+          <h2 class="section-title">Ringkasan Baterai</h2>
+          <div class="count-pill">
+            <i class="fas fa-circle" style="font-size:7px"></i>
+            <span id="total-batteries">0</span>&nbsp;unit terhubung
+          </div>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+        <div class="metric-card mc-blue"><div class="mc-label">Rata-rata Tegangan</div><div class="mc-value" id="avg-voltage">-</div><div class="mc-unit">Volt (V)</div></div>
+        <div class="metric-card mc-green"><div class="mc-label">Rata-rata SOC</div><div class="mc-value" id="avg-soc">-</div><div class="mc-unit">Persen (%)</div></div>
+        <div class="metric-card mc-indigo"><div class="mc-label">Rata-rata SOH</div><div class="mc-value" id="avg-soh">-</div><div class="mc-unit">Persen (%)</div></div>
+        <div class="metric-card mc-amber"><div class="mc-label">Total Arus</div><div class="mc-value" id="total-current">-</div><div class="mc-unit">Ampere (A)</div></div>
+        <div class="metric-card mc-rose"><div class="mc-label">Total Daya</div><div class="mc-value" id="total-power">-</div><div class="mc-unit">Watt (W)</div></div>
+      </div>
+    </div>
+
+    <!-- Grid kartu baterai -->
+    <div id="batteryGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 hidden"></div>
+
+    <!-- Status kosong -->
+    <div id="empty-state" class="section-card text-center py-10">
+      <div style="color:#3b82f6;margin-bottom:1rem;"><i class="fas fa-car-battery text-5xl opacity-40"></i></div>
+      <h3 class="text-base font-medium mb-1" style="color:var(--card-text)">Belum ada baterai terhubung</h3>
+      <p class="text-sm" style="color:var(--card-subtext)">Data baterai akan muncul setelah sistem BMS terhubung dan mengirimkan data.</p>
+    </div>
+
+  </div>
+</main>
+
+<footer class="py-4 w-full">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 text-center text-sm">
+    © 2025 BMS Monitor System |
+    <a href="https://wa.me/628972309993" class="hover:text-white">Hubungi Developer</a>
+    <label id="id_monitoring_footer"></label>
+  </div>
+</footer>
+
+<!-- Modal Detail Baterai -->
+<div id="batteryModal" class="fixed inset-0 hidden bg-black/50 flex items-center justify-center z-50 p-4">
+  <div class="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+    <div class="flex items-center justify-between px-6 py-4 border-b">
+      <div class="flex items-center">
+        <div id="led-modal" class="w-3 h-3 rounded-full bg-gray-300 mr-3"></div>
+        <h2 id="modalTitle" class="text-xl font-semibold text-gray-800"></h2>
+      </div>
+      <button id="closeModal" class="text-gray-500 hover:text-gray-700"><i class="fas fa-times text-xl"></i></button>
+    </div>
+    <div class="overflow-y-auto flex-1 p-6">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <div class="bg-blue-50 p-4 rounded-lg">
+          <div class="flex justify-between items-start mb-2">
+            <div class="text-blue-700 font-medium">Status Pengisian (SOC)</div>
+            <div class="text-2xl font-bold text-blue-700" id="modalSOC"></div>
+          </div>
+          <div class="progress-bar"><div id="soc-progress" class="progress-fill bg-blue-500"></div></div>
+          <div class="text-xs text-gray-500 mt-1">Sisa: <span id="modalRemaining"></span> Ah</div>
+        </div>
+        <div class="bg-green-50 p-4 rounded-lg">
+          <div class="flex justify-between items-start mb-2">
+            <div class="text-green-700 font-medium">Kesehatan Baterai (SOH)</div>
+            <div class="text-2xl font-bold text-green-700" id="modalSOH"></div>
+          </div>
+          <div class="progress-bar"><div id="soh-progress" class="progress-fill bg-green-500"></div></div>
+          <div class="text-xs text-gray-500 mt-1">Kapasitas penuh: <span id="modalCapacity"></span> Ah</div>
+        </div>
+        <div class="bg-purple-50 p-4 rounded-lg">
+          <div class="flex justify-between items-center mb-2">
+            <div class="text-purple-700 font-medium">Jumlah Siklus</div>
+            <div class="text-2xl font-bold text-purple-700" id="modalCycles"></div>
+          </div>
+          <div class="text-xs text-gray-500 mt-1">Terakhir diperbarui: <span id="modalLastUpdate"></span></div>
+        </div>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <div class="bg-gray-50 p-4 rounded-lg">
+          <h3 class="font-medium text-gray-700 mb-3 flex items-center"><i class="fas fa-bolt text-yellow-500 mr-2"></i>Metrik Tegangan</h3>
+          <div class="space-y-3 text-sm">
+            <div class="flex justify-between"><span class="text-gray-600">Tegangan Pack</span><span class="font-semibold" id="modalVoltage"></span></div>
+            <div class="flex justify-between"><span class="text-gray-600">Tegangan Bus</span><span class="font-semibold" id="modalBusVoltage"></span></div>
+            <div class="flex justify-between"><span class="text-gray-600">Tegangan Sel Minimum</span><span class="font-semibold" id="modalcellmin"></span></div>
+            <div class="flex justify-between"><span class="text-gray-600">Tegangan Sel Maksimum</span><span class="font-semibold" id="modalcellmax"></span></div>
+            <div class="flex justify-between"><span class="text-gray-600">Selisih Tegangan Sel</span><span class="font-semibold" id="modalcelldif"></span></div>
+          </div>
+        </div>
+        <div class="bg-gray-50 p-4 rounded-lg">
+          <h3 class="font-medium text-gray-700 mb-3 flex items-center"><i class="fas fa-tachometer-alt text-blue-500 mr-2"></i>Metrik Arus</h3>
+          <div class="space-y-3 text-sm">
+            <div class="flex justify-between"><span class="text-gray-600">Arus Pack</span><span class="font-semibold" id="modalCurrent"></span></div>
+            <div class="flex justify-between"><span class="text-gray-600">Arus Bus</span><span class="font-semibold" id="modalBusCurrentValue"></span></div>
+            <div class="flex justify-between"><span class="text-gray-600">Daya Pack</span><span class="font-semibold" id="modalPower"></span></div>
+            <div class="flex justify-between"><span class="text-gray-600">Daya Bus</span><span class="font-semibold" id="modalBusPowerValue"></span></div>
+            <div class="flex justify-between"><span class="text-gray-600">Daya Rugi</span><span class="font-semibold" id="modalLossPower"></span></div>
+          </div>
+        </div>
+      </div>
+      <div class="bg-gray-50 p-4 rounded-lg">
+        <h3 class="font-medium text-gray-700 mb-4 flex items-center"><i class="fas fa-battery-three-quarters text-green-500 mr-2"></i>Tegangan Tiap Sel</h3>
+        <div id="modalCells" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ JS: DATA BEBAN ═══ -->
+ <!--
+<script>
+// Load configuration constants
+const LOAD_BROKER="wss://broker.emqx.io:8084/mqtt",LOAD_USER="emqx",LOAD_PASS="emqx";
+const LOAD_ID="1613606304",LOAD_RX=LOAD_ID+"/RX",LOAD_TX=LOAD_ID+"/TX",LOAD_SETING=LOAD_ID+"/seting";
+const LOAD_POLL_MS=2000,LOAD_TIMEOUT=3000;
+let loadClient=null,loadSched=0,loadFTimer=null,loadPTimer=null,loadWaiting=false;
+const LP1=new Uint8Array([0x71,0x03,0x20,0x00,0x00,0x10,0x44,0xF6]);
+const LP2=new Uint8Array([0x71,0x03,0x40,0x00,0x00,0x04,0x5A,0xF9]);
+
+function toggleLog(){document.getElementById('logDrawer').classList.toggle('open');document.getElementById('logToggleIcon').classList.toggle('rotated');}
+
+function addLoadLog(msg,cls){
+  const el=document.getElementById("loadLog"),t=new Date().toLocaleTimeString("id-ID",{hour12:false});
+  const c=cls==='ok'?'#10b981':cls==='err'?'#ef4444':cls==='warn'?'#f59e0b':cls==='rx'?'#3b82f6':'#6b7280';
+  el.innerHTML+=`<span style="opacity:0.45">[${t}]</span> <span style="color:${c}">${msg}</span><br>`;
+  el.scrollTop=el.scrollHeight;
+}
+function flashLoadDot(id,color){const el=document.getElementById(id);if(!el)return;el.style.background=color;el.style.boxShadow='0 0 5px '+color;setTimeout(()=>{el.style.background='';el.style.boxShadow='';},200);}
+function setLoadVal(id,v){const el=document.getElementById("load-"+id);if(!el)return;el.textContent=v;el.classList.remove('val-updated');void el.offsetWidth;el.classList.add('val-updated');}
+function setLoadMqttStatus(ok,connecting){
+  const dot=document.getElementById('load-dot-mqtt'),lbl=document.getElementById('load-lbl-mqtt');
+  dot.className='mqtt-dot'+(connecting?' blink':ok?' on':' off');
+  lbl.textContent=connecting?'Menghubungkan':ok?'Terhubung':'Terputus';
+}
+function toLoadBytes(payload){
+  if(payload instanceof Uint8Array)return payload;
+  if(payload instanceof ArrayBuffer)return new Uint8Array(payload);
+  if(payload&&typeof payload==="object"){const len=payload.length!=null?payload.length:Object.keys(payload).filter(k=>!isNaN(k)).length;const arr=new Uint8Array(len);for(let i=0;i<len;i++)arr[i]=payload[i];return arr;}
+  return new Uint8Array(0);
+}
+function extractLoadFrame(bytes){for(let i=0;i<bytes.length;i++){if(bytes[i]===0x71)return bytes.slice(i);}return null;}
+function ui16f32(hi,lo){const b=new ArrayBuffer(4),v=new DataView(b);v.setUint16(0,hi,false);v.setUint16(2,lo,false);return v.getFloat32(0,false);}
+function parseLoadFrame(raw){
+  const frame=extractLoadFrame(raw);
+  if(!frame){addLoadLog("0x71 tidak ditemukan","err");return;}
+  if(frame.length<5||frame[1]!==0x03){addLoadLog("Frame tidak valid","err");return;}
+  const bc=frame[2];
+  if(bc===0x20&&frame.length>=37){
+    const volt=ui16f32((frame[3]<<8)|frame[4],(frame[5]<<8)|frame[6]);
+    const curr=ui16f32((frame[7]<<8)|frame[8],(frame[9]<<8)|frame[10]);
+    const actP=ui16f32((frame[11]<<8)|frame[12],(frame[13]<<8)|frame[14])*1000;
+    const reaP=ui16f32((frame[15]<<8)|frame[16],(frame[17]<<8)|frame[18])*1000;
+    const pf=ui16f32((frame[23]<<8)|frame[24],(frame[25]<<8)|frame[26]);
+    const freq=ui16f32((frame[31]<<8)|frame[32],(frame[33]<<8)|frame[34]);
+    setLoadVal("volt",volt.toFixed(2));setLoadVal("current",curr.toFixed(3));setLoadVal("active",actP.toFixed(1));
+    setLoadVal("reactive",reaP.toFixed(1));setLoadVal("pf",pf.toFixed(3));setLoadVal("freq",freq.toFixed(2));
+    const t=new Date().toLocaleTimeString("id-ID",{hour12:false});
+    document.getElementById("load-last-update").textContent=t;
+    addLoadLog("V="+volt.toFixed(2)+" I="+curr.toFixed(3)+" P="+actP.toFixed(1)+"W PF="+pf.toFixed(3)+" f="+freq.toFixed(2)+"Hz","ok");return;
+  }
+  if(bc===8&&frame.length>=9){const exp=ui16f32((frame[3]<<8)|frame[4],(frame[5]<<8)|frame[6]);setLoadVal("export",exp.toFixed(3));addLoadLog("Energi="+exp.toFixed(3)+"kWh","ok");return;}
+  addLoadLog("byteCount tidak cocok: 0x"+bc.toString(16)+" len="+frame.length,"warn");
+}
+function sendLoadReq(){
+  if(!loadClient||!loadClient.connected||loadWaiting)return;
+  const payload=loadSched===0?LP1:LP2;
+  document.getElementById("load-sched-badge").textContent=loadSched===0?"V/I/P":"ENERGI";
+  loadClient.publish(LOAD_RX,payload,{qos:0});loadWaiting=true;flashLoadDot("load-dot-tx","#f59e0b");
+  addLoadLog("→ TX sched="+loadSched+": "+Array.from(payload).map(b=>b.toString(16).padStart(2,"0").toUpperCase()).join(" "));
+  loadFTimer=setTimeout(()=>{if(loadWaiting){addLoadLog("TIMEOUT 3 detik","err");loadWaiting=false;}},LOAD_TIMEOUT);
+}
+function connectLoadMQTT(){
+  setLoadMqttStatus(false,true);addLoadLog("Menghubungkan ke broker...");
+  loadClient=mqtt.connect(LOAD_BROKER,{username:LOAD_USER,password:LOAD_PASS,reconnectPeriod:4000});
+  loadClient.on("connect",()=>{
+    setLoadMqttStatus(true,false);addLoadLog("Terhubung. Subscribe "+LOAD_TX,"ok");
+    loadClient.subscribe(LOAD_TX,{qos:0});loadClient.publish(LOAD_SETING,"POLL0");
+    setTimeout(()=>{sendLoadReq();loadPTimer=setInterval(()=>{if(!loadWaiting)sendLoadReq();},LOAD_POLL_MS);},1000);
+  });
+  loadClient.on("message",(topic,payload)=>{
+    if(topic!==LOAD_TX)return;
+    const bytes=toLoadBytes(payload);flashLoadDot("load-dot-rx","#10b981");
+    addLoadLog("← RX ["+bytes.length+"B]: "+Array.from(bytes).map(b=>b.toString(16).padStart(2,"0").toUpperCase()).join(" "),"rx");
+    if(loadFTimer){clearTimeout(loadFTimer);loadFTimer=null;}
+    loadWaiting=false;parseLoadFrame(bytes);loadSched=loadSched===0?1:0;
+  });
+  loadClient.on("error",err=>{setLoadMqttStatus(false,false);addLoadLog("Error: "+err.message,"err");});
+  loadClient.on("close",()=>{setLoadMqttStatus(false,false);addLoadLog("Koneksi terputus.","warn");loadWaiting=false;if(loadPTimer){clearInterval(loadPTimer);loadPTimer=null;}});
+  loadClient.on("reconnect",()=>{setLoadMqttStatus(false,true);addLoadLog("Menghubungkan kembali...");});
+}
+connectLoadMQTT();
+</script>
+-->
+<!-- ═══ JS: BMS MONITORING (dipindah ke bms-core.js) ═══ -->
+
+<!--
+<script>
+  let id_logger="-",client,client2,batteries=[],pollingSts=false,xxx;
+  const cardTimers={};
+
+  function sortBatteries(){batteries.sort((a,b)=>{if(a.typeBattery<b.typeBattery)return -1;if(a.typeBattery>b.typeBattery)return 1;return parseInt(a.addr)-parseInt(b.addr);});reRenderAllCards();}
+
+  function reRenderAllCards(){
+    const grid=document.getElementById("batteryGrid");grid.innerHTML='';
+    batteries.forEach(batt=>{
+      let cid=`card-${batt.loggerId}-${batt.typeBattery}-${batt.addr}`;
+      if(cardTimers[cid]){clearTimeout(cardTimers[cid]);delete cardTimers[cid];}
+      let card=document.createElement("div");card.id=cid;
+      card.className="battery-card rounded-xl shadow-sm p-5 cursor-pointer hover:shadow-md fade-in";
+      card.innerHTML=`
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-semibold">${batt.typeBattery} <span class="text-blue-600">#${batt.addr}</span></h3>
+          <div class="led" id="led-card-${batt.loggerId}-${batt.typeBattery}-${batt.addr}"></div>
+        </div>
+        <div class="mb-4">
+          <div class="flex justify-between items-center mb-1">
+            <span class="text-sm" style="color:var(--card-subtext)">SOC</span>
+            <span class="font-semibold" id="soc-value-${batt.loggerId}-${batt.typeBattery}-${batt.addr}">${batt.soc}%</span>
+          </div>
+          <div class="progress-bar"><div id="soc-bar-${batt.loggerId}-${batt.typeBattery}-${batt.addr}" class="progress-fill" style="width:${batt.soc}%"></div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-5 text-sm">
+          <div class="space-y-2">
+            <div class="flex items-center"><i class="fas fa-bolt text-yellow-500 mr-2"></i><div><div style="color:var(--card-subtext)">Tegangan</div><div id="voltage-${batt.loggerId}-${batt.typeBattery}-${batt.addr}" class="font-semibold">${batt.voltage} V</div></div></div>
+            <div class="flex items-center"><i class="fas fa-minus-circle text-blue-500 mr-2"></i><div><div style="color:var(--card-subtext)">Selisih Sel</div><div id="voltagedif-${batt.loggerId}-${batt.typeBattery}-${batt.addr}" class="font-semibold">${batt.cell_vdif} mV</div></div></div>
+            <div class="flex items-center"><i class="fas fa-minus-circle text-red-500 mr-2"></i><div><div style="color:var(--card-subtext)">Sel Min</div><div id="cellmin-${batt.loggerId}-${batt.typeBattery}-${batt.addr}" class="font-semibold">${batt.cell_vmin} V</div></div></div>
+          </div>
+          <div class="space-y-2">
+            <div class="flex items-center"><i class="fas fa-tachometer-alt text-blue-500 mr-2"></i><div><div style="color:var(--card-subtext)">Arus</div><div id="current-${batt.loggerId}-${batt.typeBattery}-${batt.addr}" class="font-semibold">${batt.current} A</div></div></div>
+            <div class="flex items-center"><i class="fas fa-bolt text-red-500 mr-2"></i><div><div style="color:var(--card-subtext)">Daya</div><div id="power-${batt.loggerId}-${batt.typeBattery}-${batt.addr}" class="font-semibold">${(batt.voltage*batt.current).toFixed(1)} W</div></div></div>
+            <div class="flex items-center"><i class="fas fa-plus-circle text-green-500 mr-2"></i><div><div style="color:var(--card-subtext)">Sel Maks</div><div id="cellmax-${batt.loggerId}-${batt.typeBattery}-${batt.addr}" class="font-semibold">${batt.cell_vmax} V</div></div></div>
+          </div>
+        </div>
+        <div class="mt-4 pt-3 border-t text-xs flex justify-between" style="color:var(--card-subtext);border-color:rgba(128,128,128,0.15)">
+          <span>Siklus: ${batt.cycles}</span>
+          <span class="last-update"><i class="far fa-clock mr-1"></i>${batt.time}</span>
+        </div>`;
+      card.onclick=()=>openModal(batt.loggerId,batt.addr,batt.typeBattery);
+      grid.appendChild(card);
+      const sb=document.getElementById(`soc-bar-${batt.loggerId}-${batt.typeBattery}-${batt.addr}`);
+      sb.className=batt.soc>70?'progress-fill bg-green-500':batt.soc>30?'progress-fill bg-yellow-500':'progress-fill bg-red-500';
+      const led=document.getElementById(`led-card-${batt.loggerId}-${batt.typeBattery}-${batt.addr}`);
+      led.classList.add("active");setTimeout(()=>led.classList.remove("active"),250);
+      cardTimers[cid]=setTimeout(()=>{let c=document.getElementById(cid);if(c){c.remove();removeBatteryFromArray(batt.loggerId,batt.typeBattery,batt.addr);}delete cardTimers[cid];},30000);
+    });
+    updateConnectionCount();
+  }
+
+  function getCurrentTimeHHMMSS(){const now=new Date();return[now.getHours(),now.getMinutes(),now.getSeconds()].map(v=>v.toString().padStart(2,'0')).join(':');}
+
+  function normalizeFromMqtt(data,topic){
+    const cells=data.cell_voltages.map(v=>(v/1000).toFixed(3));
+    const cell_vmax=Math.max(...data.cell_voltages)/1000,cell_vmin=Math.min(...data.cell_voltages)/1000;
+    return{loggerId:topic.split('/')[1],typeBattery:data.typeBattery,addr:data.AddrBattery,
+      soc:data.SOC.toFixed(1),soh:data.SOH.toFixed(1),voltage:data.bat_voltage.toFixed(2),
+      busVoltage:data.bus_voltage.toFixed(2),current:data.bat_current.toFixed(2),bus_current:data.bus_current.toFixed(2),
+      capacity:data.full_capacity.toFixed(2),remaining:data.rem_capacity.toFixed(2),cycles:data.cycle_count,cells,
+      cell_vmax:cell_vmax.toFixed(3),cell_vmin:cell_vmin.toFixed(3),cell_vdif:((cell_vmax-cell_vmin)*1000).toFixed(0),
+      time:getCurrentTimeHHMMSS(),power:(data.bat_voltage*data.bat_current).toFixed(2)};
+  }
+
+  const modal=document.getElementById("batteryModal");
+  let currentAddr=null,currentLoggerId=null,currentTypeBattery=null;
+
+  function updateConnectionCount(){
+    document.getElementById('total-batteries').textContent=batteries.length;
+    document.getElementById('batteryGrid').classList.toggle('hidden',batteries.length===0);
+    document.getElementById('empty-state').classList.toggle('hidden',batteries.length!==0);
+    document.getElementById('summarySection').classList.toggle('hidden',batteries.length===0);
+  }
+
+  function removeBatteryFromArray(loggerId,typeBattery,addr){
+    batteries=batteries.filter(b=>!(b.loggerId===loggerId&&b.typeBattery===typeBattery&&b.addr===addr));
+    updateConnectionCount();updateSummary();sortBatteries();
+  }
+
+  function update_cards(batt){
+    let cid=`card-${batt.loggerId}-${batt.typeBattery}-${batt.addr}`;
+    let card=document.getElementById(cid);
+    if(!card){batt.elementId=`battery-${batt.loggerId}-${batt.typeBattery}-${batt.addr}`;batteries.push(batt);sortBatteries();return;}
+    const g=(id)=>document.getElementById(id+`-${batt.loggerId}-${batt.typeBattery}-${batt.addr}`);
+    g('soc-value').textContent=`${batt.soc}%`;
+    g('soc-bar').style.width=`${batt.soc}%`;
+    g('voltage').innerHTML=`${batt.voltage} V`;g('current').innerHTML=`${batt.current} A`;
+    g('cellmin').innerHTML=`${batt.cell_vmin} V`;g('cellmax').innerHTML=`${batt.cell_vmax} V`;
+    g('power').innerHTML=`${(batt.voltage*batt.current).toFixed(1)} W`;g('voltagedif').innerHTML=`${batt.cell_vdif} mV`;
+    const sb=g('soc-bar');sb.className=batt.soc>70?'progress-fill bg-green-500':batt.soc>30?'progress-fill bg-yellow-500':'progress-fill bg-red-500';
+    card.querySelector(".last-update").innerHTML=`<i class="far fa-clock mr-1"></i>${batt.time}`;
+    const led=g('led-card');led.classList.add("active");setTimeout(()=>led.classList.remove("active"),250);
+    if(cardTimers[cid])clearTimeout(cardTimers[cid]);
+    cardTimers[cid]=setTimeout(()=>{let c=document.getElementById(cid);if(c){c.remove();removeBatteryFromArray(batt.loggerId,batt.typeBattery,batt.addr);}delete cardTimers[cid];},30000);
+  }
+
+  function updateSummary(){
+    if(batteries.length===0){['avg-voltage','avg-soc','avg-soh','total-current','total-power'].forEach(id=>document.getElementById(id).textContent="-");return;}
+    let tv=0,ts=0,th=0,tc=0,tp=0;
+    batteries.forEach(b=>{tv+=parseFloat(b.voltage);ts+=parseFloat(b.soc);th+=parseFloat(b.soh);tc+=parseFloat(b.current);tp+=parseFloat(b.power);});
+    const n=batteries.length;
+    document.getElementById("avg-voltage").textContent=`${(tv/n).toFixed(2)} V`;
+    document.getElementById("avg-soc").textContent=`${(ts/n).toFixed(1)}%`;
+    document.getElementById("avg-soh").textContent=`${(th/n).toFixed(1)}%`;
+    document.getElementById("total-current").textContent=`${tc.toFixed(2)} A`;
+    document.getElementById("total-power").textContent=`${tp.toFixed(2)} W`;
+  }
+
+  function openModal(loggerId,addr,typeBattery){currentLoggerId=loggerId;currentAddr=addr;currentTypeBattery=typeBattery;updateModal();modal.classList.remove("hidden");document.body.style.overflow='hidden';}
+
+  function updateModal(){
+    if(!currentAddr||!currentLoggerId||!currentTypeBattery)return;
+    const batt=batteries.find(b=>b.loggerId===currentLoggerId&&b.addr===currentAddr&&b.typeBattery===currentTypeBattery);
+    if(!batt)return;
+    document.getElementById("modalTitle").textContent=`${batt.typeBattery} #${batt.addr}`;
+    document.getElementById("modalSOC").textContent=`${batt.soc}%`;document.getElementById("modalSOH").textContent=`${batt.soh}%`;
+    document.getElementById("modalCycles").textContent=batt.cycles;document.getElementById("modalVoltage").textContent=`${batt.voltage} V`;
+    document.getElementById("modalBusVoltage").textContent=`${batt.busVoltage} V`;document.getElementById("modalCurrent").textContent=`${batt.current} A`;
+    document.getElementById("modalCapacity").textContent=batt.capacity;document.getElementById("modalRemaining").textContent=batt.remaining;
+    document.getElementById("modalLastUpdate").textContent=batt.time;document.getElementById("modalcellmin").textContent=`${batt.cell_vmin} V`;
+    document.getElementById("modalcellmax").textContent=`${batt.cell_vmax} V`;document.getElementById("modalcelldif").textContent=`${batt.cell_vdif} mV`;
+    document.getElementById("modalPower").textContent=`${batt.power} W`;document.getElementById("modalBusCurrentValue").textContent=`${batt.bus_current} A`;
+    document.getElementById("modalBusPowerValue").textContent=`${(batt.busVoltage*batt.bus_current).toFixed(2)} W`;
+    document.getElementById("modalLossPower").textContent=`${Math.abs((batt.busVoltage*batt.bus_current)-batt.power).toFixed(2)} W`;
+    document.getElementById("soc-progress").style.width=`${batt.soc}%`;document.getElementById("soh-progress").style.width=`${batt.soh}%`;
+    const sp=document.getElementById("soc-progress"),shp=document.getElementById("soh-progress");
+    sp.className=batt.soc>70?"progress-fill bg-blue-500":batt.soc>30?"progress-fill bg-yellow-500":"progress-fill bg-red-500";
+    shp.className=batt.soh>80?"progress-fill bg-green-500":batt.soh>60?"progress-fill bg-yellow-500":"progress-fill bg-red-500";
+    const cellsDiv=document.getElementById("modalCells");cellsDiv.innerHTML="";
+    const cellVals=batt.cells.map(v=>parseFloat(v)),maxV=Math.max(...cellVals),minV=Math.min(...cellVals);
+    batt.cells.forEach((v,i)=>{
+      const cv=parseFloat(v),sc=cv<3.2?"cell-danger":cv<3.4?"cell-warning":"cell-normal";
+      const box=document.createElement("div");box.className=`cell-voltage ${sc} bg-white rounded-lg shadow-sm p-3 flex flex-col items-center`;
+      if(cv===maxV)box.classList.add('cell-highest-voltage');else if(cv===minV)box.classList.add('cell-lowest-voltage');
+      const lbl=document.createElement("div");lbl.className="text-xs font-medium text-gray-500 mb-1";lbl.textContent=`Sel ${i+1}`;
+      const val=document.createElement("div");val.className="text-sm font-bold";val.textContent=`${v} V`;
+      val.className+=sc==="cell-danger"?" text-red-600":sc==="cell-warning"?" text-yellow-600":" text-green-600";
+      box.appendChild(lbl);box.appendChild(val);cellsDiv.appendChild(box);
+    });
+    blinkLed("led-modal");
+  }
+
+  document.getElementById("closeModal").onclick=()=>{modal.classList.add("hidden");document.body.style.overflow='auto';currentAddr=currentLoggerId=currentTypeBattery=null;};
+  modal.onclick=e=>{if(e.target===modal){modal.classList.add("hidden");document.body.style.overflow='auto';currentAddr=currentLoggerId=currentTypeBattery=null;}};
+  function blinkLed(id){const el=document.getElementById(id);if(!el)return;el.classList.remove("bg-gray-300");el.classList.add("bg-green-500");setTimeout(()=>{el.classList.remove("bg-green-500");el.classList.add("bg-gray-300");},250);}
+
+  window.onload=function(){
+    const params=new URLSearchParams(window.location.search);
+    if([...params].length>0){
+      let qd={};for(const[k,v]of params.entries())qd[k]=v;
+      id_logger=qd.id;
+      if(!id_logger){let u=prompt("Masukkan ID Logger:");if(u&&u.trim()){id_logger=u;startMQTT();}else alert("Error: Muat ulang halaman!");}
+      else startMQTT();
+    }else{let u=prompt("Masukkan ID Logger:");if(u&&u.trim()){id_logger=u;startMQTT();}else alert("Error: Muat ulang halaman!");}
+    updateConnectionCount();
+  };
+</script>
+
+-->
+
+<!-- ═══ URUTAN LOAD SCRIPT (jangan diubah) ═══ -->
+<!-- 1. Library MQTT sudah di <head> -->
+<!-- 2. ModulSakti class -->
+<script src="ModulSakti-v2-uart.js"></script>
+<!-- 3. Variabel global & fungsi UI BMS -->
+<script src="bms-core.js"></script>
+<!-- 4. Logika koneksi MQTT BMS -->
+<script src="monitoring-mqtt.js"></script>
+<!-- 5. Logika MQTT beban & MPPT -->
+<script src="load-mqtt.js"></script>
+<script src="mppt-mqtt.js"></script>
+
+<!-- Settings dropdown & tema -->
+<script>
+  const btn=document.getElementById("settingsBtn"),menu=document.getElementById("dropdownMenu");
+  btn.addEventListener("click",e=>{e.stopPropagation();menu.classList.toggle("hidden");});
+  window.addEventListener("click",()=>menu.classList.add("hidden"));
+  document.getElementById("pollingState").addEventListener("click",()=>{
+    const modul=modulsMap.get(xxx&&xxx[0]);
+    if(modul){modul.publishBinary(xxx[0]+"/seting",pollingSts?"POLL0":"POLL1");}
+  });
+  const networkModal=document.getElementById("networkModal"),closeNetwork=document.getElementById("closeNetwork");
+  document.getElementById("networkBtn").addEventListener("click",e=>{e.preventDefault();networkModal.classList.remove("hidden");});
+  closeNetwork.addEventListener("click",()=>networkModal.classList.add("hidden"));
+  window.addEventListener("click",e=>{if(e.target===networkModal)networkModal.classList.add("hidden");});
+
+  const themeToggleLink=document.getElementById('themeToggleLink');
+  function setTheme(theme){document.body.setAttribute('data-theme',theme);localStorage.setItem('theme',theme);themeToggleLink.innerHTML=theme==='dark'?'☀️ Mode Terang':'🌙 Mode Gelap';}
+  setTheme(localStorage.getItem('theme')||'light');
+  themeToggleLink.addEventListener('click',e=>{e.preventDefault();setTheme(document.body.getAttribute('data-theme')==='dark'?'light':'dark');});
+</script>
+</body>
+</html>
