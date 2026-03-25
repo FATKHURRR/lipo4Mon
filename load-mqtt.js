@@ -96,7 +96,7 @@ function parseLoadFrame(raw) {
   if (!frame) { addLoadLog("0x71 tidak ditemukan", "err"); return; }
   if (frame.length < 5 || frame[1] !== 0x03) { addLoadLog("Frame tidak valid", "err"); return; }
   const bc = frame[2];
-  if (bc === 0x20 && frame.length >= 37) {
+  if (bc === 0x20 && frame.length >= 10) {
     const volt = ui16f32((frame[3]<<8)|frame[4],  (frame[5]<<8)|frame[6]);
     const curr = ui16f32((frame[7]<<8)|frame[8],  (frame[9]<<8)|frame[10]);
     const actP = ui16f32((frame[11]<<8)|frame[12],(frame[13]<<8)|frame[14]) * 1000;
