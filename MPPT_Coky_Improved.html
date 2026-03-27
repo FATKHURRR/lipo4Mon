@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PLTS & Power Monitoring System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1e40af;
+            --secondary: #7c3aed;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --bg-dark: #0f172a;
+            --bg-light: #f8fafc;
+            --border-light: #e2e8f0;
+            --text-dark: #1e293b;
+            --text-light: #475569;
+            --shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 20px 50px rgba(0, 0, 0, 0.15);
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: var(--text-dark);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            letter-spacing: -0.5px;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+
+        .content {
+            padding: 40px 30px;
+        }
+
+        /* Card Styling */
+        .card {
+            background: white;
+            border-radius: 12px;
+            border: 1px solid var(--border-light);
+            margin-bottom: 30px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            box-shadow: var(--shadow);
+            border-color: var(--primary);
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            padding: 20px 25px;
+            border-bottom: 2px solid var(--border-light);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-header h3 {
+            font-size: 1.3rem;
+            color: var(--text-dark);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-header .icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            font-weight: bold;
+        }
+
+        .card-body {
+            padding: 25px;
+        }
+
+        /* Data Grid */
+        .data-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .data-grid-item {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border: 1px solid var(--border-light);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: default;
+        }
+
+        .data-grid-item:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 20px rgba(37, 99, 235, 0.1);
+            border-color: var(--primary);
+        }
+
+        .data-grid-item strong {
+            display: block;
+            font-size: 0.85rem;
+            color: var(--text-light);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .data-grid-value {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: var(--primary);
+            font-family: 'Courier New', monospace;
+            word-break: break-word;
+        }
+
+        /* Summary Section */
+        .summary-section {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border-light);
+            font-size: 0.95rem;
+        }
+
+        .summary-item:last-child {
+            border-bottom: none;
+        }
+
+        .summary-item strong {
+            color: var(--primary);
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
+        /* Controls Section */
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .control-item {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .control-item label {
+            font-weight: 600;
+            color: var(--text-dark);
+            font-size: 0.95rem;
+        }
+
+        input[type="text"],
+        input[type="date"],
+        input[type="file"] {
+            padding: 12px 15px;
+            border: 1px solid var(--border-light);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        input[type="text"]:focus,
+        input[type="date"]:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        /* Button Styling */
+        .button-group {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+
+        .button-group button {
+            padding: 12px 28px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            letter-spacing: 0.3px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
+            color: var(--text-dark);
+            border: 1px solid var(--border-light);
+        }
+
+        .btn-secondary:hover {
+            background: linear-gradient(135deg, #e2e8f0, #cbd5e1);
+            border-color: var(--text-light);
+        }
+
+        /* Checkbox Styling */
+        .checkbox-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border: 1px solid var(--border-light);
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .checkbox-item:hover {
+            background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
+            border-color: var(--primary);
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: var(--primary);
+        }
+
+        .checkbox-item label {
+            margin-left: 10px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            flex: 1;
+        }
+
+        /* Loader */
+        #loader {
+            display: none;
+            position: relative;
+            width: 50px;
+            height: 50px;
+            margin: 30px auto;
+            border: 4px solid var(--border-light);
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Chart Container */
+        .chart-container {
+            position: relative;
+            height: 500px;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        /* Status Badge */
+        .status {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .status.connected {
+            background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+            color: #047857;
+            border: 1px solid #6ee7b7;
+        }
+
+        .status.connecting {
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+            color: #92400e;
+            border: 1px solid #fcd34d;
+        }
+
+        .status.error {
+            background: linear-gradient(135deg, #fee2e2, #fecaca);
+            color: #991b1b;
+            border: 1px solid #fca5a5;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8rem;
+            }
+
+            .content {
+                padding: 20px;
+            }
+
+            .data-grid {
+                grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+                gap: 15px;
+            }
+
+            .data-grid-value {
+                font-size: 1.2rem;
+            }
+
+            .checkbox-container {
+                grid-template-columns: 1fr;
+            }
+
+            .controls-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .chart-container {
+                height: 350px;
+            }
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-light);
+        }
+
+        .empty-state p {
+            font-size: 0.95rem;
+            margin: 10px 0;
+        }
+
+        /* Badge Indicator */
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            background: var(--primary);
+            color: white;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+    </style>
+
+    <!-- External Libraries -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/svg.js/3.0.16/svg.min.js" integrity="sha256-MCvBrhCuX8GNt0gmv06kZ4jGIi1R2QNaSkadjRzinFs=" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>⚡ PLTS & Power Monitoring</h1>
+            <p>Real-time Solar Power System & Battery Management Monitoring</p>
+        </div>
+
+        <div class="content">
+            <!-- MPPT Data Section -->
+            <div class="card">
+                <div class="card-header">
+                    <h3><span class="icon">☀️</span> MPPT System Data</h3>
+                </div>
+                <div class="card-body">
+                    <div id="mppt-data-container" class="data-grid"></div>
+                    <div id="mppt-summary-container" class="summary-section"></div>
+                </div>
+            </div>
+
+            <!-- Controls Section -->
+            <div class="card">
+                <div class="card-header">
+                    <h3><span class="icon">⚙️</span> Data Controls</h3>
+                </div>
+                <div class="card-body">
+                    <div class="controls-grid">
+                        <div class="control-item">
+                            <label for="datePicker">📅 Select Date</label>
+                            <input type="text" id="datePicker" placeholder="Select Date" class="flatpickr-input" readonly="readonly">
+                        </div>
+                        <div class="control-item">
+                            <label for="requestButton">📊 Data Logging</label>
+                            <div class="button-group">
+                                <input type="file" id="csvFileInput" accept=".csv" hidden>
+                                <button id="requestButton" class="btn-primary">📥 Get Data Log</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chart Section -->
+            <div class="card">
+                <div class="card-header">
+                    <h3><span class="icon">📈</span> Data Visualization</h3>
+                </div>
+                <div class="card-body">
+                    <div class="checkbox-container" id="checkboxContainer"></div>
+                    <div style="display:none;" id="loader"></div>
+                    <div class="chart-container">
+                        <canvas id="lineChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize datepicker
+        const datePicker = flatpickr("#datePicker", {
+            defaultDate: new Date(),
+            dateFormat: "Y/m/d"
+        });
+
+        // Global variables for chart and data
+        let chart = null;
+        let datasets = [];
+        const zoomPlugin = {
+            id: 'zoomPlugin',
+            beforeInit: (chart) => {
+                chart.resetZoom = () => {
+                    if (chart.$zoom) {
+                        chart.resetZoom();
+                    }
+                };
+            }
+        };
+
+        // CSV file handling
+        document.getElementById('csvFileInput').addEventListener('change', handleFileSelect);
+        
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const csvData = e.target.result;
+                parseCSVData(csvData);
+            };
+            reader.readAsText(file);
+        }
+
+        function parseCSVData(csvData) {
+            const lines = csvData.trim().split('\n');
+            const labels = [];
+            const dataSets = {};
+            
+            lines.forEach((line, index) => {
+                const columns = line.split(',');
+                if (index === 0) {
+                    columns.slice(1).forEach(col => dataSets[col] = []);
+                } else {
+                    labels.push(columns[0].substring(0,5));
+                    columns.slice(1).forEach((value, i) => {
+                        const colName = Object.keys(dataSets)[i];
+                        dataSets[colName].push(parseFloat(value));
+                    });
+                }
+            });
+            
+            datasets = Object.keys(dataSets).map((name, i) => ({
+                label: name,
+                data: dataSets[name],
+                borderColor: `hsl(${(i * 130) % 360}, 70%, 50%)`,
+                borderWidth: 2,
+                fill: false,
+                hidden: !(i < 3),
+                pointRadius: 0,
+                tension: 0.4
+            }));
+            
+            createChart(labels, datasets);
+            createCheckboxes();
+        }
+
+        // Create chart with zoom functionality
+        function createChart(labels, datasets) {
+            const ctx = document.getElementById('lineChart').getContext('2d');
+            if (chart) chart.destroy();
+            
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            backgroundColor: 'rgba(37, 99, 235, 0.9)',
+                            padding: 12,
+                            borderRadius: 8,
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.dataset.label}: ${context.parsed.y.toFixed(2)}`;
+                                }
+                            }
+                        },
+                        zoom: {
+                            zoom: {
+                                wheel: {
+                                    enabled: true,
+                                },
+                                pinch: {
+                                    enabled: true
+                                },
+                                mode: 'x',
+                            },
+                            pan: {
+                                enabled: true,
+                                mode: 'x',
+                                threshold: 10
+                            },
+                            limits: {
+                                x: { min: 'original', max: 'original' }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Time',
+                                font: { size: 12, weight: 'bold' }
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Value',
+                                font: { size: 12, weight: 'bold' }
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'nearest'
+                    }
+                },
+                plugins: [zoomPlugin]
+            });
+        }
+
+        // Create checkboxes for dataset visibility
+        function createCheckboxes() {
+            const container = document.getElementById('checkboxContainer');
+            container.innerHTML = '';
+            
+            datasets.forEach((dataset, index) => {
+                const div = document.createElement('div');
+                div.className = 'checkbox-item';
+                
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.checked = !dataset.hidden;
+                checkbox.id = `checkbox${index}`;
+                checkbox.style.accentColor = dataset.borderColor;
+                
+                checkbox.addEventListener('change', (e) => {
+                    datasets[index].hidden = !e.target.checked;
+                    chart.update();
+                });
+                
+                const labelElement = document.createElement('label');
+                labelElement.htmlFor = `checkbox${index}`;
+                labelElement.textContent = dataset.label;
+                labelElement.style.color = dataset.borderColor;
+                
+                div.appendChild(checkbox);
+                div.appendChild(labelElement);
+                container.appendChild(div);
+            });
+        }
+    </script>
+
+    <script>
+        let is_request_log = false;
+        // MQTT broker details
+        const broker = 'wss://public.cloud.shiftr.io:443/mqtt';
+        const client = new Paho.MQTT.Client(broker, 'clientId-' + Math.random().toString(16).substr(2, 8));
+        let csv_like_data = "";
+
+        // Connect to the broker
+        client.connect({
+            userName: "public",
+            password: "public",
+            onSuccess: onConnect,
+            onFailure: onFailure
+        });
+
+        function onConnect() {
+            console.log('Connected to broker');
+            client.subscribe('13990360//#');
+        }
+
+        function onFailure(error) {
+            console.error('Connection failed: ', error);
+        }
+        
+        // MPPT parameters to display
+        const mpptParameters = [
+            'time', 'current', 'vbat', 'vpv', 'envtemp', 
+            'mppttemp', 'dayE', 'total', 'power', 
+            'peak', 'percent_load', 'status_code', 
+            'statusint', 'status', 'rssi'
+        ];
+        
+        // Initialize MPPT data grid
+        function initMPPTGrid() {
+            const container = document.getElementById('mppt-data-container');
+            container.innerHTML = '';
+            
+            mpptParameters.forEach(param => {
+                const item = document.createElement('div');
+                item.className = 'data-grid-item';
+                item.id = `mppt-${param}`;
+                
+                const label = document.createElement('strong');
+                label.textContent = param.replace(/_/g, ' ').toUpperCase();
+                
+                const value = document.createElement('div');
+                value.className = 'data-grid-value';
+                value.textContent = '-';
+                
+                item.appendChild(label);
+                item.appendChild(value);
+                container.appendChild(item);
+            });
+        }
+        
+        // Update MPPT data
+        function updateMPPTData(topic, payload) {
+            const param = topic.split('/').pop();
+            const element = document.getElementById(`mppt-${param}`);
+            if (element) {
+                element.querySelector('.data-grid-value').textContent = payload;
+            }
+        }
+
+        // Handle incoming MQTT messages
+        client.onMessageArrived = function(message) {
+            const topic = message.destinationName;
+            const payload = message.payloadString;
+            console.log(topic, payload);
+            
+            if (topic == "13990360/mppt1_cokylog") {
+                if(is_request_log == true){
+                    if (payload.indexOf("Time") >= 0) {
+                        console.log("start transfer logger");
+                        csv_like_data = "";
+                        csv_like_data = payload + '\n'
+                    } else if (payload.indexOf("endOfFile") >= 0) {
+                        console.log("End transfer logger -> update chart");
+                        unshowAn();
+                        parseCSVData(csv_like_data);
+                        is_request_log=false;
+                    } else if (payload.indexOf("Fail") >= 0) {
+                        console.log("Data Not available, or broken storage!");
+                        unshowAn();
+                        is_request_log=false;
+                        alert("Data Not available, or broken storage!");
+                    } else {
+                        csv_like_data += payload + '\n'
+                    }
+                }
+            } else if (topic.startsWith("13990360/mppt1_coky")) {
+                updateMPPTData(topic, payload);
+            }
+        };
+        
+        function unshowAn() {
+            document.getElementById("loader").style.display = "none";
+        }
+        
+        function showAn() {
+            document.getElementById("loader").style.display = "block";
+        }
+
+        // Request data log button
+        document.getElementById('requestButton').addEventListener('click', function() {
+            const selectedDate = datePicker.input.value;
+            const url = `1#${selectedDate}`;
+            console.log('Requesting:', url);
+            client.send('13990360/mppt1_coky/cmd', url);
+            is_request_log = true;
+            showAn();
+        });
+
+        // Initialize on page load
+        $(document).ready(function() {
+            initMPPTGrid();
+        });
+    </script>
+</body>
+</html>
