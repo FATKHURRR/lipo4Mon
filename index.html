@@ -33,9 +33,9 @@
     
     body[data-theme="dark"] {
       --card-bg: #525252;
-      --card-lapis: #222222;
-      --card-text: #dddddd;
-      --card-subtext: #cccccc;
+      --card-lapis: #1f2937;
+      --card-text: #f3f4f6;
+      --card-subtext: #d1d5db;
       --icon-voltage: #f59e0b;
       --icon-current: #60a5fa;
       background-color: #111827;
@@ -46,7 +46,89 @@
       background-color: var(--card-lapis);
       color: var(--card-text);
       transition: all 0.3s ease;
-      border-left: 5px solid var(--card-bg);
+      border: 4px solid transparent;
+    }
+
+    /* Border Colors untuk Charging (Hijau) - Gradasi berdasarkan magnitude arus */
+    .battery-card.charge-level-1 {
+      border-color: #86efac;
+      box-shadow: 0 0 8px rgba(134, 239, 172, 0.3);
+    }
+    .battery-card.charge-level-2 {
+      border-color: #4ade80;
+      box-shadow: 0 0 12px rgba(74, 222, 128, 0.4);
+    }
+    .battery-card.charge-level-3 {
+      border-color: #22c55e;
+      box-shadow: 0 0 15px rgba(34, 197, 94, 0.5);
+    }
+    .battery-card.charge-level-4 {
+      border-color: #16a34a;
+      box-shadow: 0 0 18px rgba(22, 163, 74, 0.6);
+    }
+    .battery-card.charge-level-5 {
+      border-color: #15803d;
+      box-shadow: 0 0 20px rgba(21, 128, 61, 0.7);
+    }
+
+    /* Border Colors untuk Discharging (Merah) - Gradasi berdasarkan magnitude arus */
+    .battery-card.discharge-level-1 {
+      border-color: #fca5a5;
+      box-shadow: 0 0 8px rgba(252, 165, 165, 0.3);
+    }
+    .battery-card.discharge-level-2 {
+      border-color: #f87171;
+      box-shadow: 0 0 12px rgba(248, 113, 113, 0.4);
+    }
+    .battery-card.discharge-level-3 {
+      border-color: #ef4444;
+      box-shadow: 0 0 15px rgba(239, 68, 68, 0.5);
+    }
+    .battery-card.discharge-level-4 {
+      border-color: #dc2626;
+      box-shadow: 0 0 18px rgba(220, 38, 38, 0.6);
+    }
+    .battery-card.discharge-level-5 {
+      border-color: #b91c1c;
+      box-shadow: 0 0 20px rgba(185, 28, 28, 0.7);
+    }
+
+    /* Border Colors untuk Standby (Hitam/Transparan) */
+    .battery-card.standby {
+      border-color: rgba(0, 0, 0, 0.2);
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+    }
+
+    body[data-theme="dark"] .battery-card.standby {
+      border-color: rgba(255, 255, 255, 0.15);
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Pulse animation untuk charging/discharging */
+    .battery-card.charging {
+      animation: pulse-charge 2s ease-in-out infinite;
+    }
+
+    .battery-card.discharging {
+      animation: pulse-discharge 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse-charge {
+      0%, 100% {
+        box-shadow: 0 0 8px rgba(34, 197, 94, 0.3);
+      }
+      50% {
+        box-shadow: 0 0 20px rgba(34, 197, 94, 0.6);
+      }
+    }
+
+    @keyframes pulse-discharge {
+      0%, 100% {
+        box-shadow: 0 0 8px rgba(239, 68, 68, 0.3);
+      }
+      50% {
+        box-shadow: 0 0 20px rgba(239, 68, 68, 0.6);
+      }
     }
 
     .battery-card h3 {
@@ -67,6 +149,10 @@
       border-radius: 4px;
       overflow: hidden;
       background-color: #e5e7eb;
+    }
+
+    body[data-theme="dark"] .progress-bar {
+      background-color: rgba(255, 255, 255, 0.1);
     }
     
     .progress-fill {
@@ -107,6 +193,14 @@
       box-shadow: 0 0 12px rgba(252, 211, 77, 0.5) !important;
       animation: pulse-yellow 1.5s ease-in-out infinite;
       background-color: rgba(252, 211, 77, 0.05) !important;
+    }
+
+    body[data-theme="dark"] .cell-highest-voltage {
+      background-color: rgba(239, 68, 68, 0.1) !important;
+    }
+
+    body[data-theme="dark"] .cell-lowest-voltage {
+      background-color: rgba(252, 211, 77, 0.1) !important;
     }
 
     @keyframes pulse-red {
@@ -191,7 +285,121 @@
     .summary-card {
       background-color: var(--card-lapis);
       color: var(--card-text);
-      border-left: 5px solid var(--primary);
+      border: 4px solid transparent;
+      transition: all 0.3s ease;
+    }
+
+    /* Summary Card - Charging (Hijau) */
+    .summary-card.summary-charging-level-1 {
+      border-color: #86efac;
+      box-shadow: 0 0 15px rgba(134, 239, 172, 0.3);
+    }
+    .summary-card.summary-charging-level-2 {
+      border-color: #4ade80;
+      box-shadow: 0 0 18px rgba(74, 222, 128, 0.4);
+    }
+    .summary-card.summary-charging-level-3 {
+      border-color: #22c55e;
+      box-shadow: 0 0 20px rgba(34, 197, 94, 0.5);
+    }
+    .summary-card.summary-charging-level-4 {
+      border-color: #16a34a;
+      box-shadow: 0 0 22px rgba(22, 163, 74, 0.6);
+    }
+    .summary-card.summary-charging-level-5 {
+      border-color: #15803d;
+      box-shadow: 0 0 25px rgba(21, 128, 61, 0.7);
+    }
+
+    /* Summary Card - Discharging (Merah) */
+    .summary-card.summary-discharge-level-1 {
+      border-color: #fca5a5;
+      box-shadow: 0 0 15px rgba(252, 165, 165, 0.3);
+    }
+    .summary-card.summary-discharge-level-2 {
+      border-color: #f87171;
+      box-shadow: 0 0 18px rgba(248, 113, 113, 0.4);
+    }
+    .summary-card.summary-discharge-level-3 {
+      border-color: #ef4444;
+      box-shadow: 0 0 20px rgba(239, 68, 68, 0.5);
+    }
+    .summary-card.summary-discharge-level-4 {
+      border-color: #dc2626;
+      box-shadow: 0 0 22px rgba(220, 38, 38, 0.6);
+    }
+    .summary-card.summary-discharge-level-5 {
+      border-color: #b91c1c;
+      box-shadow: 0 0 25px rgba(185, 28, 28, 0.7);
+    }
+
+    /* Summary Card - Standby (Netral) */
+    .summary-card.summary-standby {
+      border-color: var(--primary);
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
+    }
+
+    /* Pulse animation untuk summary charging */
+    .summary-card.summary-charging {
+      animation: pulse-summary-charge 2s ease-in-out infinite;
+    }
+
+    /* Pulse animation untuk summary discharging */
+    .summary-card.summary-discharging {
+      animation: pulse-summary-discharge 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse-summary-charge {
+      0%, 100% {
+        box-shadow: 0 0 15px rgba(34, 197, 94, 0.3);
+      }
+      50% {
+        box-shadow: 0 0 30px rgba(34, 197, 94, 0.6);
+      }
+    }
+
+    @keyframes pulse-summary-discharge {
+      0%, 100% {
+        box-shadow: 0 0 15px rgba(239, 68, 68, 0.3);
+      }
+      50% {
+        box-shadow: 0 0 30px rgba(239, 68, 68, 0.6);
+      }
+    }
+
+    /* Text highlight untuk summary card */
+    .summary-card.summary-charging #avg-voltage,
+    .summary-card.summary-charging #avg-soc,
+    .summary-card.summary-charging #avg-soh,
+    .summary-card.summary-charging #total-current,
+    .summary-card.summary-charging #total-power {
+      color: #22c55e;
+      font-weight: 700;
+    }
+
+    .summary-card.summary-discharging #avg-voltage,
+    .summary-card.summary-discharging #avg-soc,
+    .summary-card.summary-discharging #avg-soh,
+    .summary-card.summary-discharging #total-current,
+    .summary-card.summary-discharging #total-power {
+      color: #ef4444;
+      font-weight: 700;
+    }
+
+    body[data-theme="dark"] .summary-card.summary-charging #avg-voltage,
+    body[data-theme="dark"] .summary-card.summary-charging #avg-soc,
+    body[data-theme="dark"] .summary-card.summary-charging #avg-soh,
+    body[data-theme="dark"] .summary-card.summary-charging #total-current,
+    body[data-theme="dark"] .summary-card.summary-charging #total-power {
+      color: #4ade80;
+    }
+
+    body[data-theme="dark"] .summary-card.summary-discharging #avg-voltage,
+    body[data-theme="dark"] .summary-card.summary-discharging #avg-soc,
+    body[data-theme="dark"] .summary-card.summary-discharging #avg-soh,
+    body[data-theme="dark"] .summary-card.summary-discharging #total-current,
+    body[data-theme="dark"] .summary-card.summary-discharging #total-power {
+      color: #f87171;
     }
     
     .sort-indicator {
@@ -220,12 +428,22 @@
       border-left: 4px solid #2563eb;
     }
 
+    body[data-theme="dark"] .bus-metrics-modal {
+      background: linear-gradient(135deg, rgba(37, 99, 235, 0.1) 0%, rgba(239, 68, 68, 0.1) 100%);
+    }
+
     .bus-metric-item {
       text-align: center;
       padding: 10px;
       background: white;
       border-radius: 6px;
       box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    body[data-theme="dark"] .bus-metric-item {
+      background: rgba(31, 41, 55, 0.6);
+      color: #f3f4f6;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
     }
 
     .bus-metric-item h4 {
@@ -237,6 +455,10 @@
       letter-spacing: 0.5px;
     }
 
+    body[data-theme="dark"] .bus-metric-item h4 {
+      color: #9ca3af;
+    }
+
     .bus-metric-item .value {
       font-size: 20px;
       font-weight: 700;
@@ -244,9 +466,163 @@
       font-family: 'Courier New', monospace;
     }
 
+    body[data-theme="dark"] .bus-metric-item .value {
+      color: #f3f4f6;
+    }
+
     .bus-metric-item .unit {
       font-size: 10px;
       color: #9ca3af;
+    }
+
+    /* Modal Styling untuk Dark Mode */
+    #batteryModal .bg-white {
+      background-color: var(--card-lapis);
+      color: var(--card-text);
+    }
+
+    body[data-theme="dark"] #batteryModal .text-gray-800 {
+      color: var(--card-text);
+    }
+
+    body[data-theme="dark"] #batteryModal .text-gray-600 {
+      color: var(--card-subtext);
+    }
+
+    body[data-theme="dark"] #batteryModal .border-b {
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    body[data-theme="dark"] #batteryModal .bg-blue-50 {
+      background: rgba(37, 99, 235, 0.1);
+      color: #f3f4f6;
+    }
+
+    body[data-theme="dark"] #batteryModal .bg-green-50 {
+      background: rgba(34, 197, 94, 0.1);
+      color: #f3f4f6;
+    }
+
+    body[data-theme="dark"] #batteryModal .bg-purple-50 {
+      background: rgba(147, 51, 234, 0.1);
+      color: #f3f4f6;
+    }
+
+    body[data-theme="dark"] #batteryModal .bg-gray-50 {
+      background: rgba(31, 41, 55, 0.4);
+      color: #f3f4f6;
+    }
+
+    body[data-theme="dark"] #batteryModal .text-blue-700 {
+      color: #60a5fa;
+    }
+
+    body[data-theme="dark"] #batteryModal .text-green-700 {
+      color: #4ade80;
+    }
+
+    body[data-theme="dark"] #batteryModal .text-purple-700 {
+      color: #a78bfa;
+    }
+
+    body[data-theme="dark"] #batteryModal .text-yellow-500 {
+      color: #fbbf24;
+    }
+
+    body[data-theme="dark"] #batteryModal .text-blue-500 {
+      color: #60a5fa;
+    }
+
+    body[data-theme="dark"] #batteryModal .text-green-500 {
+      color: #4ade80;
+    }
+
+    /* ===== FITUR MODAL DENGAN BORDER CHARGE/DISCHARGE ===== */
+    #batteryModal .modal-content {
+      border: 4px solid transparent;
+      transition: all 0.3s ease;
+    }
+
+    /* Border Modal untuk Charging */
+    #batteryModal .modal-content.modal-charging.modal-charge-level-1 {
+      border-color: #86efac;
+      box-shadow: 0 0 20px rgba(134, 239, 172, 0.3);
+    }
+    #batteryModal .modal-content.modal-charging.modal-charge-level-2 {
+      border-color: #4ade80;
+      box-shadow: 0 0 25px rgba(74, 222, 128, 0.4);
+    }
+    #batteryModal .modal-content.modal-charging.modal-charge-level-3 {
+      border-color: #22c55e;
+      box-shadow: 0 0 30px rgba(34, 197, 94, 0.5);
+    }
+    #batteryModal .modal-content.modal-charging.modal-charge-level-4 {
+      border-color: #16a34a;
+      box-shadow: 0 0 35px rgba(22, 163, 74, 0.6);
+    }
+    #batteryModal .modal-content.modal-charging.modal-charge-level-5 {
+      border-color: #15803d;
+      box-shadow: 0 0 40px rgba(21, 128, 61, 0.7);
+    }
+
+    /* Border Modal untuk Discharging */
+    #batteryModal .modal-content.modal-discharging.modal-discharge-level-1 {
+      border-color: #fca5a5;
+      box-shadow: 0 0 20px rgba(252, 165, 165, 0.3);
+    }
+    #batteryModal .modal-content.modal-discharging.modal-discharge-level-2 {
+      border-color: #f87171;
+      box-shadow: 0 0 25px rgba(248, 113, 113, 0.4);
+    }
+    #batteryModal .modal-content.modal-discharging.modal-discharge-level-3 {
+      border-color: #ef4444;
+      box-shadow: 0 0 30px rgba(239, 68, 68, 0.5);
+    }
+    #batteryModal .modal-content.modal-discharging.modal-discharge-level-4 {
+      border-color: #dc2626;
+      box-shadow: 0 0 35px rgba(220, 38, 38, 0.6);
+    }
+    #batteryModal .modal-content.modal-discharging.modal-discharge-level-5 {
+      border-color: #b91c1c;
+      box-shadow: 0 0 40px rgba(185, 28, 28, 0.7);
+    }
+
+    /* Border Modal untuk Standby */
+    #batteryModal .modal-content.modal-standby {
+      border-color: rgba(0, 0, 0, 0.2);
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    }
+
+    body[data-theme="dark"] #batteryModal .modal-content.modal-standby {
+      border-color: rgba(255, 255, 255, 0.15);
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Pulse animation untuk modal */
+    #batteryModal .modal-content.modal-charging {
+      animation: pulse-charge-modal 2s ease-in-out infinite;
+    }
+
+    #batteryModal .modal-content.modal-discharging {
+      animation: pulse-discharge-modal 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse-charge-modal {
+      0%, 100% {
+        box-shadow: 0 0 20px rgba(34, 197, 94, 0.3);
+      }
+      50% {
+        box-shadow: 0 0 40px rgba(34, 197, 94, 0.6);
+      }
+    }
+
+    @keyframes pulse-discharge-modal {
+      0%, 100% {
+        box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+      }
+      50% {
+        box-shadow: 0 0 40px rgba(239, 68, 68, 0.6);
+      }
     }
 
     @media (max-width: 768px) {
@@ -265,7 +641,7 @@
       <div class="bg-white/20 p-2 rounded-lg mr-3">
         <i class="fas fa-car-battery text-2xl"></i>
       </div>
-      <h1 class="text-2xl font-bold">Lithium Monitoring</h1>
+      <h1 class="text-2xl font-bold">Modul Sakti</h1>
     </div>
 
     <div class="flex items-center space-x-4">
@@ -292,7 +668,7 @@
 
 <!-- Modal Network -->
 <div id="networkModal" class="fixed inset-0 bg-black/50 flex items-center justify-center hidden z-50">
-  <div class="bg-white rounded-lg shadow-lg w-96 p-6 relative">
+  <div class="bg-white rounded-lg shadow-lg w-96 p-6 relative" style="background-color: var(--card-lapis);">
     <button id="closeNetwork" class="absolute top-2 right-2 text-gray-500 hover:text-gray-700">
       ✖
     </button>
@@ -306,9 +682,9 @@
 <main class="flex-1 p-4 sm:p-6 w-full">
   <div class="max-w-7xl mx-auto">
     <div class="mb-6 flex justify-between items-center">
-      <h2 class="text-xl font-semibold text-gray-500">Summary</h2>
+      <h2 class="text-xl font-semibold" style="color: var(--card-subtext);">Summary</h2>
       <div class="flex items-center gap-4">
-        <div class="text-sm text-gray-500">
+        <div class="text-sm" style="color: var(--card-subtext);">
           <span id="total-batteries">0</span> batteries connected
         </div>
       </div>
@@ -319,24 +695,24 @@
       <div class="summary-card rounded-xl shadow-sm p-5">
         <div class="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
           <div class="space-y-1">
-            <div class="text-gray-600">Avg Pack Voltage</div>
-            <div id="avg-voltage" class="font-semibold text-white-800">-</div>
+            <div style="color: var(--card-subtext);">Avg Pack Voltage</div>
+            <div id="avg-voltage" class="font-semibold">-</div>
           </div>
           <div class="space-y-1">
-            <div class="text-gray-600">Avg SOC</div>
-            <div id="avg-soc" class="font-semibold text-white-800">-</div>
+            <div style="color: var(--card-subtext);">Avg SOC</div>
+            <div id="avg-soc" class="font-semibold">-</div>
           </div>
           <div class="space-y-1">
-            <div class="text-gray-600">Avg SOH</div>
-            <div id="avg-soh" class="font-semibold text-white-800">-</div>
+            <div style="color: var(--card-subtext);">Avg SOH</div>
+            <div id="avg-soh" class="font-semibold">-</div>
           </div>
           <div class="space-y-1">
-            <div class="text-gray-600">Total Current</div>
-            <div id="total-current" class="font-semibold text-white-800">-</div>
+            <div style="color: var(--card-subtext);">Total Current</div>
+            <div id="total-current" class="font-semibold">-</div>
           </div>
           <div class="space-y-1">
-            <div class="text-gray-600">Total Power</div>
-            <div id="total-power" class="font-semibold text-white-800">-</div>
+            <div style="color: var(--card-subtext);">Total Power</div>
+            <div id="total-power" class="font-semibold">-</div>
           </div>
         </div>
       </div>
@@ -344,12 +720,12 @@
     
     <div id="batteryGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5"></div>
     
-    <div id="empty-state" class="hidden text-center py-12 bg-white rounded-xl shadow-sm">
+    <div id="empty-state" class="hidden text-center py-12 bg-white rounded-xl shadow-sm" style="background-color: var(--card-lapis);">
       <div class="text-blue-500 mb-4">
         <i class="fas fa-car-battery text-5xl opacity-50"></i>
       </div>
-      <h3 class="text-lg font-medium text-gray-700 mb-2">No batteries connected</h3>
-      <p class="text-gray-500 max-w-md mx-auto">Battery data will appear here once your BMS systems are connected and sending data.</p>
+      <h3 class="text-lg font-medium mb-2" style="color: var(--card-text);">No batteries connected</h3>
+      <p style="color: var(--card-subtext);">Battery data will appear here once your BMS systems are connected and sending data.</p>
     </div>
   </div>
 </main>
@@ -358,7 +734,7 @@
 <footer class="text-gray-300 py-4 w-full" style="background-color: #1f2937;">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col items-center text-center">
     <div class="text-sm">
-      © 2025 BMS Monitor System |
+      © 2025 BMS Monitor System | Modul Sakti | 
       <a href="https://wa.me/628972309993" class="no-underline hover:text-white">
         Hubungi Developer
       </a>
@@ -369,11 +745,11 @@
 
 <!-- Modal -->
 <div id="batteryModal" class="fixed inset-0 hidden bg-black/50 flex items-center justify-center z-50 p-4">
-  <div class="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-    <div class="flex items-center justify-between px-6 py-4 border-b">
+  <div class="modal-content rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col" style="background-color: var(--card-lapis);">
+    <div class="flex items-center justify-between px-6 py-4" style="border-bottom: 1px solid rgba(0,0,0,0.1);">
       <div class="flex items-center">
         <div id="led-modal" class="w-3 h-3 rounded-full bg-gray-300 mr-3"></div>
-        <h2 id="modalTitle" class="text-xl font-semibold text-gray-800"></h2>
+        <h2 id="modalTitle" class="text-xl font-semibold" style="color: var(--card-text);"></h2>
       </div>
       <button id="closeModal" class="text-gray-500 hover:text-gray-700">
         <i class="fas fa-times text-xl"></i>
@@ -381,25 +757,6 @@
     </div>
 
     <div class="overflow-y-auto flex-1 p-6">
-      <!-- FITUR BARU: Bus Metrics Section
-      <div class="bus-metrics-modal" id="busMetricsSection">
-        <div class="bus-metric-item">
-          <h4>📊 Bus Voltage</h4>
-          <div class="value" id="modalBusVoltageValue">-</div>
-          <div class="unit">V</div>
-        </div>
-        <div class="bus-metric-item">
-          <h4>⚡ Bus Current</h4>
-          <div class="value" id="modalBusCurrentValue">-</div>
-          <div class="unit">A</div>
-        </div>
-        <div class="bus-metric-item">
-          <h4>🔌 Bus Power</h4>
-          <div class="value" id="modalBusPowerValue">-</div>
-          <div class="unit">W</div>
-        </div>
-      </div>
- -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         <div class="bg-blue-50 p-4 rounded-lg">
           <div class="flex justify-between items-start mb-2">
@@ -409,7 +766,7 @@
           <div class="progress-bar">
             <div id="soc-progress" class="progress-fill bg-blue-500"></div>
           </div>
-          <div class="text-xs text-gray-500 mt-1">Remaining: <span id="modalRemaining"></span> Ah</div>
+          <div class="text-xs" style="color: var(--card-subtext); margin-top: 0.25rem;">Remaining: <span id="modalRemaining"></span> Ah</div>
         </div>
         
         <div class="bg-green-50 p-4 rounded-lg">
@@ -420,7 +777,7 @@
           <div class="progress-bar">
             <div id="soh-progress" class="progress-fill bg-green-500"></div>
           </div>
-          <div class="text-xs text-gray-500 mt-1">Full Capacity: <span id="modalCapacity"></span> Ah</div>
+          <div class="text-xs" style="color: var(--card-subtext); margin-top: 0.25rem;">Full Capacity: <span id="modalCapacity"></span> Ah</div>
         </div>
         
         <div class="bg-purple-50 p-4 rounded-lg">
@@ -428,36 +785,36 @@
             <div class="text-purple-700 font-medium">Cycle Count</div>
             <div class="text-2xl font-bold text-purple-700" id="modalCycles"></div>
           </div>
-          <div class="text-xs text-gray-500 mt-1">Last updated: <span id="modalLastUpdate"></span></div>
+          <div class="text-xs" style="color: var(--card-subtext); margin-top: 0.25rem;">Last updated: <span id="modalLastUpdate"></span></div>
         </div>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         <div class="space-y-4">
           <div class="bg-gray-50 p-4 rounded-lg">
-            <h3 class="font-medium text-gray-700 mb-3 flex items-center">
+            <h3 class="font-medium mb-3 flex items-center" style="color: var(--card-text);">
               <i class="fas fa-bolt text-yellow-500 mr-2"></i> Voltage Metrics
             </h3>
             <div class="space-y-3">
               <div class="flex justify-between items-center">
-                <span class="text-gray-600">Pack Voltage</span>
-                <span class="font-semibold text-gray-800" id="modalVoltage"></span>
+                <span style="color: var(--card-subtext);">Pack Voltage</span>
+                <span class="font-semibold" id="modalVoltage" style="color: var(--card-text);"></span>
               </div>
               <div class="flex justify-between items-center">
-                <span class="text-gray-600">Bus Voltage</span>
-                <span class="font-semibold text-gray-800" id="modalBusVoltage"></span>
+                <span style="color: var(--card-subtext);">Bus Voltage</span>
+                <span class="font-semibold" id="modalBusVoltage" style="color: var(--card-text);"></span>
               </div>
               <div class="flex justify-between items-center">
-                <span class="text-gray-600">Min Cell Voltage</span>
-                <span class="font-semibold text-gray-800" id="modalcellmin"></span>
+                <span style="color: var(--card-subtext);">Min Cell Voltage</span>
+                <span class="font-semibold" id="modalcellmin" style="color: var(--card-text);"></span>
               </div>
               <div class="flex justify-between items-center">
-                <span class="text-gray-600">Max Cell Voltage</span>
-                <span class="font-semibold text-gray-800" id="modalcellmax"></span>
+                <span style="color: var(--card-subtext);">Max Cell Voltage</span>
+                <span class="font-semibold" id="modalcellmax" style="color: var(--card-text);"></span>
               </div>
               <div class="flex justify-between items-center">
-                <span class="text-gray-600">Voltage Difference</span>
-                <span class="font-semibold text-gray-800" id="modalcelldif"></span>
+                <span style="color: var(--card-subtext);">Voltage Difference</span>
+                <span class="font-semibold" id="modalcelldif" style="color: var(--card-text);"></span>
               </div>
             </div>
           </div>
@@ -465,29 +822,29 @@
 
         <div class="space-y-4">
           <div class="bg-gray-50 p-4 rounded-lg">
-            <h3 class="font-medium text-gray-700 mb-3 flex items-center">
+            <h3 class="font-medium mb-3 flex items-center" style="color: var(--card-text);">
               <i class="fas fa-tachometer-alt text-blue-500 mr-2"></i> Current Metrics
             </h3>
             <div class="space-y-3">
               <div class="flex justify-between items-center">
-                <span class="text-gray-600">Pack Current</span>
-                <span class="font-semibold text-gray-800" id="modalCurrent"></span>
+                <span style="color: var(--card-subtext);">Pack Current</span>
+                <span class="font-semibold" id="modalCurrent" style="color: var(--card-text);"></span>
               </div>
                <div class="flex justify-between items-center">
-                <span class="text-gray-600">Bus Current</span>
-                <span class="font-semibold text-gray-800" id="modalBusCurrentValue"></span>
+                <span style="color: var(--card-subtext);">Bus Current</span>
+                <span class="font-semibold" id="modalBusCurrentValue" style="color: var(--card-text);"></span>
               </div>
               <div class="flex justify-between items-center">
-                <span class="text-gray-600">Pack Power</span>
-                <span class="font-semibold text-gray-800" id="modalPower"></span>
+                <span style="color: var(--card-subtext);">Pack Power</span>
+                <span class="font-semibold" id="modalPower" style="color: var(--card-text);"></span>
               </div>
                <div class="flex justify-between items-center">
-                <span class="text-gray-600">Bus Power</span>
-                <span class="font-semibold text-gray-800" id="modalBusPowerValue"></span>
+                <span style="color: var(--card-subtext);">Bus Power</span>
+                <span class="font-semibold" id="modalBusPowerValue" style="color: var(--card-text);"></span>
               </div>
                <div class="flex justify-between items-center">
-                <span class="text-gray-600">Loss Power</span>
-                <span class="font-semibold text-gray-800" id="modalLossPower"></span>
+                <span style="color: var(--card-subtext);">Loss Power</span>
+                <span class="font-semibold" id="modalLossPower" style="color: var(--card-text);"></span>
               </div>
             </div>
           </div>
@@ -495,7 +852,7 @@
       </div>
 
       <div class="bg-gray-50 p-4 rounded-lg">
-        <h3 class="font-medium text-gray-700 mb-4 flex items-center">
+        <h3 class="font-medium mb-4 flex items-center" style="color: var(--card-text);">
           <i class="fas fa-battery-three-quarters text-green-500 mr-2"></i> Cell Voltages
         </h3>
         <div id="modalCells" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3"></div>
@@ -513,6 +870,16 @@
   let timer_poll;
   let xxx;
   const cardTimers = {};
+  
+  // Fungsi untuk menentukan level intensitas berdasarkan magnitude arus
+  function getIntensityLevel(current) {
+    const absCurrent = Math.abs(current);
+    if (absCurrent <= 5) return 1;
+    if (absCurrent <= 10) return 2;
+    if (absCurrent <= 15) return 3;
+    if (absCurrent <= 20) return 4;
+    return 5;
+  }
   
   // Fungsi untuk mengurutkan baterai berdasarkan typeBattery dan address
   function sortBatteries() {
@@ -552,15 +919,33 @@
       card.dataset.loggerId = batt.loggerId;
       card.dataset.addr = String(batt.addr);
       card.dataset.typeBattery = batt.typeBattery;
+      
+      // Tentukan class berdasarkan status charging/discharging
+      const current = parseFloat(batt.current);
+      if (current > 0.1) {
+        // Charging
+        card.classList.add('charging');
+        const intensityLevel = getIntensityLevel(current);
+        card.classList.add(`charge-level-${intensityLevel}`);
+      } else if (current < -0.1) {
+        // Discharging
+        card.classList.add('discharging');
+        const intensityLevel = getIntensityLevel(current);
+        card.classList.add(`discharge-level-${intensityLevel}`);
+      } else {
+        // Standby
+        card.classList.add('standby');
+      }
+      
       card.innerHTML = `
         <div class="flex items-center justify-between mb-4">
-          <h3 class="text-lg font-semibold text-gray-800">${batt.typeBattery} <span class="text-blue-600">#${batt.addr} </span></h3>
+          <h3 class="text-lg font-semibold" style="color: var(--card-text);">${batt.typeBattery} <span class="text-blue-600">#${batt.addr} </span></h3>
           <div class="led" id="led-card-${batt.loggerId}-${batt.typeBattery}-${batt.addr}"></div>
         </div>
         <div class="mb-4">
           <div class="flex justify-between items-center mb-1">
-            <span class="text-sm text-gray-600">SOC</span>
-            <span class="font-semibold" id="soc-value-${batt.loggerId}-${batt.typeBattery}-${batt.addr}">${batt.soc}%</span>
+            <span class="text-sm" style="color: var(--card-subtext);">SOC</span>
+            <span class="font-semibold" style="color: var(--card-text);" id="soc-value-${batt.loggerId}-${batt.typeBattery}-${batt.addr}">${batt.soc}%</span>
           </div>
           <div class="progress-bar">
             <div id="soc-bar-${batt.loggerId}-${batt.typeBattery}-${batt.addr}" class="progress-fill" style="width: ${batt.soc}%"></div>
@@ -571,22 +956,22 @@
             <div class="flex items-center">
               <i class="fas fa-bolt text-yellow-500 mr-2"></i>
               <div>
-                <div class="text-gray-500">Voltage</div>
-                <div id="voltage-${batt.loggerId}-${batt.typeBattery}-${batt.addr}" class="font-semibold">${batt.voltage} V</div>
+                <div style="color: var(--card-subtext);">Voltage</div>
+                <div id="voltage-${batt.loggerId}-${batt.typeBattery}-${batt.addr}" class="font-semibold" style="color: var(--card-text);">${batt.voltage} V</div>
               </div>
             </div>
             <div class="flex items-center">
               <i class="fas fa-minus-circle  text-blue-500 mr-2"></i>
               <div>
-                <div class="text-gray-500">Diff Cell</div>
-                <div id="voltagedif-${batt.loggerId}-${batt.typeBattery}-${batt.addr}" class="font-semibold">${batt.cell_vdif} mV</div>
+                <div style="color: var(--card-subtext);">Diff Cell</div>
+                <div id="voltagedif-${batt.loggerId}-${batt.typeBattery}-${batt.addr}" class="font-semibold" style="color: var(--card-text);">${batt.cell_vdif} mV</div>
               </div>
             </div>
             <div class="flex items-center">
               <i class="fas fa-minus-circle text-red-500 mr-2"></i>
               <div>
-                <div class="text-gray-500">Min Cell</div>
-                <div id="cellmin-${batt.loggerId}-${batt.typeBattery}-${batt.addr}" class="font-semibold">${batt.cell_vmin} V</div>
+                <div style="color: var(--card-subtext);">Min Cell</div>
+                <div id="cellmin-${batt.loggerId}-${batt.typeBattery}-${batt.addr}" class="font-semibold" style="color: var(--card-text);">${batt.cell_vmin} V</div>
               </div>
             </div>
           </div>
@@ -594,27 +979,27 @@
             <div class="flex items-center">
               <i class="fas fa-tachometer-alt text-blue-500 mr-2"></i>
               <div>
-                <div class="text-gray-500">Current</div>
-                <div id="current-${batt.loggerId}-${batt.typeBattery}-${batt.addr}" class="font-semibold">${batt.current} A</div>
+                <div style="color: var(--card-subtext);">Current</div>
+                <div id="current-${batt.loggerId}-${batt.typeBattery}-${batt.addr}" class="font-semibold" style="color: var(--card-text);">${batt.current} A</div>
               </div>
             </div>
             <div class="flex items-center">
               <i class="fas fa-bolt text-red-500 mr-2"></i>
               <div>
-                <div class="text-gray-500">Power</div>
-                <div id="power-${batt.loggerId}-${batt.typeBattery}-${batt.addr}" class="font-semibold">${(batt.voltage*batt.current).toFixed(1)} W</div>
+                <div style="color: var(--card-subtext);">Power</div>
+                <div id="power-${batt.loggerId}-${batt.typeBattery}-${batt.addr}" class="font-semibold" style="color: var(--card-text);">${(batt.voltage*batt.current).toFixed(1)} W</div>
               </div>
             </div>
             <div class="flex items-center">
               <i class="fas fa-plus-circle text-green-500 mr-2"></i>
               <div>
-                <div class="text-gray-500">Max Cell</div>
-                <div id="cellmax-${batt.loggerId}-${batt.typeBattery}-${batt.addr}" class="font-semibold">${batt.cell_vmax} V</div>
+                <div style="color: var(--card-subtext);">Max Cell</div>
+                <div id="cellmax-${batt.loggerId}-${batt.typeBattery}-${batt.addr}" class="font-semibold" style="color: var(--card-text);">${batt.cell_vmax} V</div>
               </div>
             </div>
           </div>
         </div>
-        <div class="mt-4 pt-3 border-t border-gray-100 text-xs text-gray-500 flex justify-between">
+        <div class="mt-4 pt-3 border-t text-xs flex justify-between" style="border-color: rgba(0,0,0,0.1); color: var(--card-subtext);">
           <span>Cycles: ${batt.cycles}</span>
           <span class="last-update"><i class="far fa-clock mr-1"></i>${batt.time}</span>
         </div>
@@ -684,11 +1069,9 @@
     });
     
     client.on("connect", () => {
-      // console.log("Connected to MQTT");
       xxx = id_logger.split("-");
       for(var a=0; a<xxx.length;a++){
         client.subscribe("sysMon/"+xxx[a]+"/AutoPoll/#");
-        // console.log("Subscribed topic: ", xxx[a]);
         client.publish(xxx[a]+"/seting","POLL1",0);
       }
       client.subscribe("sysMon/"+xxx[0]+"/info/#");
@@ -704,7 +1087,6 @@
     });
     
     client.on("error", (error) => {
-      // console.error("MQTT Error:", error);
       updateConnectionStatus(false);
     });
 
@@ -714,11 +1096,9 @@
     });
     
     client2.on("connect", () => {
-      // console.log("Connected to MQTT 2");
       xxx = id_logger.split("-");
       for(var a=0; a<xxx.length;a++){
         client2.subscribe("sysMon/"+xxx[a]+"/AutoPoll/#");
-        // console.log("Subscribed topic: ", xxx[a]);
         client2.publish(xxx[a]+"/seting","POLL1",0);
       }
       client2.subscribe("sysMon/"+xxx[0]+"/info/#");
@@ -734,7 +1114,6 @@
     });
     
     client2.on("error", (error) => {
-      // console.error("MQTT Error:", error);
       updateConnectionStatus(false);
     });
   }
@@ -770,7 +1149,6 @@
         } else {
           batt.elementId = `battery-${batt.loggerId}-${batt.typeBattery}-${batt.addr}`;
           batteries.push(batt);
-          // Setelah menambahkan baterai baru, urutkan semua baterai
           sortBatteries();
         }
 
@@ -856,7 +1234,6 @@
     batteries = batteries.filter(b => !(b.loggerId === loggerId && b.typeBattery === typeBattery && b.addr === addr));
     updateConnectionCount();
     updateSummary();
-    // Setelah menghapus baterai, urutkan ulang
     sortBatteries();
   }
 
@@ -865,11 +1242,28 @@
     let card = document.getElementById(cardId);
     
     if (!card) {
-      // Jika card tidak ada, tambahkan baterai ke array dan urutkan
       batt.elementId = `battery-${batt.loggerId}-${batt.typeBattery}-${batt.addr}`;
       batteries.push(batt);
       sortBatteries();
       return;
+    }
+
+    // Update class berdasarkan status charging/discharging
+    const current = parseFloat(batt.current);
+    card.classList.remove('charging', 'discharging', 'standby');
+    card.classList.remove('charge-level-1', 'charge-level-2', 'charge-level-3', 'charge-level-4', 'charge-level-5');
+    card.classList.remove('discharge-level-1', 'discharge-level-2', 'discharge-level-3', 'discharge-level-4', 'discharge-level-5');
+    
+    if (current > 0.1) {
+      card.classList.add('charging');
+      const intensityLevel = getIntensityLevel(current);
+      card.classList.add(`charge-level-${intensityLevel}`);
+    } else if (current < -0.1) {
+      card.classList.add('discharging');
+      const intensityLevel = getIntensityLevel(current);
+      card.classList.add(`discharge-level-${intensityLevel}`);
+    } else {
+      card.classList.add('standby');
     }
 
     // Update card yang sudah ada
@@ -937,6 +1331,30 @@
     document.getElementById("avg-soh").textContent = `${(totalSoh / count).toFixed(1)}%`;
     document.getElementById("total-current").textContent = `${totalCurrent.toFixed(2)} A`;
     document.getElementById("total-power").textContent = `${totalPower.toFixed(2)} W`;
+
+    // ===== UPDATE SUMMARY CARD STYLING BERDASARKAN TOTAL CURRENT =====
+    const summaryCard = document.querySelector('.summary-card');
+    if (summaryCard) {
+      // Reset semua classes
+      summaryCard.classList.remove('summary-charging', 'summary-discharging', 'summary-standby');
+      summaryCard.classList.remove('summary-charging-level-1', 'summary-charging-level-2', 'summary-charging-level-3', 'summary-charging-level-4', 'summary-charging-level-5');
+      summaryCard.classList.remove('summary-discharge-level-1', 'summary-discharge-level-2', 'summary-discharge-level-3', 'summary-discharge-level-4', 'summary-discharge-level-5');
+
+      if (totalCurrent > 0.1) {
+        // Charging
+        summaryCard.classList.add('summary-charging');
+        const intensityLevel = getIntensityLevel(totalCurrent);
+        summaryCard.classList.add(`summary-charging-level-${intensityLevel}`);
+      } else if (totalCurrent < -0.1) {
+        // Discharging
+        summaryCard.classList.add('summary-discharging');
+        const intensityLevel = getIntensityLevel(totalCurrent);
+        summaryCard.classList.add(`summary-discharge-level-${intensityLevel}`);
+      } else {
+        // Standby
+        summaryCard.classList.add('summary-standby');
+      }
+    }
   }
 
   function openModal(loggerId, addr, typeBattery) {
@@ -953,6 +1371,27 @@
     const batt = batteries.find(b => b.loggerId === currentLoggerId && b.addr === currentAddr && b.typeBattery === currentTypeBattery);
     if (!batt) return;
 
+    // ===== UPDATE BORDER MODAL SESUAI CHARGE/DISCHARGE STATUS =====
+    const modalContent = document.querySelector('#batteryModal .modal-content');
+    const current = parseFloat(batt.current);
+    
+    // Reset classes
+    modalContent.classList.remove('modal-charging', 'modal-discharging', 'modal-standby');
+    modalContent.classList.remove('modal-charge-level-1', 'modal-charge-level-2', 'modal-charge-level-3', 'modal-charge-level-4', 'modal-charge-level-5');
+    modalContent.classList.remove('modal-discharge-level-1', 'modal-discharge-level-2', 'modal-discharge-level-3', 'modal-discharge-level-4', 'modal-discharge-level-5');
+    
+    if (current > 0.1) {
+      modalContent.classList.add('modal-charging');
+      const intensityLevel = getIntensityLevel(current);
+      modalContent.classList.add(`modal-charge-level-${intensityLevel}`);
+    } else if (current < -0.1) {
+      modalContent.classList.add('modal-discharging');
+      const intensityLevel = getIntensityLevel(current);
+      modalContent.classList.add(`modal-discharge-level-${intensityLevel}`);
+    } else {
+      modalContent.classList.add('modal-standby');
+    }
+
     document.getElementById("modalTitle").textContent = `${batt.typeBattery} #${batt.addr}`;
     document.getElementById("modalSOC").textContent = `${batt.soc}%`;
     document.getElementById("modalSOH").textContent = `${batt.soh}%`;
@@ -968,8 +1407,6 @@
     document.getElementById("modalcelldif").textContent = `${batt.cell_vdif} mV`;
     document.getElementById("modalPower").textContent = `${batt.power} W`;
 
-    // FITUR BARU: Update Bus Metrics di Modal
-    //document.getElementById("modalBusVoltageValue").textContent = `${batt.busVoltage}`;
     document.getElementById("modalBusCurrentValue").textContent = `${batt.bus_current} A`;
     document.getElementById("modalBusPowerValue").textContent = `${(batt.busVoltage * batt.bus_current).toFixed(2)} W`;
     document.getElementById("modalLossPower").textContent = `${Math.abs((batt.busVoltage * batt.bus_current)-batt.power).toFixed(2)} W`;
@@ -991,7 +1428,6 @@
     const cellsDiv = document.getElementById("modalCells");
     cellsDiv.innerHTML = "";
     
-    // FITUR BARU: Highlight cell tertinggi dan terendah
     const cellVoltages = batt.cells.map(v => parseFloat(v));
     const maxVoltage = Math.max(...cellVoltages);
     const minVoltage = Math.min(...cellVoltages);
@@ -1005,7 +1441,6 @@
       const cellBox = document.createElement("div");
       cellBox.className = `cell-voltage ${statusClass} bg-white rounded-lg shadow-sm p-3 flex flex-col items-center`;
       
-      // FITUR BARU: Tambah highlight untuk cell tertinggi dan terendah
       if (cellValue === maxVoltage) {
         cellBox.classList.add('cell-highest-voltage');
       } else if (cellValue === minVoltage) {
@@ -1118,11 +1553,9 @@
   pollingStateData.addEventListener("click",(e) => {
     if(pollingSts === true ){
       client.publish(id_logger+"/seting", "POLL0",0);
-      // console.log("deactivate");
     }
     else{
       client.publish(id_logger+"/seting", "POLL1",0);
-      // console.log("activated")
     }
   });
 
