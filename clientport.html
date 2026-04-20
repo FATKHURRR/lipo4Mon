@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Serial Port Cloud Bridge</title>
+  <title>Serial Port Bridge</title>
   <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -57,11 +57,7 @@
       }
     }
 
-    function activate(){
-      let settpic=mqttMainTopic+"/seting";
-      mqttClient.publish(settpic,"POLL0");
-      
-    }
+   
 
     function flashIndicator(id) {
       const el = document.getElementById(id);
@@ -114,19 +110,15 @@
   </script>
 </head>
 <body class="p-4 font-mono">
-  <h2 class="text-xl font-bold mb-2">Serial Port ↔ Cloud Bridge</h2>
+  <h2 class="text-xl font-bold mb-2">COM ↔ Bridge</h2>
   <div class="mb-2">
     <label class="block">Baudrate:</label>
     <input id="baudrate" type="number" value="9600" class="border p-1">
     <button onclick="connectSerial()" class="bg-blue-500 text-white px-2 py-1 rounded">Open Serial</button>
     <span id="status" class="ml-2">Not connected</span>
   </div>
-
   <div class="mb-2">
     <span id="mqtt-status" class="ml-2">Not connected</span>
-  </div>
-   <div class="mb-2">
-     <button onclick="activate()" class="bg-blue-500 text-white px-2 py-1 rounded">ConnectModule</button>
   </div>
   <div class="flex gap-4">
     <div id="mqtt-in" class="w-4 h-4 bg-gray-300 rounded-full"></div>
