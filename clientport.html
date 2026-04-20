@@ -1,43 +1,300 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Serial Port Bridge</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>COM ↔ Cloud Bridge</title>
   <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    let port, reader, writer;
-    let mqttClient;
-    let mqttMainTopic;
-    let mqttRxTopic;
-    let mqttTxTopic;
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    const mqttBroker = "wss://broker.emqx.io:8084/mqtt";
-    const mqttUser = "emqx";
-    const mqttPass = "emqx";
-
-    function getQueryParam(name) {
-      const urlParams = new URLSearchParams(window.location.search);
-      return urlParams.get(name);
+    body {
+      font-family: 'Courier New', Courier, monospace;
+      background: #0f1117;
+      color: #e2e8f0;
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 2rem 1rem;
     }
 
-    function logStatus(msg) {
-      const log = document.getElementById("status");
-      log.textContent = msg;
+    .app {
+      width: 100%;
+      max-width: 480px;
+    }
+
+    .app-header {
+      margin-bottom: 1.5rem;
+    }
+
+    .app-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #f1f5f9;
+      letter-spacing: 0.02em;
+    }
+
+    .app-sub {
+      font-size: 12px;
+      color: #64748b;
+      margin-top: 3px;
+    }
+
+    .card {
+      background: #1e2230;
+      border: 1px solid #2d3348;
+      border-radius: 10px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 10px;
+    }
+
+    .card-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: #475569;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 12px;
+    }
+
+    /* Serial section */
+    .baud-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    select {
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 13px;
+      background: #141620;
+      border: 1px solid #2d3348;
+      border-radius: 6px;
+      padding: 7px 10px;
+      color: #e2e8f0;
+      cursor: pointer;
+      outline: none;
+    }
+
+    select:focus { border-color: #4f6ef7; }
+
+    .btn {
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 13px;
+      background: #141620;
+      border: 1px solid #2d3348;
+      border-radius: 6px;
+      padding: 7px 16px;
+      color: #e2e8f0;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+      white-space: nowrap;
+    }
+
+    .btn:hover { background: #252a3d; border-color: #3d4666; }
+
+    .btn.connected {
+      background: #0f2e1a;
+      border-color: #1a5c2e;
+      color: #4ade80;
+    }
+
+    .status-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #2d3348;
+      border: 1px solid #3d4666;
+      flex-shrink: 0;
+      transition: background 0.2s, border-color 0.2s;
+    }
+
+    .dot.ok   { background: #16a34a; border-color: #4ade80; box-shadow: 0 0 6px #16a34a66; }
+    .dot.err  { background: #dc2626; border-color: #f87171; }
+    .dot.warn { background: #d97706; border-color: #fbbf24; }
+
+    .status-text {
+      font-size: 12px;
+      color: #94a3b8;
+    }
+
+    /* Topic chips */
+    .chip-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
+    .chip {
+      font-size: 11px;
+      background: #141620;
+      border: 1px solid #2d3348;
+      border-radius: 5px;
+      padding: 3px 9px;
+      color: #7c9ef8;
+    }
+
+    /* Activity */
+    .activity-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .activity-item {
+      background: #141620;
+      border: 1px solid #2d3348;
+      border-radius: 8px;
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .act-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #2d3348;
+      border: 1px solid #3d4666;
+      flex-shrink: 0;
+      transition: background 0.05s;
+    }
+
+    .act-dot.flash { background: #4ade80; border-color: #16a34a; box-shadow: 0 0 8px #16a34a88; }
+
+    .act-label { font-size: 12px; color: #cbd5e1; }
+    .act-sub   { font-size: 11px; color: #475569; margin-top: 2px; }
+
+    /* Divider */
+    .divider {
+      height: 1px;
+      background: #2d3348;
+      margin: 10px 0;
+    }
+
+    /* Broker info */
+    .broker-info {
+      font-size: 11px;
+      color: #475569;
+      margin-top: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+
+    <div class="app-header">
+      <div class="app-title">COM ↔ Bridge</div>
+      <div class="app-sub">Serial Forwarder For client</div>
+    </div>
+
+    <!-- Serial Port -->
+    <div class="card">
+      <div class="card-label">Serial Port</div>
+      <div class="baud-row">
+        <select id="baudrate">
+          <option value="9600">9600</option>
+          <option value="19200">19200</option>
+          <option value="38400">38400</option>
+          <option value="57600">57600</option>
+          <option value="115200">115200</option>
+        </select>
+        <button class="btn" id="serial-btn" onclick="connectSerial()">Open port</button>
+      </div>
+      <div class="status-row">
+        <div class="dot" id="serial-dot"></div>
+        <span class="status-text" id="status">Not connected</span>
+      </div>
+    </div>
+
+    <!-- MQTT Broker -->
+    <div class="card">
+      <div class="card-label">MQTT Broker</div>
+      <div class="status-row">
+        <div class="dot warn" id="mqtt-dot"></div>
+        <span class="status-text" id="mqtt-status">Connecting…</span>
+      </div>
+      <div class="chip-row" id="topic-row" style="display:none">
+        <span class="chip" id="rx-chip">RX ← —</span>
+        <span class="chip" id="tx-chip">TX → —</span>
+      </div>
+      <div class="broker-info" id="broker-info"></div>
+    </div>
+
+    <!-- Activity -->
+    <div class="card">
+      <div class="card-label">Activity</div>
+      <div class="activity-grid">
+        <div class="activity-item">
+          <div class="act-dot" id="mqtt-in"></div>
+          <div>
+            <div class="act-label">Cloude IN</div>
+            <div class="act-sub">SKY → COM</div>
+          </div>
+        </div>
+        <div class="activity-item">
+          <div class="act-dot" id="mqtt-out"></div>
+          <div>
+            <div class="act-label">Cloude OUT</div>
+            <div class="act-sub">COM → SKY</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    let port, reader, writer, mqttClient;
+    let mqttRxTopic, mqttTxTopic;
+    const mqttBroker = "wss://broker.emqx.io:8084/mqtt";
+
+    function getParam(name) {
+      return new URLSearchParams(window.location.search).get(name);
+    }
+
+    function setSerial(state, msg) {
+      const dot = document.getElementById("serial-dot");
+      const btn = document.getElementById("serial-btn");
+      dot.className = "dot" + (state === "ok" ? " ok" : state === "err" ? " err" : "");
+      document.getElementById("status").textContent = msg;
+      if (state === "ok") { btn.textContent = "Connected"; btn.classList.add("connected"); }
+      else { btn.textContent = "Open port"; btn.classList.remove("connected"); }
+    }
+
+    function setMqtt(state, msg) {
+      const dot = document.getElementById("mqtt-dot");
+      dot.className = "dot" + (state === "ok" ? " ok" : state === "err" ? " err" : " warn");
+      document.getElementById("mqtt-status").textContent = msg;
+    }
+
+    function flashIndicator(id) {
+      const el = document.getElementById(id);
+      el.classList.add("flash");
+      setTimeout(() => el.classList.remove("flash"), 130);
     }
 
     async function connectSerial() {
       try {
         port = await navigator.serial.requestPort();
-        const baudRate = parseInt(document.getElementById("baudrate").value);
-        await port.open({ baudRate });
+        const baud = parseInt(document.getElementById("baudrate").value);
+        await port.open({ baudRate: baud });
         writer = port.writable.getWriter();
         reader = port.readable.getReader();
-        logStatus("Serial connected");
+        setSerial("ok", "Connected · " + baud + " baud");
         readSerialLoop();
       } catch (e) {
-        logStatus("Serial connection failed: " + e);
+        setSerial("err", "Failed: " + e.message);
       }
     }
 
@@ -48,84 +305,46 @@
           if (done) break;
           if (mqttClient?.connected && mqttTxTopic) {
             mqttClient.publish(mqttTxTopic, new Uint8Array(value));
-            console.log("publish", mqttTxTopic,value);
             flashIndicator("mqtt-out");
           }
         }
-      } catch (err) {
-        console.error(err);
-      }
-    }
-
-   
-
-    function flashIndicator(id) {
-      const el = document.getElementById(id);
-      el.classList.add("bg-green-500");
-      setTimeout(() => el.classList.remove("bg-green-500"), 100);
+      } catch (e) { console.error(e); }
     }
 
     function connectMQTT() {
-      mqttClient = mqtt.connect(mqttBroker, {
-        username: mqttUser,
-        password: mqttPass
-      });
+      const mainTopic = getParam("id") || "defaultTopic";
+      mqttRxTopic = mainTopic + "/TX";
+      mqttTxTopic = mainTopic + "/RX";
+
+      //document.getElementById("rx-chip").textContent = "RX ← SKY" + mqttRxTopic;
+      //document.getElementById("tx-chip").textContent = "TX → SKY" + mqttTxTopic;
+		document.getElementById("rx-chip").textContent = "RX ← SKY";
+		document.getElementById("tx-chip").textContent = "TX → SKY";
+      mqttClient = mqtt.connect(mqttBroker, { username: "emqx", password: "emqx" });
 
       mqttClient.on("connect", () => {
-        document.getElementById("mqtt-status").textContent = "Connected";
+        setMqtt("ok", "Connected");
+        document.getElementById("topic-row").style.display = "flex";
+        //document.getElementById("broker-info").textContent = "broker.emqx.io:8084";
         mqttClient.subscribe(mqttRxTopic);
-        console.log("Topic subscribed:", mqttRxTopic);
       });
 
       mqttClient.on("message", (topic, payload) => {
-        console.log("receive:",topic,payload);
-        if(topic === mqttRxTopic) {
+        if (topic === mqttRxTopic) {
           flashIndicator("mqtt-in");
-          if (writer){
-            console.log("Serial Oke", payload);
-            writer.write(payload);
-          } else {
-            console.log("Serial not connected", payload);
-          }
+          if (writer) writer.write(payload);
         }
       });
 
-      mqttClient.on("error", err => {
-        document.getElementById("mqtt-status").textContent = "MQTT Error: " + err;
-      });
-
+      mqttClient.on("error", e => setMqtt("err", "Error: " + e.message));
       mqttClient.on("close", () => {
-        document.getElementById("mqtt-status").textContent = "Disconnected";
+        setMqtt("", "Disconnected");
+        document.getElementById("topic-row").style.display = "none";
+        document.getElementById("broker-info").textContent = "";
       });
     }
 
-    // auto-run saat page dibuka
-    window.addEventListener("DOMContentLoaded", () => {
-      mqttMainTopic = getQueryParam("id") || "defaultTopic";
-      mqttRxTopic = mqttMainTopic + "/TX";
-      mqttTxTopic = mqttMainTopic + "/RX";
-      console.log("Using MainTopic:", mqttMainTopic);
-      connectMQTT();
-    });
+    connectMQTT();
   </script>
-</head>
-<body class="p-4 font-mono">
-  <h2 class="text-xl font-bold mb-2">COM ↔ Bridge</h2>
-  <div class="mb-2">
-    <label class="block">Baudrate:</label>
-    <input id="baudrate" type="number" value="9600" class="border p-1">
-    <button onclick="connectSerial()" class="bg-blue-500 text-white px-2 py-1 rounded">Open Serial</button>
-    <span id="status" class="ml-2">Not connected</span>
-  </div>
-  <div class="mb-2">
-    <span id="mqtt-status" class="ml-2">Not connected</span>
-  </div>
-  <div class="flex gap-4">
-    <div id="mqtt-in" class="w-4 h-4 bg-gray-300 rounded-full"></div>
-    <span>Cloud IN</span>
-    <div id="mqtt-out" class="w-4 h-4 bg-gray-300 rounded-full"></div>
-    <span>Cloud OUT</span>
-  </div>
 </body>
 </html>
-
