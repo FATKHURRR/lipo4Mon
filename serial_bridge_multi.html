@@ -324,9 +324,7 @@ function setUSB(state, msg) {
     connMode = 'serial';
   }
 
-  if (connMode === 'usb') {
-  setTimeout(connectUSB, 500);
-}
+
 }
 
 function switchTab(mode) {
@@ -635,10 +633,10 @@ async function writeToDevice(data) {
       document.getElementById("broker-info").textContent = "";
     });
   }
+  connectMQTT();
 
   detectPlatform();
 
-  connectMQTT();
 </script>
 </body>
 </html>
