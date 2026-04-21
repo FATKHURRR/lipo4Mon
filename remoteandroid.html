@@ -307,10 +307,144 @@
     });
   }
 
-  // ---------- Connection Logic ----------
-  async function connectAction() {
-    if (isAndroid) await connectUSB();
-    else await connectSerial();
+  // ---------- Baudrate Setup Functions ----------
+  async function setupCH340BaudRate(device, baudrate) {
+    try {
+      await device.controlTransferOut({
+        requestType: 'vendor',
+        recipient: 'device',
+        request: 0xA1,
+        value: 0x1312,
+        index: 0,
+        data: new Uint32Array([baudrate]).buffer
+      });
+      console.log(`CH340 baudrate set to ${baudrate}`);
+    } catch(e) {
+      console.warn("CH340 baudrate setup failed:", e);
+    }
+  }
+
+  async function setupCP210xBaudRate(device, baudrate) {
+    try {
+      await device.controlTransferOut({
+        requestType: 'vendor',
+        recipient: 'device',
+        request: 0x1E,
+        value: 0x0000,
+        index: 0x0000,
+        data: new Uint32Array([baudrate]).buffer
+      });
+      console.log(`CP210x baudrate set to ${baudrate}`);
+    } catch(e) {
+      console.warn("CP210x baudrate setup failed:", e);
+    }
+  }
+
+  async function setupFTDIBaudRate(device, baudrate) {
+    try {
+      // FTDI menggunakan divisor, dengan base clock 3MHz
+      const divisor = Math.round(3000000 / baudrate);
+      await device.controlTransferOut({
+        requestType: 'vendor',
+        recipient: 'device',
+        request: 0x03,
+        value: divisor & 0xFFFF,
+        index: (divisor >> 16) & 0xFFFF,
+        data: new ArrayBuffer(0)
+      });
+      console.log(`FTDI baudrate set to ${baudrate} (divisor: ${divisor})`);
+    } catch(e) {
+      console.warn("FTDI baudrate setup failed:", e);
+    }
+  }
+
+  async function setupPL2303BaudRate(device, baudrate) {
+    try {
+      const data = new Uint8Array(7);
+      data[0] = baudrate & 0xFF;
+      data[1] = (baudrate >> 8) & 0xFF;
+      data[2] = (baudrate >> 16) & 0xFF;
+      data[3] = (baudrate >> 24) & 0xFF;
+      data[4] = 0; // stop bits: 1 stop bit
+      data[5] = 0; // parity: none
+      data[6] = 8; // data bits: 8
+      
+      await device.controlTransferOut({
+        requestType: 'class',
+        recipient: 'interface',
+        request: 0x20,
+        value: 0,
+        index: 0,
+        data: data.buffer
+      });
+      console.log(`PL2303 baudrate set to ${baudrate}`);
+    } catch(e) {
+      console.warn("PL2303 baudrate setup failed:", e);
+    }
+  }
+
+  async function setupCDCLineCoding(device, baudrate) {
+    try {
+      // CDC SET_LINE_CODING - standard untuk USB serial device
+      const data = new Uint8Array(7);
+      data[0] = baudrate & 0xFF;
+      data[1] = (baudrate >> 8) & 0xFF;
+      data[2] = (baudrate >> 16) & 0xFF;
+      data[3] = (baudrate >> 24) & 0xFF;
+      data[4] = 0; // 1 stop bit
+      data[5] = 0; // no parity
+      data[6] = 8; // 8 data bits
+      
+      await device.controlTransferOut({
+        requestType: 'class',
+        recipient: 'interface',
+        request: 0x20, // SET_LINE_CODING
+        value: 0,
+        index: 0,
+        data: data.buffer
+      });
+      console.log(`CDC line coding set to ${baudrate} baud`);
+    } catch(e) {
+      console.warn("CDC line coding setup failed:", e);
+    }
+  }
+
+  async function changeBaudRate() {
+    if (!usbConnected && !port) {
+      alert("Device not connected!");
+      return;
+    }
+    
+    const newBaud = parseInt(document.getElementById("baudrate").value);
+    
+    try {
+      if (isAndroid && usbConnected) {
+        // Ubah baudrate di USB device
+        if (usbDevice.vendorId === 0x1a86) {
+          await setupCH340BaudRate(usbDevice, newBaud);
+        } else if (usbDevice.vendorId === 0x0403) {
+          await setupFTDIBaudRate(usbDevice, newBaud);
+        } else if (usbDevice.vendorId === 0x10c4) {
+          await setupCP210xBaudRate(usbDevice, newBaud);
+        } else if (usbDevice.vendorId === 0x067b) {
+          await setupPL2303BaudRate(usbDevice, newBaud);
+        }
+        await setupCDCLineCoding(usbDevice, newBaud);
+        await new Promise(r => setTimeout(r, 100));
+        setSerial('ok', 'Baudrate changed to ' + newBaud);
+      } else if (port) {
+        // Serial API akan ditangani dengan menutup dan membuka ulang port
+        await reader.cancel();
+        await port.close();
+        await port.open({ baudRate: newBaud });
+        writer = port.writable.getWriter();
+        reader = port.readable.getReader();
+        setSerial('ok', 'Baudrate changed to ' + newBaud);
+        readSerialLoop();
+      }
+    } catch(e) {
+      setSerial('err', 'Failed to change baudrate: ' + e.message);
+    }
   }
 
   async function connectUSB() {
@@ -328,17 +462,29 @@
       if (usbDevice.configuration === null) await usbDevice.selectConfiguration(1);
       await usbDevice.claimInterface(0);
 
-      // Set Baudrate based on selection
+      // Get selected baudrate
       const baud = parseInt(document.getElementById("baudrate").value);
+      
+      // Set Baudrate berdasarkan vendor device
       if (usbDevice.vendorId === 0x1a86) {
+        // CH340
         await setupCH340BaudRate(usbDevice, baud);
+        await setupCDCLineCoding(usbDevice, baud);
+      } else if (usbDevice.vendorId === 0x0403) {
+        // FTDI
+        await setupFTDIBaudRate(usbDevice, baud);
+        await setupCDCLineCoding(usbDevice, baud);
       } else if (usbDevice.vendorId === 0x10c4) {
-        // CP210x Baudrate logic
-        await usbDevice.controlTransferOut({
-          requestType: 'vendor', recipient: 'device',
-          request: 0x1E, value: 0x0000, index: 0x0000,
-          data: new Uint32Array([baud]).buffer
-        });
+        // CP210x
+        await setupCP210xBaudRate(usbDevice, baud);
+        await setupCDCLineCoding(usbDevice, baud);
+      } else if (usbDevice.vendorId === 0x067b) {
+        // PL2303
+        await setupPL2303BaudRate(usbDevice, baud);
+        await setupCDCLineCoding(usbDevice, baud);
+      } else {
+        // Fallback untuk device lain, coba CDC line coding
+        await setupCDCLineCoding(usbDevice, baud);
       }
 
       // Set Control Line State (DTR/RTS)
@@ -347,11 +493,15 @@
         request: 0x22, value: 0x01, index: 0
       });
 
+      // Add small delay untuk memastikan setting sudah diterapkan
+      await new Promise(r => setTimeout(r, 200));
+
       usbConnected = true;
       setSerial('ok', 'Connected USB (' + baud + ' baud)');
       readUSBLoop();
     } catch(e) {
       setSerial('err', e.message);
+      console.error("USB Connection Error:", e);
     }
   }
 
@@ -516,6 +666,13 @@
   // Init
   detectPlatform();
   connectMQTT();
+  
+  // Event listener untuk perubahan baudrate
+  document.getElementById("baudrate").addEventListener("change", function() {
+    if ((isAndroid && usbConnected) || port) {
+      changeBaudRate();
+    }
+  });
 
 </script>
 </body>
