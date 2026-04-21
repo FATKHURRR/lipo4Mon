@@ -214,41 +214,33 @@
       <div class="activity-item">
         <div class="act-dot" id="mqtt-in"></div>
         <div>
-          <div class="act-label">INCOMING</div>
-          <div class="act-sub" id="act-in-sub">Cloud → Device</div>
+          <div class="act-label">MQTT ↓</div>
+          <div class="act-sub">Receiving from cloud</div>
         </div>
       </div>
       <div class="activity-item">
         <div class="act-dot" id="mqtt-out"></div>
         <div>
-          <div class="act-label">OUTGOING</div>
-          <div class="act-sub" id="act-out-sub">Device → Cloud</div>
+          <div class="act-label">MQTT ↑</div>
+          <div class="act-sub">Sending to cloud</div>
         </div>
       </div>
     </div>
   </div>
 
-  <div class="card" id="logging" hidden>
+  <div class="card" id="logging" style="display:none;">
+    <div class="card-label">Debug Log</div>
     <div class="log-toolbar">
-      <div>
-        <div class="card-label" style="margin-bottom:2px">Transaction Log</div>
-        <div class="log-count" id="log-count">0 entries in buffer</div>
-      </div>
+      <span class="log-count" id="log-count">0 entries</span>
       <div class="log-btns">
         <button class="btn sm cl" onclick="clearLog()">Clear</button>
-        <button class="btn sm dl" onclick="downloadLog()">↓ CSV</button>
+        <button class="btn sm dl" onclick="downloadLog()">Download</button>
       </div>
     </div>
     <div class="log-wrap">
       <table>
-        <thead>
-          <tr>
-            <th style="width:80px">Time</th><th style="width:60px">Dir</th><th style="width:100px">Topic</th><th>Data (Hex)</th>
-          </tr>
-        </thead>
-        <tbody id="log-body">
-          <tr><td colspan="4" class="empty-log">No transactions yet</td></tr>
-        </tbody>
+        <thead><tr><th>Time</th><th>Dir</th><th>Topic</th><th>Data</th></tr></thead>
+        <tbody id="log-body"><tr><td colspan="4" class="empty-log">No transactions yet</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -256,55 +248,47 @@
 </div>
 
 <script>
-  let port, reader, writer, mqttClient;
-  let mqttRxTopic, mqttTxTopic, mainTopic;
-  let isServerMode = false;
-  let usbDevice, usbConnected = false;
+  // ---------- Global Variables ----------
   let isAndroid = false;
-  const mqttBroker = "wss://broker.emqx.io:8084/mqtt";
-  const logBuffer = [];
-  const MAX_DISPLAY = 10;
-  const allowedTopics = new Set();
+  let isServerMode = false;
+  let usbDevice = null;
+  let usbConnected = false;
+  let port = null;
+  let writer = null;
+  let reader = null;
+  let mqttClient = null;
+  let mqttBroker = "wss://test.mosquitto.org:8081";
+  let mainTopic = "";
+  let mqttRxTopic = "";
+  let mqttTxTopic = "";
+  let allowedTopics = new Set();
+  let logBuffer = [];
+  const MAX_DISPLAY = 100;
 
-  // CH340 Baudrate Register Map
-  const CH340_BAUD_MAP = {
-    9600:   { value: 0x120c, index: 0x0000 },
-    19200:  { value: 0xd206, index: 0x0000 },
-    38400:  { value: 0x6903, index: 0x0000 },
-    57600:  { value: 0x9c03, index: 0x0000 },
-    115200: { value: 0xcc01, index: 0x0000 }
-  };
-
+  // ---------- Platform Detection ----------
   function detectPlatform() {
     const ua = navigator.userAgent.toLowerCase();
     isAndroid = /android/.test(ua);
-    const badge = document.getElementById('platform-badge');
-    badge.textContent = isAndroid ? 'ANDROID' : 'DESKTOP';
-    setSerial("", isAndroid ? "Android detected (WebUSB)" : "Desktop detected (WebSerial)");
+    const badge = document.getElementById("platform-badge");
+    if (isAndroid) {
+      badge.textContent = "ANDROID";
+      badge.className = "mode-badge platform";
+      badge.style.background = "#1a3a2e";
+      badge.style.borderColor = "#2d5a4f";
+      badge.style.color = "#6ee7b7";
+    } else {
+      badge.textContent = "DESKTOP";
+      badge.className = "mode-badge platform";
+      badge.style.background = "#1e293b";
+      badge.style.borderColor = "#334155";
+      badge.style.color = "#cbd5e1";
+    }
+    console.log("Platform:", isAndroid ? "Android" : "Desktop");
   }
 
-  function getParam(n) { return new URLSearchParams(window.location.search).get(n); }
-
-  // ---------- Baudrate Logic (WebUSB) ----------
-  async function setupCH340BaudRate(device, baudRate) {
-    const config = CH340_BAUD_MAP[baudRate] || CH340_BAUD_MAP[9600];
-    
-    // Init command
-    await device.controlTransferOut({
-      requestType: 'vendor', recipient: 'device',
-      request: 0xa1, value: 0xc29c, index: 0xb2b9
-    });
-
-    // Write baudrate factors
-    await device.controlTransferOut({
-      requestType: 'vendor', recipient: 'device',
-      request: 0x9a, value: 0x1312, index: config.value
-    });
-
-    await device.controlTransferOut({
-      requestType: 'vendor', recipient: 'device',
-      request: 0x9a, value: 0x0f2c, index: config.index
-    });
+  function getParam(name) {
+    const params = new URLSearchParams(window.location.search);
+    return params.get(name);
   }
 
   // ---------- Baudrate Setup Functions ----------
@@ -318,9 +302,9 @@
         index: 0,
         data: new Uint32Array([baudrate]).buffer
       });
-      console.log(`CH340 baudrate set to ${baudrate}`);
+      console.log(`✓ CH340 baudrate set to ${baudrate}`);
     } catch(e) {
-      console.warn("CH340 baudrate setup failed:", e);
+      console.warn("✗ CH340 baudrate setup failed:", e.message);
     }
   }
 
@@ -334,15 +318,14 @@
         index: 0x0000,
         data: new Uint32Array([baudrate]).buffer
       });
-      console.log(`CP210x baudrate set to ${baudrate}`);
+      console.log(`✓ CP210x baudrate set to ${baudrate}`);
     } catch(e) {
-      console.warn("CP210x baudrate setup failed:", e);
+      console.warn("✗ CP210x baudrate setup failed:", e.message);
     }
   }
 
   async function setupFTDIBaudRate(device, baudrate) {
     try {
-      // FTDI menggunakan divisor, dengan base clock 3MHz
       const divisor = Math.round(3000000 / baudrate);
       await device.controlTransferOut({
         requestType: 'vendor',
@@ -352,9 +335,9 @@
         index: (divisor >> 16) & 0xFFFF,
         data: new ArrayBuffer(0)
       });
-      console.log(`FTDI baudrate set to ${baudrate} (divisor: ${divisor})`);
+      console.log(`✓ FTDI baudrate set to ${baudrate}`);
     } catch(e) {
-      console.warn("FTDI baudrate setup failed:", e);
+      console.warn("✗ FTDI baudrate setup failed:", e.message);
     }
   }
 
@@ -365,9 +348,9 @@
       data[1] = (baudrate >> 8) & 0xFF;
       data[2] = (baudrate >> 16) & 0xFF;
       data[3] = (baudrate >> 24) & 0xFF;
-      data[4] = 0; // stop bits: 1 stop bit
-      data[5] = 0; // parity: none
-      data[6] = 8; // data bits: 8
+      data[4] = 0;
+      data[5] = 0;
+      data[6] = 8;
       
       await device.controlTransferOut({
         requestType: 'class',
@@ -377,82 +360,42 @@
         index: 0,
         data: data.buffer
       });
-      console.log(`PL2303 baudrate set to ${baudrate}`);
+      console.log(`✓ PL2303 baudrate set to ${baudrate}`);
     } catch(e) {
-      console.warn("PL2303 baudrate setup failed:", e);
+      console.warn("✗ PL2303 baudrate setup failed:", e.message);
     }
   }
 
   async function setupCDCLineCoding(device, baudrate) {
     try {
-      // CDC SET_LINE_CODING - standard untuk USB serial device
       const data = new Uint8Array(7);
       data[0] = baudrate & 0xFF;
       data[1] = (baudrate >> 8) & 0xFF;
       data[2] = (baudrate >> 16) & 0xFF;
       data[3] = (baudrate >> 24) & 0xFF;
-      data[4] = 0; // 1 stop bit
-      data[5] = 0; // no parity
-      data[6] = 8; // 8 data bits
+      data[4] = 0;
+      data[5] = 0;
+      data[6] = 8;
       
       await device.controlTransferOut({
         requestType: 'class',
         recipient: 'interface',
-        request: 0x20, // SET_LINE_CODING
+        request: 0x20,
         value: 0,
         index: 0,
         data: data.buffer
       });
-      console.log(`CDC line coding set to ${baudrate} baud`);
+      console.log(`✓ CDC line coding set to ${baudrate} baud`);
     } catch(e) {
-      console.warn("CDC line coding setup failed:", e);
+      console.warn("✗ CDC line coding setup failed:", e.message);
     }
   }
 
-  async function changeBaudRate() {
-    if (!usbConnected && !port) {
-      alert("Device not connected!");
-      return;
-    }
-    
-    const newBaud = parseInt(document.getElementById("baudrate").value);
-    
-    try {
-      if (isAndroid && usbConnected) {
-        // Ubah baudrate di USB device
-        if (usbDevice.vendorId === 0x1a86) {
-          await setupCH340BaudRate(usbDevice, newBaud);
-        } else if (usbDevice.vendorId === 0x0403) {
-          await setupFTDIBaudRate(usbDevice, newBaud);
-        } else if (usbDevice.vendorId === 0x10c4) {
-          await setupCP210xBaudRate(usbDevice, newBaud);
-        } else if (usbDevice.vendorId === 0x067b) {
-          await setupPL2303BaudRate(usbDevice, newBaud);
-        }
-        await setupCDCLineCoding(usbDevice, newBaud);
-        await new Promise(r => setTimeout(r, 100));
-        setSerial('ok', 'Baudrate changed to ' + newBaud);
-      } else if (port) {
-        // Serial API akan ditangani dengan menutup dan membuka ulang port
-        await reader.cancel();
-        await port.close();
-        await port.open({ baudRate: newBaud });
-        writer = port.writable.getWriter();
-        reader = port.readable.getReader();
-        setSerial('ok', 'Baudrate changed to ' + newBaud);
-        readSerialLoop();
-      }
-    } catch(e) {
-      setSerial('err', 'Failed to change baudrate: ' + e.message);
-    }
-  }
-
-   // ---------- Connection Logic ----------
+  // ---------- Connection Logic ----------
   async function connectAction() {
     if (isAndroid) await connectUSB();
     else await connectSerial();
   }
-
 
   async function connectUSB() {
     try {
@@ -469,38 +412,34 @@
       if (usbDevice.configuration === null) await usbDevice.selectConfiguration(1);
       await usbDevice.claimInterface(0);
 
-      // Get selected baudrate
       const baud = parseInt(document.getElementById("baudrate").value);
+      console.log("Setting baudrate to:", baud);
       
-      // Set Baudrate berdasarkan vendor device
       if (usbDevice.vendorId === 0x1a86) {
-        // CH340
         await setupCH340BaudRate(usbDevice, baud);
         await setupCDCLineCoding(usbDevice, baud);
       } else if (usbDevice.vendorId === 0x0403) {
-        // FTDI
         await setupFTDIBaudRate(usbDevice, baud);
         await setupCDCLineCoding(usbDevice, baud);
       } else if (usbDevice.vendorId === 0x10c4) {
-        // CP210x
         await setupCP210xBaudRate(usbDevice, baud);
         await setupCDCLineCoding(usbDevice, baud);
       } else if (usbDevice.vendorId === 0x067b) {
-        // PL2303
         await setupPL2303BaudRate(usbDevice, baud);
         await setupCDCLineCoding(usbDevice, baud);
       } else {
-        // Fallback untuk device lain, coba CDC line coding
         await setupCDCLineCoding(usbDevice, baud);
       }
 
-      // Set Control Line State (DTR/RTS)
+      // Set DTR/RTS
       await usbDevice.controlTransferOut({
-        requestType: 'class', recipient: 'interface',
-        request: 0x22, value: 0x01, index: 0
+        requestType: 'class',
+        recipient: 'interface',
+        request: 0x22,
+        value: 0x01,
+        index: 0
       });
 
-      // Add small delay untuk memastikan setting sudah diterapkan
       await new Promise(r => setTimeout(r, 200));
 
       usbConnected = true;
@@ -521,7 +460,45 @@
       reader = port.readable.getReader();
       setSerial("ok", "Connected Serial (" + baud + " baud)");
       readSerialLoop();
-    } catch(e) { setSerial("err", "Serial Error: " + e.message); }
+    } catch(e) {
+      setSerial("err", "Serial Error: " + e.message);
+    }
+  }
+
+  async function changeBaudRate() {
+    if (!usbConnected && !port) {
+      alert("Device not connected!");
+      return;
+    }
+    
+    const newBaud = parseInt(document.getElementById("baudrate").value);
+    
+    try {
+      if (isAndroid && usbConnected) {
+        if (usbDevice.vendorId === 0x1a86) {
+          await setupCH340BaudRate(usbDevice, newBaud);
+        } else if (usbDevice.vendorId === 0x0403) {
+          await setupFTDIBaudRate(usbDevice, newBaud);
+        } else if (usbDevice.vendorId === 0x10c4) {
+          await setupCP210xBaudRate(usbDevice, newBaud);
+        } else if (usbDevice.vendorId === 0x067b) {
+          await setupPL2303BaudRate(usbDevice, newBaud);
+        }
+        await setupCDCLineCoding(usbDevice, newBaud);
+        await new Promise(r => setTimeout(r, 100));
+        setSerial('ok', 'Baudrate changed to ' + newBaud);
+      } else if (port) {
+        await reader.cancel();
+        await port.close();
+        await port.open({ baudRate: newBaud });
+        writer = port.writable.getWriter();
+        reader = port.readable.getReader();
+        setSerial('ok', 'Baudrate changed to ' + newBaud);
+        readSerialLoop();
+      }
+    } catch(e) {
+      setSerial('err', 'Failed to change baudrate: ' + e.message);
+    }
   }
 
   // ---------- Loops ----------
@@ -534,9 +511,9 @@
           handleIncomingHardwareData(u8, 'USB');
         }
       } catch(e) { 
-          usbConnected = false;
-          setSerial('err', 'Disconnected');
-          break; 
+        usbConnected = false;
+        setSerial('err', 'Disconnected');
+        break; 
       }
     }
   }
@@ -548,7 +525,9 @@
         if (done) break;
         handleIncomingHardwareData(new Uint8Array(value), 'COM');
       }
-    } catch(e) { setSerial("err", e.message); }
+    } catch(e) {
+      setSerial("err", e.message);
+    }
   }
 
   function handleIncomingHardwareData(u8, source) {
@@ -581,10 +560,12 @@
     const lbl = document.getElementById("toggle-label");
     
     if (isServerMode) {
-      badge.textContent = "SERVER"; badge.className = "mode-badge server";
+      badge.textContent = "SERVER";
+      badge.className = "mode-badge server";
       lbl.innerHTML = 'Mode <span style="color:#fbbf24">— Server/Master</span>';
     } else {
-      badge.textContent = "CLIENT"; badge.className = "mode-badge client";
+      badge.textContent = "CLIENT";
+      badge.className = "mode-badge client";
       lbl.innerHTML = 'Mode <span style="color:#475569">— Client/BMS</span>';
     }
     buildTopics();
@@ -595,7 +576,9 @@
 
   function connectMQTT() {
     onServerToggle();
-    mqttClient = mqtt.connect(mqttBroker, { clientId: "bridge_" + Math.random().toString(16).slice(2, 8) });
+    mqttClient = mqtt.connect(mqttBroker, {
+      clientId: "bridge_" + Math.random().toString(16).slice(2, 8)
+    });
 
     mqttClient.on("connect", () => {
       setMqtt("ok", "Cloud Connected");
@@ -608,7 +591,6 @@
       flash("mqtt-in");
       addLog('IN', "cloud->dev", payload);
 
-      // Write to Hardware
       if (isAndroid && usbConnected) {
         await usbDevice.transferOut(2, payload);
       } else if (writer) {
@@ -624,8 +606,13 @@
     document.getElementById("serial-dot").className = "dot" + (state==="ok"?" ok":state==="err"?" err":"");
     document.getElementById("status").textContent = msg;
     const btn = document.getElementById("serial-btn");
-    if (state === "ok") { btn.textContent = "Connected"; btn.classList.add("connected"); }
-    else { btn.textContent = "Connect"; btn.classList.remove("connected"); }
+    if (state === "ok") {
+      btn.textContent = "Connected";
+      btn.classList.add("connected");
+    } else {
+      btn.textContent = "Connect";
+      btn.classList.remove("connected");
+    }
   }
 
   function setMqtt(state, msg) {
@@ -641,7 +628,9 @@
 
   // ---------- Logger Core ----------
   function toHex(payload) {
-    return Array.from(new Uint8Array(payload)).map(x => x.toString(16).padStart(2,'0').toUpperCase()).join(' ');
+    return Array.from(new Uint8Array(payload))
+      .map(x => x.toString(16).padStart(2,'0').toUpperCase())
+      .join(' ');
   }
 
   function addLog(dir, topic, payload) {
@@ -661,20 +650,24 @@
     document.getElementById("log-count").textContent = logBuffer.length + " entries";
   }
 
-  function clearLog() { logBuffer.length = 0; document.getElementById("log-body").innerHTML = '<tr><td colspan="4" class="empty-log">No transactions yet</td></tr>'; }
+  function clearLog() {
+    logBuffer.length = 0;
+    document.getElementById("log-body").innerHTML = '<tr><td colspan="4" class="empty-log">No transactions yet</td></tr>';
+  }
   
   function downloadLog() {
     const csv = 'Time,Dir,Topic,Hex\n' + logBuffer.map(e => `"${e.ts}","${e.dir}","${e.topic}","${e.hex}"`).join('\n');
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
-    a.download = 'log.csv'; a.click();
+    a.download = 'log.csv';
+    a.click();
   }
 
-  // Init
+  // ---------- Init ----------
   detectPlatform();
   connectMQTT();
   
-  // Event listener untuk perubahan baudrate
+  // Event listener untuk perubahan baudrate saat sudah terhubung
   document.getElementById("baudrate").addEventListener("change", function() {
     if ((isAndroid && usbConnected) || port) {
       changeBaudRate();
