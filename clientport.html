@@ -19,332 +19,461 @@
       padding: 2rem 1rem;
     }
 
-    .app {
-      width: 100%;
-      max-width: 480px;
-    }
+    .app { width: 100%; max-width: 560px; }
 
-    .app-header {
-      margin-bottom: 1.5rem;
-    }
+    .app-header { margin-bottom: 1.25rem; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+    .app-title { font-size: 18px; font-weight: 600; color: #f1f5f9; letter-spacing: 0.02em; }
+    .app-sub { font-size: 12px; color: #64748b; margin-top: 3px; }
 
-    .app-title {
-      font-size: 18px;
-      font-weight: 600;
-      color: #f1f5f9;
-      letter-spacing: 0.02em;
+    .mode-badge {
+      font-size: 10px; font-weight: 600; letter-spacing: 0.08em;
+      text-transform: uppercase; padding: 4px 10px;
+      border-radius: 5px; flex-shrink: 0; margin-top: 2px;
     }
-
-    .app-sub {
-      font-size: 12px;
-      color: #64748b;
-      margin-top: 3px;
-    }
+    .mode-badge.client { background: #0f2240; border: 1px solid #1a3a6e; color: #7cb5f8; }
+    .mode-badge.server { background: #2e1a00; border: 1px solid #6b3c00; color: #fbbf24; }
 
     .card {
-      background: #1e2230;
-      border: 1px solid #2d3348;
-      border-radius: 10px;
-      padding: 1rem 1.25rem;
-      margin-bottom: 10px;
+      background: #1e2230; border: 1px solid #2d3348;
+      border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: 10px;
     }
 
     .card-label {
-      font-size: 10px;
-      font-weight: 600;
-      color: #475569;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      margin-bottom: 12px;
+      font-size: 10px; font-weight: 600; color: #475569;
+      text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px;
     }
 
-    /* Serial section */
-    .baud-row {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-    }
+    .baud-row { display: flex; gap: 8px; align-items: center; }
 
     select {
       font-family: 'Courier New', Courier, monospace;
-      font-size: 13px;
-      background: #141620;
-      border: 1px solid #2d3348;
-      border-radius: 6px;
-      padding: 7px 10px;
-      color: #e2e8f0;
-      cursor: pointer;
-      outline: none;
+      font-size: 13px; background: #141620;
+      border: 1px solid #2d3348; border-radius: 6px;
+      padding: 7px 10px; color: #e2e8f0; cursor: pointer; outline: none;
     }
-
     select:focus { border-color: #4f6ef7; }
 
     .btn {
       font-family: 'Courier New', Courier, monospace;
-      font-size: 13px;
-      background: #141620;
-      border: 1px solid #2d3348;
-      border-radius: 6px;
-      padding: 7px 16px;
-      color: #e2e8f0;
-      cursor: pointer;
-      transition: background 0.15s, border-color 0.15s;
-      white-space: nowrap;
+      font-size: 13px; background: #141620;
+      border: 1px solid #2d3348; border-radius: 6px;
+      padding: 7px 16px; color: #e2e8f0; cursor: pointer;
+      transition: background 0.15s, border-color 0.15s; white-space: nowrap;
     }
-
     .btn:hover { background: #252a3d; border-color: #3d4666; }
+    .btn.connected { background: #0f2e1a; border-color: #1a5c2e; color: #4ade80; }
+    .btn.sm { font-size: 12px; padding: 5px 12px; }
+    .btn.dl:hover { border-color: #4f6ef7; color: #7c9ef8; }
+    .btn.cl:hover { border-color: #dc2626; color: #f87171; }
 
-    .btn.connected {
-      background: #0f2e1a;
-      border-color: #1a5c2e;
-      color: #4ade80;
-    }
-
-    .status-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-top: 10px;
-    }
+    .status-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
 
     .dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: #2d3348;
-      border: 1px solid #3d4666;
-      flex-shrink: 0;
-      transition: background 0.2s, border-color 0.2s;
+      width: 7px; height: 7px; border-radius: 50%;
+      background: #2d3348; border: 1px solid #3d4666;
+      flex-shrink: 0; transition: background 0.2s;
     }
+    .dot.ok  { background: #16a34a; border-color: #4ade80; box-shadow: 0 0 6px #16a34a66; }
+    .dot.err { background: #dc2626; border-color: #f87171; }
+    .dot.warn{ background: #d97706; border-color: #fbbf24; }
 
-    .dot.ok   { background: #16a34a; border-color: #4ade80; box-shadow: 0 0 6px #16a34a66; }
-    .dot.err  { background: #dc2626; border-color: #f87171; }
-    .dot.warn { background: #d97706; border-color: #fbbf24; }
+    .status-text { font-size: 12px; color: #94a3b8; }
 
-    .status-text {
-      font-size: 12px;
-      color: #94a3b8;
-    }
-
-    /* Topic chips */
-    .chip-row {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      margin-top: 10px;
-    }
-
+    .chip-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
     .chip {
-      font-size: 11px;
-      background: #141620;
-      border: 1px solid #2d3348;
-      border-radius: 5px;
-      padding: 3px 9px;
-      color: #7c9ef8;
+      font-size: 11px; background: #141620;
+      border: 1px solid #2d3348; border-radius: 5px; padding: 3px 9px;
     }
+    .chip.rx { color: #7c9ef8; border-color: #1a2a4e; background: #0d1525; }
+    .chip.tx { color: #fbbf24; border-color: #3d2e00; background: #1e1800; }
 
-    /* Activity */
-    .activity-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-    }
+    .broker-info { font-size: 11px; color: #475569; margin-top: 8px; }
 
+    .activity-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     .activity-item {
-      background: #141620;
-      border: 1px solid #2d3348;
-      border-radius: 8px;
-      padding: 12px 14px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
+      background: #141620; border: 1px solid #2d3348;
+      border-radius: 8px; padding: 12px 14px;
+      display: flex; align-items: center; gap: 10px;
     }
-
     .act-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background: #2d3348;
-      border: 1px solid #3d4666;
-      flex-shrink: 0;
-      transition: background 0.05s;
+      width: 10px; height: 10px; border-radius: 50%;
+      background: #2d3348; border: 1px solid #3d4666;
+      flex-shrink: 0; transition: background 0.05s;
     }
-
     .act-dot.flash { background: #4ade80; border-color: #16a34a; box-shadow: 0 0 8px #16a34a88; }
-
     .act-label { font-size: 12px; color: #cbd5e1; }
     .act-sub   { font-size: 11px; color: #475569; margin-top: 2px; }
 
-    /* Divider */
-    .divider {
-      height: 1px;
-      background: #2d3348;
-      margin: 10px 0;
+    /* Server mode toggle */
+    .toggle-row { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
+    .toggle { position: relative; width: 36px; height: 20px; flex-shrink: 0; }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle-track {
+      position: absolute; inset: 0;
+      background: #2d3348; border-radius: 20px;
+      border: 1px solid #3d4666; cursor: pointer; transition: background 0.2s;
     }
+    .toggle-track::after {
+      content: ''; position: absolute; left: 3px; top: 3px;
+      width: 12px; height: 12px; border-radius: 50%;
+      background: #64748b; transition: transform 0.2s, background 0.2s;
+    }
+    .toggle input:checked + .toggle-track { background: #7c3a00; border-color: #b85a00; }
+    .toggle input:checked + .toggle-track::after { transform: translateX(16px); background: #fbbf24; }
+    .toggle-label { font-size: 12px; color: #94a3b8; }
 
-    /* Broker info */
-    .broker-info {
-      font-size: 11px;
-      color: #475569;
-      margin-top: 8px;
+    /* Logger */
+    .log-toolbar {
+      display: flex; align-items: center;
+      justify-content: space-between; margin-bottom: 10px; gap: 8px;
     }
+    .log-count { font-size: 11px; color: #475569; margin-top: 2px; }
+    .log-btns { display: flex; gap: 6px; }
+
+    .log-wrap {
+      background: #141620; border: 1px solid #2d3348;
+      border-radius: 8px; overflow: hidden;
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 11px; table-layout: fixed; }
+    thead tr { background: #1a1e2e; border-bottom: 1px solid #2d3348; }
+    thead th {
+      text-align: left; padding: 7px 8px;
+      font-size: 10px; font-weight: 600;
+      color: #475569; text-transform: uppercase; letter-spacing: 0.08em;
+    }
+    tbody tr { border-bottom: 1px solid #1e2230; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: #1e2230; }
+    td { padding: 6px 8px; vertical-align: top; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .col-time  { width: 80px; }
+    .col-dir   { width: 52px; }
+    .col-topic { width: 120px; }
+    .col-data  { width: auto; white-space: normal; word-break: break-all; }
+
+    .td-time  { color: #475569; }
+    .td-topic { color: #4f6ef7; }
+    .td-data  { color: #cbd5e1; }
+    .td-ascii { color: #374151; margin-left: 5px; }
+
+    .dir-in  { color: #7c9ef8; }
+    .dir-out { color: #fbbf24; }
+
+    .empty-log { text-align: center; padding: 24px; font-size: 12px; color: #374151; }
   </style>
 </head>
 <body>
-  <div class="app">
+<div class="app">
 
-    <div class="app-header">
+  <!-- Header -->
+  <div class="app-header">
+    <div>
       <div class="app-title">COM ↔ Bridge</div>
-      <div class="app-sub">Serial Forwarder For client</div>
+      <div class="app-sub">Serial port Online Bridge</div>
     </div>
-
-    <!-- Serial Port -->
-    <div class="card">
-      <div class="card-label">Serial Port</div>
-      <div class="baud-row">
-        <select id="baudrate">
-          <option value="9600">9600</option>
-          <option value="19200">19200</option>
-          <option value="38400">38400</option>
-          <option value="57600">57600</option>
-          <option value="115200">115200</option>
-        </select>
-        <button class="btn" id="serial-btn" onclick="connectSerial()">Open port</button>
-      </div>
-      <div class="status-row">
-        <div class="dot" id="serial-dot"></div>
-        <span class="status-text" id="status">Not connected</span>
-      </div>
-    </div>
-
-    <!-- MQTT Broker -->
-    <div class="card">
-      <div class="card-label">MQTT Broker</div>
-      <div class="status-row">
-        <div class="dot warn" id="mqtt-dot"></div>
-        <span class="status-text" id="mqtt-status">Connecting…</span>
-      </div>
-      <div class="chip-row" id="topic-row" style="display:none">
-        <span class="chip" id="rx-chip">RX ← —</span>
-        <span class="chip" id="tx-chip">TX → —</span>
-      </div>
-      <div class="broker-info" id="broker-info"></div>
-    </div>
-
-    <!-- Activity -->
-    <div class="card">
-      <div class="card-label">Activity</div>
-      <div class="activity-grid">
-        <div class="activity-item">
-          <div class="act-dot" id="mqtt-in"></div>
-          <div>
-            <div class="act-label">Cloude IN</div>
-            <div class="act-sub">SKY → COM</div>
-          </div>
-        </div>
-        <div class="activity-item">
-          <div class="act-dot" id="mqtt-out"></div>
-          <div>
-            <div class="act-label">Cloude OUT</div>
-            <div class="act-sub">COM → SKY</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
+    <div class="mode-badge client" id="mode-badge">CLIENT</div>
   </div>
 
-  <script>
-    let port, reader, writer, mqttClient;
-    let mqttRxTopic, mqttTxTopic;
-    const mqttBroker = "wss://broker.emqx.io:8084/mqtt";
+  <!-- Serial Port -->
+  <div class="card">
+    <div class="card-label">Serial Port</div>
+    <div class="baud-row">
+      <select id="baudrate">
+        <option value="9600">9600</option>
+        <option value="19200">19200</option>
+        <option value="38400">38400</option>
+        <option value="57600">57600</option>
+        <option value="115200">115200</option>
+      </select>
+      <button class="btn" id="serial-btn" onclick="connectSerial()">Open port</button>
+    </div>
+    <div class="status-row">
+      <div class="dot" id="serial-dot"></div>
+      <span class="status-text" id="status">Not connected</span>
+    </div>
+  </div>
 
-    function getParam(name) {
-      return new URLSearchParams(window.location.search).get(name);
-    }
+  <!-- MQTT Broker -->
+  <div class="card">
+    <div class="card-label">Server Brigde</div>
+    <div class="status-row">
+      <div class="dot warn" id="mqtt-dot"></div>
+      <span class="status-text" id="mqtt-status">Connecting…</span>
+    </div>
+    <div class="chip-row" id="topic-row" style="display:none">
+      <span class="chip rx" id="rx-chip">RX ← —</span>
+      <span class="chip tx" id="tx-chip">TX → —</span>
+    </div>
+    <div class="broker-info" id="broker-info"></div>
+    <div class="toggle-row">
+      <label class="toggle">
+        <input type="checkbox" id="server-toggle" onchange="onServerToggle()">
+        <span class="toggle-track"></span>
+      </label>
+      <span class="toggle-label" id="toggle-label">Server mode <span style="color:#475569">— TX/RX normal</span></span>
+    </div>
+  </div>
 
-    function setSerial(state, msg) {
-      const dot = document.getElementById("serial-dot");
-      const btn = document.getElementById("serial-btn");
-      dot.className = "dot" + (state === "ok" ? " ok" : state === "err" ? " err" : "");
-      document.getElementById("status").textContent = msg;
-      if (state === "ok") { btn.textContent = "Connected"; btn.classList.add("connected"); }
-      else { btn.textContent = "Open port"; btn.classList.remove("connected"); }
-    }
+  <!-- Activity -->
+  <div class="card">
+    <div class="card-label">Activity</div>
+    <div class="activity-grid">
+      <div class="activity-item">
+        <div class="act-dot" id="mqtt-in"></div>
+        <div>
+          <div class="act-label">Bridge IN</div>
+          <div class="act-sub" id="act-in-sub">Bridge → Serial</div>
+        </div>
+      </div>
+      <div class="activity-item">
+        <div class="act-dot" id="mqtt-out"></div>
+        <div>
+          <div class="act-label">Bridge OUT</div>
+          <div class="act-sub" id="act-out-sub">Serial → Bridge</div>
+        </div>
+      </div>
+    </div>
+  </div>
 
-    function setMqtt(state, msg) {
-      const dot = document.getElementById("mqtt-dot");
-      dot.className = "dot" + (state === "ok" ? " ok" : state === "err" ? " err" : " warn");
-      document.getElementById("mqtt-status").textContent = msg;
-    }
+  <!-- Logger -->
+  <div class="card">
+    <div class="log-toolbar">
+      <div>
+        <div class="card-label" style="margin-bottom:2px">Transaction Log</div>
+        <div class="log-count" id="log-count">0 entries in buffer</div>
+      </div>
+      <div class="log-btns">
+        <button class="btn sm cl" onclick="clearLog()">Clear</button>
+        <button class="btn sm dl" onclick="downloadLog()">↓ CSV</button>
+      </div>
+    </div>
+    <div class="log-wrap">
+      <table>
+        <colgroup>
+          <col class="col-time"><col class="col-dir">
+          <col class="col-topic"><col class="col-data">
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Time</th><th>Dir</th><th>Topic</th><th>Data (hex · ascii)</th>
+          </tr>
+        </thead>
+        <tbody id="log-body">
+          <tr><td colspan="4" class="empty-log">No transactions yet</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
 
-    function flashIndicator(id) {
-      const el = document.getElementById(id);
-      el.classList.add("flash");
-      setTimeout(() => el.classList.remove("flash"), 130);
-    }
+</div>
+<script>
+  let port, reader, writer, mqttClient;
+  let mqttRxTopic, mqttTxTopic, mainTopic;
+  let isServerMode = false;
+  const mqttBroker = "wss://broker.emqx.io:8084/mqtt";
+  const logBuffer = [];
+  const MAX_DISPLAY = 10;
 
-    async function connectSerial() {
-      try {
-        port = await navigator.serial.requestPort();
-        const baud = parseInt(document.getElementById("baudrate").value);
-        await port.open({ baudRate: baud });
-        writer = port.writable.getWriter();
-        reader = port.readable.getReader();
-        setSerial("ok", "Connected · " + baud + " baud");
-        readSerialLoop();
-      } catch (e) {
-        setSerial("err", "Failed: " + e.message);
-      }
-    }
+  function getParam(n) { return new URLSearchParams(window.location.search).get(n); }
 
-    async function readSerialLoop() {
-      try {
-        while (port.readable) {
-          const { value, done } = await reader.read();
-          if (done) break;
-          if (mqttClient?.connected && mqttTxTopic) {
-            mqttClient.publish(mqttTxTopic, new Uint8Array(value));
-            flashIndicator("mqtt-out");
-          }
-        }
-      } catch (e) { console.error(e); }
-    }
-
-    function connectMQTT() {
-      const mainTopic = getParam("id") || "defaultTopic";
+  // ---------- Topics ----------
+  function buildTopics() {
+    // Client: sub /TX, pub /RX
+    // Server: sub /RX, pub /TX  (mirrored)
+    if (isServerMode) {
+      mqttRxTopic = mainTopic + "/RX";
+      mqttTxTopic = mainTopic + "/TX";
+    } else {
       mqttRxTopic = mainTopic + "/TX";
       mqttTxTopic = mainTopic + "/RX";
+    }
+    document.getElementById("rx-chip").textContent = "RX ← Bridge" ;
+    document.getElementById("tx-chip").textContent = "TX → Bridge" ;
+  }
 
-      //document.getElementById("rx-chip").textContent = "RX ← SKY" + mqttRxTopic;
-      //document.getElementById("tx-chip").textContent = "TX → SKY" + mqttTxTopic;
-		document.getElementById("rx-chip").textContent = "RX ← SKY";
-		document.getElementById("tx-chip").textContent = "TX → SKY";
-      mqttClient = mqtt.connect(mqttBroker, { username: "emqx", password: "emqx" });
+  function onServerToggle() {
+    isServerMode = document.getElementById("server-toggle").checked;
+    const badge  = document.getElementById("mode-badge");
+    const lbl    = document.getElementById("toggle-label");
+    const inSub  = document.getElementById("act-in-sub");
+    const outSub = document.getElementById("act-out-sub");
 
-      mqttClient.on("connect", () => {
-        setMqtt("ok", "Connected");
-        document.getElementById("topic-row").style.display = "flex";
-        //document.getElementById("broker-info").textContent = "broker.emqx.io:8084";
-        mqttClient.subscribe(mqttRxTopic);
-      });
-
-      mqttClient.on("message", (topic, payload) => {
-        if (topic === mqttRxTopic) {
-          flashIndicator("mqtt-in");
-          if (writer) writer.write(payload);
-        }
-      });
-
-      mqttClient.on("error", e => setMqtt("err", "Error: " + e.message));
-      mqttClient.on("close", () => {
-        setMqtt("", "Disconnected");
-        document.getElementById("topic-row").style.display = "none";
-        document.getElementById("broker-info").textContent = "";
-      });
+    if (isServerMode) {
+      badge.textContent = "SERVER"; badge.className = "mode-badge server";
+      lbl.innerHTML = 'Server mode <span style="color:#fbbf24">— TX/RX swapped</span>';
+      inSub.textContent  = "MQTT ← Client";
+      outSub.textContent = "Serial → Client";
+    } else {
+      badge.textContent = "CLIENT"; badge.className = "mode-badge client";
+      lbl.innerHTML = 'Server mode <span style="color:#475569">— TX/RX normal</span>';
+      inSub.textContent  = "MQTT → Serial";
+      outSub.textContent = "Serial → MQTT";
     }
 
-    connectMQTT();
-  </script>
+    if (mqttClient?.connected) {
+      const oldRx = mqttRxTopic;
+      buildTopics();
+      mqttClient.unsubscribe(oldRx);
+      mqttClient.subscribe(mqttRxTopic);
+    } else {
+      buildTopics();
+    }
+  }
+
+  // ---------- Status helpers ----------
+  function setSerial(state, msg) {
+    document.getElementById("serial-dot").className = "dot" + (state==="ok"?" ok":state==="err"?" err":"");
+    document.getElementById("status").textContent = msg;
+    const btn = document.getElementById("serial-btn");
+    if (state === "ok") { btn.textContent = "Connected"; btn.classList.add("connected"); }
+    else { btn.textContent = "Open port"; btn.classList.remove("connected"); }
+  }
+
+  function setMqtt(state, msg) {
+    document.getElementById("mqtt-dot").className = "dot" + (state==="ok"?" ok":state==="err"?" err":" warn");
+    document.getElementById("mqtt-status").textContent = msg;
+  }
+
+  function flash(id) {
+    const el = document.getElementById(id);
+    el.classList.add("flash");
+    setTimeout(() => el.classList.remove("flash"), 130);
+  }
+
+  // ---------- Logger ----------
+  function toHex(payload) {
+    const b = (payload instanceof Uint8Array) ? payload : new Uint8Array(payload.buffer ?? payload);
+    return Array.from(b).map(x => x.toString(16).padStart(2,'0').toUpperCase()).join(' ');
+  }
+
+  function toAscii(payload) {
+    const b = (payload instanceof Uint8Array) ? payload : new Uint8Array(payload.buffer ?? payload);
+    return Array.from(b).map(x => (x>=32 && x<127) ? String.fromCharCode(x) : '.').join('');
+  }
+
+  function nowTime() {
+    const d = new Date();
+    return d.toTimeString().slice(0,8) + '.' + String(d.getMilliseconds()).padStart(3,'0');
+  }
+
+  function addLog(dir, topic, payload) {
+    const u8 = (payload instanceof Uint8Array) ? payload : new Uint8Array(payload.buffer ?? payload);
+    logBuffer.push({
+      ts: new Date().toISOString(),
+      displayTime: nowTime(),
+      dir, topic,
+      hex: toHex(u8),
+      ascii: toAscii(u8),
+      len: u8.length
+    });
+    renderLog();
+    updateCount();
+  }
+
+  function renderLog() {
+    const tbody = document.getElementById("log-body");
+    const recent = logBuffer.slice(-MAX_DISPLAY).reverse();
+    if (!recent.length) {
+      tbody.innerHTML = '<tr><td colspan="4" class="empty-log">No transactions yet</td></tr>';
+      return;
+    }
+    tbody.innerHTML = recent.map(e => `
+      <tr>
+        <td class="td-time">${e.displayTime}</td>
+        <td><span class="${e.dir==='IN'?'dir-in':'dir-out'}">${e.dir==='IN'?'↓ IN':'↑ OUT'}</span></td>
+        <td class="td-topic" title="${e.topic}">${e.topic}</td>
+        <td class="td-data">${e.hex || '—'}<span class="td-ascii">${e.ascii}</span></td>
+      </tr>`).join('');
+  }
+
+  function updateCount() {
+    const n = logBuffer.length;
+    document.getElementById("log-count").textContent =
+      n + ' entr' + (n===1?'y':'ies') + ' in buffer' +
+      (n > MAX_DISPLAY ? ' · showing last ' + MAX_DISPLAY : '');
+  }
+
+  function clearLog() { logBuffer.length = 0; renderLog(); updateCount(); }
+
+  function downloadLog() {
+    if (!logBuffer.length) return;
+    const csv = 'Timestamp,Direction,Topic,Hex,ASCII,Bytes\n' +
+      logBuffer.map(e =>
+        `"${e.ts}","${e.dir}","${e.topic}","${e.hex}","${e.ascii.replace(/"/g,'""')}","${e.len}"`
+      ).join('\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
+    a.download = 'bridge_log_' + new Date().toISOString().slice(0,19).replace(/[:.]/g,'-') + '.csv';
+    a.click();
+  }
+
+  // ---------- Serial ----------
+  async function connectSerial() {
+    try {
+      port = await navigator.serial.requestPort();
+      const baud = parseInt(document.getElementById("baudrate").value);
+      await port.open({ baudRate: baud });
+      writer = port.writable.getWriter();
+      reader = port.readable.getReader();
+      setSerial("ok", "Connected · " + baud + " baud");
+      readSerialLoop();
+    } catch(e) { setSerial("err", "Failed: " + e.message); }
+  }
+
+  async function readSerialLoop() {
+    try {
+      while (port.readable) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        if (mqttClient?.connected && mqttTxTopic) {
+          const u8 = new Uint8Array(value);
+          mqttClient.publish(mqttTxTopic, u8);
+          flash("mqtt-out");
+          addLog('OUT', "com->br ", u8);
+        }
+      }
+    } catch(e) { console.error(e); }
+  }
+
+  // ---------- MQTT ----------
+  function connectMQTT() {
+    mainTopic = getParam("id") || "defaultTopic";
+
+    // Allow ?mode=server to pre-activate server mode
+    if (getParam("mode") === "server") {
+      document.getElementById("server-toggle").checked = true;
+      isServerMode = true;
+      onServerToggle();
+    } else {
+      buildTopics();
+    }
+
+    mqttClient = mqtt.connect(mqttBroker, { username: "emqx", password: "emqx" });
+
+    mqttClient.on("connect", () => {
+      setMqtt("ok", "Connected · " + mainTopic);
+      document.getElementById("topic-row").style.display = "flex";
+      document.getElementById("broker-info").textContent = "broker.emqx.io:8084";
+      mqttClient.subscribe(mqttRxTopic);
+    });
+
+    mqttClient.on("message", (topic, payload) => {
+      if (topic === mqttRxTopic) {
+        flash("mqtt-in");
+        addLog('IN', "br->com", payload);
+        if (writer) writer.write(payload);
+      }
+    });
+
+    mqttClient.on("error", e => setMqtt("err", "Error: " + e.message));
+    mqttClient.on("close", () => {
+      setMqtt("", "Disconnected");
+      document.getElementById("topic-row").style.display = "none";
+      document.getElementById("broker-info").textContent = "";
+    });
+  }
+
+  connectMQTT();
+</script>
 </body>
 </html>
