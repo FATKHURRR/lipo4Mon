@@ -145,9 +145,10 @@
     tbody tr:hover { background: #1e2230; }
     td { padding: 6px 8px; vertical-align: top; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-    .td-time  { color: #475569; }
-    .td-topic { color: #4f6ef7; }
-    .td-data  { color: #cbd5e1; }
+    .td-time  { color: #475569; width: 80px; }
+    .td-topic { color: #4f6ef7; width: 100px; }
+    .td-data  { color: #cbd5e1; word-break: break-all; }
+    .td-size  { color: #a78bfa; width: 60px; text-align: right; }
     .td-ascii { color: #374151; margin-left: 5px; }
 
     .dir-in  { color: #7c9ef8; }
@@ -239,7 +240,7 @@
     </div>
     <div class="log-wrap">
       <table>
-        <thead><tr><th>Time</th><th>Dir</th><th>Topic</th><th>Data</th></tr></thead>
+        <thead><tr><th>Time</th><th>Dir</th><th>Topic</th><th>Data (Hex)</th></tr></thead>
         <tbody id="log-body"><tr><td colspan="4" class="empty-log">No transactions yet</td></tr></tbody>
       </table>
     </div>
@@ -413,18 +414,23 @@
       await usbDevice.claimInterface(0);
 
       const baud = parseInt(document.getElementById("baudrate").value);
-      console.log("Setting baudrate to:", baud);
       
+      // Detect device type
+      let deviceType = "Unknown";
       if (usbDevice.vendorId === 0x1a86) {
+        deviceType = "CH340";
         await setupCH340BaudRate(usbDevice, baud);
         await setupCDCLineCoding(usbDevice, baud);
       } else if (usbDevice.vendorId === 0x0403) {
+        deviceType = "FTDI";
         await setupFTDIBaudRate(usbDevice, baud);
         await setupCDCLineCoding(usbDevice, baud);
       } else if (usbDevice.vendorId === 0x10c4) {
+        deviceType = "CP210x";
         await setupCP210xBaudRate(usbDevice, baud);
         await setupCDCLineCoding(usbDevice, baud);
       } else if (usbDevice.vendorId === 0x067b) {
+        deviceType = "PL2303";
         await setupPL2303BaudRate(usbDevice, baud);
         await setupCDCLineCoding(usbDevice, baud);
       } else {
@@ -443,7 +449,8 @@
       await new Promise(r => setTimeout(r, 200));
 
       usbConnected = true;
-      setSerial('ok', 'Connected USB (' + baud + ' baud)');
+      setSerial('ok', `Connected ${deviceType} USB (${baud} baud)`);
+      addLog('SYS', 'connection', new TextEncoder().encode(`Connected to ${deviceType} at ${baud} baud`));
       readUSBLoop();
     } catch(e) {
       setSerial('err', e.message);
@@ -459,6 +466,7 @@
       writer = port.writable.getWriter();
       reader = port.readable.getReader();
       setSerial("ok", "Connected Serial (" + baud + " baud)");
+      addLog('SYS', 'connection', new TextEncoder().encode(`Connected to Serial port at ${baud} baud`));
       readSerialLoop();
     } catch(e) {
       setSerial("err", "Serial Error: " + e.message);
@@ -531,10 +539,13 @@
   }
 
   function handleIncomingHardwareData(u8, source) {
+    // Selalu log data yang diterima dari hardware, apakah MQTT terhubung atau tidak
+    addLog('RX', source.toUpperCase(), u8);
+    
     if (mqttClient?.connected && mqttTxTopic) {
       mqttClient.publish(mqttTxTopic, u8);
       flash("mqtt-out");
-      addLog('OUT', source.toLowerCase() + "->cloud", u8);
+      addLog('TX', source.toLowerCase() + "->cloud", u8);
     }
   }
 
@@ -589,12 +600,14 @@
     mqttClient.on("message", async (topic, payload) => {
       if (topic !== mqttRxTopic) return;
       flash("mqtt-in");
-      addLog('IN', "cloud->dev", payload);
+      addLog('RX', "cloud", payload);
 
       if (isAndroid && usbConnected) {
         await usbDevice.transferOut(2, payload);
+        addLog('TX', "usb", payload);
       } else if (writer) {
         await writer.write(payload);
+        addLog('TX', "serial", payload);
       }
     });
 
@@ -633,30 +646,42 @@
       .join(' ');
   }
 
+  function toASCII(payload) {
+    return Array.from(new Uint8Array(payload))
+      .map(x => (x >= 32 && x <= 126) ? String.fromCharCode(x) : '.')
+      .join('');
+  }
+
   function addLog(dir, topic, payload) {
+    const hex = toHex(payload);
+    const ascii = toASCII(payload);
+    const size = payload.byteLength || payload.length;
+    
     logBuffer.push({
       ts: new Date().toLocaleTimeString(),
-      dir, topic, hex: toHex(payload)
+      dir, topic, hex, ascii, size
     });
+    
     const tbody = document.getElementById("log-body");
     const recent = logBuffer.slice(-MAX_DISPLAY).reverse();
     tbody.innerHTML = recent.map(e => `
-      <tr>
+      <tr title="ASCII: ${e.ascii}">
         <td class="td-time">${e.ts}</td>
-        <td><span class="${e.dir==='IN'?'dir-in':'dir-out'}">${e.dir}</span></td>
+        <td><span class="${e.dir==='RX'?'dir-in':e.dir==='TX'?'dir-out':''}"><b>${e.dir}</b></span></td>
         <td class="td-topic">${e.topic}</td>
-        <td class="td-data">${e.hex}</td>
+        <td class="td-data">[${e.size}B] ${e.hex}</td>
       </tr>`).join('');
     document.getElementById("log-count").textContent = logBuffer.length + " entries";
   }
 
   function clearLog() {
     logBuffer.length = 0;
-    document.getElementById("log-body").innerHTML = '<tr><td colspan="4" class="empty-log">No transactions yet</td></tr>';
+    document.getElementById("log-body").innerHTML = '<tr><td colspan="5" class="empty-log">No transactions yet</td></tr>';
   }
   
   function downloadLog() {
-    const csv = 'Time,Dir,Topic,Hex\n' + logBuffer.map(e => `"${e.ts}","${e.dir}","${e.topic}","${e.hex}"`).join('\n');
+    const csv = 'Time,Direction,Topic,Size(Bytes),Hex,ASCII\n' + 
+      logBuffer.map(e => `"${e.ts}","${e.dir}","${e.topic}","${e.size}","${e.hex}","${e.ascii}"`).join('\n');
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
     a.download = 'log.csv';
