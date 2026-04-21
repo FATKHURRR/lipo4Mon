@@ -447,6 +447,13 @@
     }
   }
 
+   // ---------- Connection Logic ----------
+  async function connectAction() {
+    if (isAndroid) await connectUSB();
+    else await connectSerial();
+  }
+
+
   async function connectUSB() {
     try {
       usbDevice = await navigator.usb.requestDevice({
