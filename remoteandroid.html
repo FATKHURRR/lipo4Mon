@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>COM ↔ Online Bridge (BMS Support)</title>
+  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Courier New', Courier, monospace;
+      background: #0f1117;
+      color: #e2e8f0;
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 2rem 1rem;
+    }
+
+    .app { width: 100%; max-width: 560px; }
+
+    .app-header { margin-bottom: 1.25rem; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+    .app-title { font-size: 18px; font-weight: 600; color: #f1f5f9; letter-spacing: 0.02em; }
+    .app-sub { font-size: 12px; color: #64748b; margin-top: 3px; }
+
+    .mode-badge {
+      font-size: 10px; font-weight: 600; letter-spacing: 0.08em;
+      text-transform: uppercase; padding: 4px 10px;
+      border-radius: 5px; flex-shrink: 0; margin-top: 2px;
+    }
+    .mode-badge.client { background: #0f2240; border: 1px solid #1a3a6e; color: #7cb5f8; }
+    .mode-badge.server { background: #2e1a00; border: 1px solid #6b3c00; color: #fbbf24; }
+    .mode-badge.platform { background: #1e293b; border: 1px solid #334155; color: #cbd5e1; }
+
+    .card {
+      background: #1e2230; border: 1px solid #2d3348;
+      border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: 10px;
+    }
+
+    .card-label {
+      font-size: 10px; font-weight: 600; color: #475569;
+      text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px;
+    }
+
+    .baud-row { display: flex; gap: 8px; align-items: center; }
+
+    select {
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 13px; background: #141620;
+      border: 1px solid #2d3348; border-radius: 6px;
+      padding: 7px 10px; color: #e2e8f0; cursor: pointer; outline: none;
+    }
+    select:focus { border-color: #4f6ef7; }
+
+    .btn {
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 13px; background: #141620;
+      border: 1px solid #2d3348; border-radius: 6px;
+      padding: 7px 16px; color: #e2e8f0; cursor: pointer;
+      transition: background 0.15s, border-color 0.15s; white-space: nowrap;
+    }
+    .btn:hover { background: #252a3d; border-color: #3d4666; }
+    .btn.connected { background: #0f2e1a; border-color: #1a5c2e; color: #4ade80; }
+    .btn.sm { font-size: 12px; padding: 5px 12px; }
+    .btn.dl:hover { border-color: #4f6ef7; color: #7c9ef8; }
+    .btn.cl:hover { border-color: #dc2626; color: #f87171; }
+
+    .status-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+
+    .dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: #2d3348; border: 1px solid #3d4666;
+      flex-shrink: 0; transition: background 0.2s;
+    }
+    .dot.ok  { background: #16a34a; border-color: #4ade80; box-shadow: 0 0 6px #16a34a66; }
+    .dot.err { background: #dc2626; border-color: #f87171; }
+    .dot.warn{ background: #d97706; border-color: #fbbf24; }
+
+    .status-text { font-size: 12px; color: #94a3b8; }
+
+    .activity-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .activity-item {
+      background: #141620; border: 1px solid #2d3348;
+      border-radius: 8px; padding: 12px 14px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .act-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: #2d3348; border: 1px solid #3d4666;
+      flex-shrink: 0; transition: background 0.05s;
+    }
+    .act-dot.flash { background: #4ade80; border-color: #16a34a; box-shadow: 0 0 8px #16a34a88; }
+    .act-label { font-size: 12px; color: #cbd5e1; }
+    .act-sub   { font-size: 11px; color: #475569; margin-top: 2px; }
+
+    .chip-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+    .chip {
+      font-size: 11px; background: #141620;
+      border: 1px solid #2d3348; border-radius: 5px; padding: 3px 9px;
+    }
+    .chip.rx { color: #7c9ef8; border-color: #1a2a4e; background: #0d1525; }
+    .chip.tx { color: #fbbf24; border-color: #3d2e00; background: #1e1800; }
+
+    /* Toggle */
+    .toggle-row { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
+    .toggle { position: relative; width: 36px; height: 20px; flex-shrink: 0; }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle-track {
+      position: absolute; inset: 0;
+      background: #2d3348; border-radius: 20px;
+      border: 1px solid #3d4666; cursor: pointer; transition: background 0.2s;
+    }
+    .toggle-track::after {
+      content: ''; position: absolute; left: 3px; top: 3px;
+      width: 12px; height: 12px; border-radius: 50%;
+      background: #64748b; transition: transform 0.2s, background 0.2s;
+    }
+    .toggle input:checked + .toggle-track { background: #7c3a00; border-color: #b85a00; }
+    .toggle input:checked + .toggle-track::after { transform: translateX(16px); background: #fbbf24; }
+    .toggle-label { font-size: 12px; color: #94a3b8; }
+
+    /* Logger */
+    .log-toolbar {
+      display: flex; align-items: center;
+      justify-content: space-between; margin-bottom: 10px; gap: 8px;
+    }
+    .log-count { font-size: 11px; color: #475569; margin-top: 2px; }
+    .log-btns { display: flex; gap: 6px; }
+
+    .log-wrap {
+      background: #141620; border: 1px solid #2d3348;
+      border-radius: 8px; overflow: hidden;
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 11px; table-layout: fixed; }
+    thead tr { background: #1a1e2e; border-bottom: 1px solid #2d3348; }
+    thead th {
+      text-align: left; padding: 7px 8px;
+      font-size: 10px; font-weight: 600;
+      color: #475569; text-transform: uppercase; letter-spacing: 0.08em;
+    }
+    tbody tr { border-bottom: 1px solid #1e2230; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: #1e2230; }
+    td { padding: 6px 8px; vertical-align: top; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .td-time  { color: #475569; }
+    .td-topic { color: #4f6ef7; }
+    .td-data  { color: #cbd5e1; }
+    .td-ascii { color: #374151; margin-left: 5px; }
+
+    .dir-in  { color: #7c9ef8; }
+    .dir-out { color: #fbbf24; }
+
+    .empty-log { text-align: center; padding: 24px; font-size: 12px; color: #374151; }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <div class="app-header">
+    <div>
+      <div class="app-title">COM ↔ Bridge</div>
+      <div class="app-sub">BMS Monitor & Serial Tunnel</div>
+    </div>
+    <div style="display:flex; gap:5px;">
+        <div class="mode-badge platform" id="platform-badge">-</div>
+        <div class="mode-badge client" id="mode-badge">-</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-label">Hardware Connection</div>
+    <div class="baud-row">
+      <select id="baudrate">
+        <option value="9600">9600</option>
+        <option value="19200">19200</option>
+        <option value="38400">38400</option>
+        <option value="57600">57600</option>
+        <option value="115200" selected>115200</option>
+      </select>
+      <button class="btn" id="serial-btn" onclick="connectAction()">Open Connection</button>
+    </div>
+    <div class="status-row">
+      <div class="dot" id="serial-dot"></div>
+      <span class="status-text" id="status">Not connected</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-label">Cloud Bridge Server</div>
+    <div class="status-row">
+      <div class="dot warn" id="mqtt-dot"></div>
+      <span class="status-text" id="mqtt-status">Connecting…</span>
+    </div>
+    <div class="chip-row" id="topic-row" style="display:none">
+      <span class="chip rx" id="rx-chip">RX ← Bridge</span>
+      <span class="chip tx" id="tx-chip">TX → Bridge</span>
+    </div>
+    <div class="toggle-row">
+      <label class="toggle">
+        <input type="checkbox" id="server-toggle" onchange="onServerToggle()">
+        <span class="toggle-track"></span>
+      </label>
+      <span class="toggle-label" id="toggle-label">Mode <span style="color:#475569">— Client Mode</span></span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-label">Traffic Activity</div>
+    <div class="activity-grid">
+      <div class="activity-item">
+        <div class="act-dot" id="mqtt-in"></div>
+        <div>
+          <div class="act-label">INCOMING</div>
+          <div class="act-sub" id="act-in-sub">Cloud → Device</div>
+        </div>
+      </div>
+      <div class="activity-item">
+        <div class="act-dot" id="mqtt-out"></div>
+        <div>
+          <div class="act-label">OUTGOING</div>
+          <div class="act-sub" id="act-out-sub">Device → Cloud</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="logging" hidden>
+    <div class="log-toolbar">
+      <div>
+        <div class="card-label" style="margin-bottom:2px">Transaction Log</div>
+        <div class="log-count" id="log-count">0 entries in buffer</div>
+      </div>
+      <div class="log-btns">
+        <button class="btn sm cl" onclick="clearLog()">Clear</button>
+        <button class="btn sm dl" onclick="downloadLog()">↓ CSV</button>
+      </div>
+    </div>
+    <div class="log-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:80px">Time</th><th style="width:60px">Dir</th><th style="width:100px">Topic</th><th>Data (Hex)</th>
+          </tr>
+        </thead>
+        <tbody id="log-body">
+          <tr><td colspan="4" class="empty-log">No transactions yet</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  let port, reader, writer, mqttClient;
+  let mqttRxTopic, mqttTxTopic, mainTopic;
+  let isServerMode = false;
+  let usbDevice, usbConnected = false;
+  let isAndroid = false;
+  const mqttBroker = "wss://broker.emqx.io:8084/mqtt";
+  const logBuffer = [];
+  const MAX_DISPLAY = 10;
+  const allowedTopics = new Set();
+
+  // CH340 Baudrate Register Map
+  const CH340_BAUD_MAP = {
+    9600:   { value: 0x120c, index: 0x0000 },
+    19200:  { value: 0xd206, index: 0x0000 },
+    38400:  { value: 0x6903, index: 0x0000 },
+    57600:  { value: 0x9c03, index: 0x0000 },
+    115200: { value: 0xcc01, index: 0x0000 }
+  };
+
+  function detectPlatform() {
+    const ua = navigator.userAgent.toLowerCase();
+    isAndroid = /android/.test(ua);
+    const badge = document.getElementById('platform-badge');
+    badge.textContent = isAndroid ? 'ANDROID' : 'DESKTOP';
+    setSerial("", isAndroid ? "Android detected (WebUSB)" : "Desktop detected (WebSerial)");
+  }
+
+  function getParam(n) { return new URLSearchParams(window.location.search).get(n); }
+
+  // ---------- Baudrate Logic (WebUSB) ----------
+  async function setupCH340BaudRate(device, baudRate) {
+    const config = CH340_BAUD_MAP[baudRate] || CH340_BAUD_MAP[9600];
+    
+    // Init command
+    await device.controlTransferOut({
+      requestType: 'vendor', recipient: 'device',
+      request: 0xa1, value: 0xc29c, index: 0xb2b9
+    });
+
+    // Write baudrate factors
+    await device.controlTransferOut({
+      requestType: 'vendor', recipient: 'device',
+      request: 0x9a, value: 0x1312, index: config.value
+    });
+
+    await device.controlTransferOut({
+      requestType: 'vendor', recipient: 'device',
+      request: 0x9a, value: 0x0f2c, index: config.index
+    });
+  }
+
+  // ---------- Connection Logic ----------
+  async function connectAction() {
+    if (isAndroid) await connectUSB();
+    else await connectSerial();
+  }
+
+  async function connectUSB() {
+    try {
+      usbDevice = await navigator.usb.requestDevice({
+        filters: [
+          { vendorId: 0x1a86 }, // CH340
+          { vendorId: 0x0403 }, // FTDI
+          { vendorId: 0x10c4 }, // CP210x
+          { vendorId: 0x067b }  // PL2303
+        ]
+      });
+
+      await usbDevice.open();
+      if (usbDevice.configuration === null) await usbDevice.selectConfiguration(1);
+      await usbDevice.claimInterface(0);
+
+      // Set Baudrate based on selection
+      const baud = parseInt(document.getElementById("baudrate").value);
+      if (usbDevice.vendorId === 0x1a86) {
+        await setupCH340BaudRate(usbDevice, baud);
+      } else if (usbDevice.vendorId === 0x10c4) {
+        // CP210x Baudrate logic
+        await usbDevice.controlTransferOut({
+          requestType: 'vendor', recipient: 'device',
+          request: 0x1E, value: 0x0000, index: 0x0000,
+          data: new Uint32Array([baud]).buffer
+        });
+      }
+
+      // Set Control Line State (DTR/RTS)
+      await usbDevice.controlTransferOut({
+        requestType: 'class', recipient: 'interface',
+        request: 0x22, value: 0x01, index: 0
+      });
+
+      usbConnected = true;
+      setSerial('ok', 'Connected USB (' + baud + ' baud)');
+      readUSBLoop();
+    } catch(e) {
+      setSerial('err', e.message);
+    }
+  }
+
+  async function connectSerial() {
+    try {
+      port = await navigator.serial.requestPort();
+      const baud = parseInt(document.getElementById("baudrate").value);
+      await port.open({ baudRate: baud });
+      writer = port.writable.getWriter();
+      reader = port.readable.getReader();
+      setSerial("ok", "Connected Serial (" + baud + " baud)");
+      readSerialLoop();
+    } catch(e) { setSerial("err", "Serial Error: " + e.message); }
+  }
+
+  // ---------- Loops ----------
+  async function readUSBLoop() {
+    while (usbConnected) {
+      try {
+        const result = await usbDevice.transferIn(1, 64);
+        if (result.data && result.data.byteLength > 0) {
+          const u8 = new Uint8Array(result.data.buffer);
+          handleIncomingHardwareData(u8, 'USB');
+        }
+      } catch(e) { 
+          usbConnected = false;
+          setSerial('err', 'Disconnected');
+          break; 
+      }
+    }
+  }
+
+  async function readSerialLoop() {
+    try {
+      while (port.readable) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        handleIncomingHardwareData(new Uint8Array(value), 'COM');
+      }
+    } catch(e) { setSerial("err", e.message); }
+  }
+
+  function handleIncomingHardwareData(u8, source) {
+    if (mqttClient?.connected && mqttTxTopic) {
+      mqttClient.publish(mqttTxTopic, u8);
+      flash("mqtt-out");
+      addLog('OUT', source.toLowerCase() + "->cloud", u8);
+    }
+  }
+
+  // ---------- MQTT ----------
+  function buildTopics() {
+    mainTopic = getParam("id") || "bms_default";
+    if (isServerMode) {
+      mqttRxTopic = mainTopic + "/RX";
+      mqttTxTopic = mainTopic + "/TX";
+      document.getElementById("logging").hidden = false;
+    } else {
+      mqttRxTopic = mainTopic + "/TX";
+      mqttTxTopic = mainTopic + "/RX";
+      document.getElementById("logging").hidden = true;
+    }
+    allowedTopics.clear();
+    allowedTopics.add(mqttRxTopic);
+  }
+
+  function onServerToggle() {
+    isServerMode = document.getElementById("server-toggle").checked;
+    const badge = document.getElementById("mode-badge");
+    const lbl = document.getElementById("toggle-label");
+    
+    if (isServerMode) {
+      badge.textContent = "SERVER"; badge.className = "mode-badge server";
+      lbl.innerHTML = 'Mode <span style="color:#fbbf24">— Server/Master</span>';
+    } else {
+      badge.textContent = "CLIENT"; badge.className = "mode-badge client";
+      lbl.innerHTML = 'Mode <span style="color:#475569">— Client/BMS</span>';
+    }
+    buildTopics();
+    if (mqttClient?.connected) {
+      mqttClient.subscribe(mqttRxTopic);
+    }
+  }
+
+  function connectMQTT() {
+    onServerToggle();
+    mqttClient = mqtt.connect(mqttBroker, { clientId: "bridge_" + Math.random().toString(16).slice(2, 8) });
+
+    mqttClient.on("connect", () => {
+      setMqtt("ok", "Cloud Connected");
+      document.getElementById("topic-row").style.display = "flex";
+      mqttClient.subscribe(mqttRxTopic);
+    });
+
+    mqttClient.on("message", async (topic, payload) => {
+      if (topic !== mqttRxTopic) return;
+      flash("mqtt-in");
+      addLog('IN', "cloud->dev", payload);
+
+      // Write to Hardware
+      if (isAndroid && usbConnected) {
+        await usbDevice.transferOut(2, payload);
+      } else if (writer) {
+        await writer.write(payload);
+      }
+    });
+
+    mqttClient.on("error", e => setMqtt("err", e.message));
+  }
+
+  // ---------- UI Helpers ----------
+  function setSerial(state, msg) {
+    document.getElementById("serial-dot").className = "dot" + (state==="ok"?" ok":state==="err"?" err":"");
+    document.getElementById("status").textContent = msg;
+    const btn = document.getElementById("serial-btn");
+    if (state === "ok") { btn.textContent = "Connected"; btn.classList.add("connected"); }
+    else { btn.textContent = "Connect"; btn.classList.remove("connected"); }
+  }
+
+  function setMqtt(state, msg) {
+    document.getElementById("mqtt-dot").className = "dot" + (state==="ok"?" ok":state==="err"?" err":" warn");
+    document.getElementById("mqtt-status").textContent = msg;
+  }
+
+  function flash(id) {
+    const el = document.getElementById(id);
+    el.classList.add("flash");
+    setTimeout(() => el.classList.remove("flash"), 100);
+  }
+
+  // ---------- Logger Core ----------
+  function toHex(payload) {
+    return Array.from(new Uint8Array(payload)).map(x => x.toString(16).padStart(2,'0').toUpperCase()).join(' ');
+  }
+
+  function addLog(dir, topic, payload) {
+    logBuffer.push({
+      ts: new Date().toLocaleTimeString(),
+      dir, topic, hex: toHex(payload)
+    });
+    const tbody = document.getElementById("log-body");
+    const recent = logBuffer.slice(-MAX_DISPLAY).reverse();
+    tbody.innerHTML = recent.map(e => `
+      <tr>
+        <td class="td-time">${e.ts}</td>
+        <td><span class="${e.dir==='IN'?'dir-in':'dir-out'}">${e.dir}</span></td>
+        <td class="td-topic">${e.topic}</td>
+        <td class="td-data">${e.hex}</td>
+      </tr>`).join('');
+    document.getElementById("log-count").textContent = logBuffer.length + " entries";
+  }
+
+  function clearLog() { logBuffer.length = 0; document.getElementById("log-body").innerHTML = '<tr><td colspan="4" class="empty-log">No transactions yet</td></tr>'; }
+  
+  function downloadLog() {
+    const csv = 'Time,Dir,Topic,Hex\n' + logBuffer.map(e => `"${e.ts}","${e.dir}","${e.topic}","${e.hex}"`).join('\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
+    a.download = 'log.csv'; a.click();
+  }
+
+  // Init
+  detectPlatform();
+  connectMQTT();
+
+</script>
+</body>
+</html>
