@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>COM ↔ Cloud Bridge</title>
+  <title>COM ↔ Online Bridge</title>
   <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -171,7 +171,7 @@
       <div class="app-title">COM ↔ Bridge</div>
       <div class="app-sub">Serial port Online Bridge</div>
     </div>
-    <div class="mode-badge client" id="mode-badge">CLIENT</div>
+    <div class="mode-badge client" id="mode-badge">-</div>
   </div>
 
   <!-- Serial Port -->
@@ -210,33 +210,33 @@
         <input type="checkbox" id="server-toggle" onchange="onServerToggle()">
         <span class="toggle-track"></span>
       </label>
-      <span class="toggle-label" id="toggle-label">Server mode <span style="color:#475569">— TX/RX normal</span></span>
+      <span class="toggle-label" id="toggle-label">Mode <span style="color:#475569">— Client Mode</span></span hidden>
     </div>
   </div>
 
   <!-- Activity -->
   <div class="card">
-    <div class="card-label">Activity</div>
+    <div class="card-label">Indicator Activity</div>
     <div class="activity-grid">
       <div class="activity-item">
         <div class="act-dot" id="mqtt-in"></div>
         <div>
           <div class="act-label">Bridge IN</div>
-          <div class="act-sub" id="act-in-sub">Bridge → Serial</div>
+          <div class="act-sub" id="act-in-sub">Bridge → COM</div>
         </div>
       </div>
       <div class="activity-item">
         <div class="act-dot" id="mqtt-out"></div>
         <div>
           <div class="act-label">Bridge OUT</div>
-          <div class="act-sub" id="act-out-sub">Serial → Bridge</div>
+          <div class="act-sub" id="act-out-sub">COM → Bridge</div>
         </div>
       </div>
     </div>
   </div>
 
   <!-- Logger -->
-  <div class="card">
+  <div class="card" id="logging" hidden>
     <div class="log-toolbar">
       <div>
         <div class="card-label" style="margin-bottom:2px">Transaction Log</div>
@@ -274,21 +274,31 @@
   const logBuffer = [];
   const MAX_DISPLAY = 10;
 
+  // Allowed topics set — rebuilt every time buildTopics() is called
+  // Only messages whose topic is exactly in this set are processed
+  const allowedTopics = new Set();
+
   function getParam(n) { return new URLSearchParams(window.location.search).get(n); }
 
   // ---------- Topics ----------
   function buildTopics() {
-    // Client: sub /TX, pub /RX
-    // Server: sub /RX, pub /TX  (mirrored)
     if (isServerMode) {
       mqttRxTopic = mainTopic + "/RX";
       mqttTxTopic = mainTopic + "/TX";
+      document.getElementById("logging").hidden=false;
     } else {
       mqttRxTopic = mainTopic + "/TX";
       mqttTxTopic = mainTopic + "/RX";
+      document.getElementById("logging").hidden=true;
+
     }
-    document.getElementById("rx-chip").textContent = "RX ← Bridge" ;
-    document.getElementById("tx-chip").textContent = "TX → Bridge" ;
+    // Rebuild allowed set with only the two exact topics
+    allowedTopics.clear();
+    allowedTopics.add(mqttRxTopic);
+    allowedTopics.add(mqttTxTopic);
+
+    document.getElementById("rx-chip").textContent = "RX ← Bridge";
+    document.getElementById("tx-chip").textContent = "TX → Bridge";
   }
 
   function onServerToggle() {
@@ -300,12 +310,12 @@
 
     if (isServerMode) {
       badge.textContent = "SERVER"; badge.className = "mode-badge server";
-      lbl.innerHTML = 'Server mode <span style="color:#fbbf24">— TX/RX swapped</span>';
+      lbl.innerHTML = 'Server mode <span style="color:#fbbf24">— Master Mode</span>';
       inSub.textContent  = "MQTT ← Client";
       outSub.textContent = "Serial → Client";
     } else {
       badge.textContent = "CLIENT"; badge.className = "mode-badge client";
-      lbl.innerHTML = 'Server mode <span style="color:#475569">— TX/RX normal</span>';
+      lbl.innerHTML = 'Server mode <span style="color:#475569">— Client Mode</span>';
       inSub.textContent  = "MQTT → Serial";
       outSub.textContent = "Serial → MQTT";
     }
@@ -314,7 +324,7 @@
       const oldRx = mqttRxTopic;
       buildTopics();
       mqttClient.unsubscribe(oldRx);
-      mqttClient.subscribe(mqttRxTopic);
+      mqttClient.subscribe(mqttRxTopic, { qos: 0 });
     } else {
       buildTopics();
     }
@@ -429,7 +439,7 @@
           const u8 = new Uint8Array(value);
           mqttClient.publish(mqttTxTopic, u8);
           flash("mqtt-out");
-          addLog('OUT', "com->br ", u8);
+          addLog('OUT', "com->br", u8);
         }
       }
     } catch(e) { console.error(e); }
@@ -438,8 +448,8 @@
   // ---------- MQTT ----------
   function connectMQTT() {
     mainTopic = getParam("id") || "defaultTopic";
+    isServerMode = getParam("server") || false;
 
-    // Allow ?mode=server to pre-activate server mode
     if (getParam("mode") === "server") {
       document.getElementById("server-toggle").checked = true;
       isServerMode = true;
@@ -451,18 +461,25 @@
     mqttClient = mqtt.connect(mqttBroker, { username: "emqx", password: "emqx" });
 
     mqttClient.on("connect", () => {
-      setMqtt("ok", "Connected · " + mainTopic);
+      setMqtt("ok", "Connected · " );
       document.getElementById("topic-row").style.display = "flex";
-      document.getElementById("broker-info").textContent = "broker.emqx.io:8084";
-      mqttClient.subscribe(mqttRxTopic);
+      // document.getElementById("broker-info").textContent = "broker.emqx.io:8084";
+      // Subscribe hanya exact topic RX saja, tidak pakai wildcard
+      mqttClient.subscribe(mqttRxTopic, { qos: 0 });
     });
 
     mqttClient.on("message", (topic, payload) => {
-      if (topic === mqttRxTopic) {
-        flash("mqtt-in");
-        addLog('IN', "br->com", payload);
-        if (writer) writer.write(payload);
+      // Hard filter: buang semua pesan yang bukan dari allowedTopics
+      if (!allowedTopics.has(topic)) {
+        console.warn("[bridge] dropped — topic not allowed:", topic);
+        return;
       }
+      // Hanya proses pesan dari mqttRxTopic (topic yang kita subscribe)
+      if (topic !== mqttRxTopic) return;
+
+      flash("mqtt-in");
+      addLog('IN', "br->com", payload);
+      if (writer) writer.write(payload);
     });
 
     mqttClient.on("error", e => setMqtt("err", "Error: " + e.message));
