@@ -283,12 +283,12 @@
   // ---------- Topics ----------
   function buildTopics() {
     if (isServerMode) {
-      mqttRxTopic = mainTopic + "/RX";
-      mqttTxTopic = mainTopic + "/TX";
-      document.getElementById("logging").hidden=false;
-    } else {
       mqttRxTopic = mainTopic + "/TX";
       mqttTxTopic = mainTopic + "/RX";
+      document.getElementById("logging").hidden=false;
+    } else {
+      mqttRxTopic = mainTopic + "/RX";
+      mqttTxTopic = mainTopic + "/TX";
       document.getElementById("logging").hidden=true;
 
     }
