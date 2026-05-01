@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESP8266 Controller</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px 30px;
+            text-align: center;
+        }
+
+        .header h1 { font-size: 24px; margin-bottom: 10px; }
+
+        .status {
+            display: inline-block;
+            padding: 6px 16px;
+            border-radius: 20px;
+            background: rgba(255,255,255,0.2);
+            font-size: 14px;
+        }
+        .status.connected { background: #10b981; }
+        .status.disconnected { background: #ef4444; }
+
+        .content { padding: 25px 30px; }
+
+        .section { margin-bottom: 25px; }
+
+        .section h2 {
+            color: #667eea;
+            margin-bottom: 12px;
+            font-size: 17px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 8px;
+        }
+
+        .btn-group { display: flex; gap: 10px; flex-wrap: wrap; }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: white;
+        }
+
+        button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        .btn-primary { background: linear-gradient(135deg, #667eea, #764ba2); }
+        .btn-primary:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(102,126,234,0.4); }
+
+        .btn-success { background: #10b981; }
+        .btn-success:hover:not(:disabled) { background: #059669; }
+
+        .btn-danger { background: #ef4444; }
+        .btn-danger:hover:not(:disabled) { background: #dc2626; }
+
+        .btn-orange { background: #f59e0b; }
+        .btn-orange:hover:not(:disabled) { background: #d97706; }
+
+        .progress-bar {
+            width: 100%;
+            height: 28px;
+            background: #e5e7eb;
+            border-radius: 6px;
+            overflow: hidden;
+            margin: 15px 0;
+            display: none;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .hex-viewer {
+            background: #f9fafb;
+            border: 2px solid #e5e7eb;
+            border-radius: 6px;
+            padding: 12px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 380px;
+            overflow-y: auto;
+        }
+
+        .hex-row { margin-bottom: 3px; display: flex; gap: 10px; }
+        .hex-address { color: #667eea; font-weight: bold; min-width: 55px; }
+        .hex-data { color: #374151; }
+        .hex-ascii { color: #6b7280; margin-left: 10px; }
+
+        .log-container {
+            background: #1f2937;
+            color: #10b981;
+            padding: 12px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 180px;
+            overflow-y: auto;
+        }
+
+        .log-entry { margin-bottom: 4px; }
+        .log-error { color: #ef4444; }
+        .log-success { color: #10b981; }
+        .log-info { color: #60a5fa; }
+
+        .file-drop {
+            border: 2px dashed #667eea;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            color: #667eea;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-top: 10px;
+        }
+        .file-drop:hover { background: #f0f4ff; }
+        .file-drop.has-file { background: #f0fdf4; border-color: #10b981; color: #059669; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>🔧 ESP8266  Controller</h1>
+        <div class="status disconnected" id="status">Disconnected</div>
+    </div>
+
+    <div class="content">
+
+        <!-- CONNECTION -->
+        <div class="section">
+            <h2>Connection</h2>
+            <div class="btn-group">
+                <button class="btn-primary" id="connectBtn">🔌 Connect Device</button>
+                <button class="btn-danger" id="disconnectBtn" disabled>⛔ Disconnect</button>
+            </div>
+        </div>
+
+        <!-- READ ALL -->
+        <div class="section">
+            <h2>Read </h2>
+            <div class="btn-group">
+                <button class="btn-success" id="readAllBtn" disabled>📖 Read All (32KB)</button>
+            </div>
+        </div>
+
+        <!-- SAVE TO FILE -->
+        <div class="section">
+            <h2>Save to File</h2>
+            <div class="btn-group">
+                <button class="btn-orange" id="saveFileBtn" disabled>💾 Save  to File (.bin + .hex)</button>
+            </div>
+        </div>
+
+        <!-- WRITE ALL FROM FILE -->
+        <div class="section">
+            <h2>Write All to </h2>
+            <div class="file-drop" id="fileDrop" onclick="document.getElementById('fileInput').click()">
+                📁 Click to load file (.bin / .hex / .eep)
+            </div>
+            <input type="file" id="fileInput" accept=".bin,.eep,.hex" style="display:none;">
+            <div class="btn-group" style="margin-top:12px;">
+                <button class="btn-danger" id="writeAllBtn" disabled>⚡ Write All to </button>
+            </div>
+        </div>
+
+        <!-- PROGRESS -->
+        <div class="progress-bar" id="progressBar">
+            <div class="progress-fill" id="progressFill" style="width:0%">0%</div>
+        </div>
+
+        <!-- HEX VIEWER -->
+        <div class="section">
+            <h2>Data Viewer (Hex)</h2>
+            <div class="hex-viewer" id="hexViewer">
+                <div style="color:#9ca3af;">No data loaded. Read  first.</div>
+            </div>
+        </div>
+
+        <!-- LOG -->
+        <div class="section">
+            <h2>Activity Log</h2>
+            <div class="log-container" id="logContainer">
+                <div class="log-entry log-info">System ready. Connect device to start.</div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────
+let port = null, reader = null, writer = null;
+let isConnected = false;
+let Data = new Uint8Array(32768);
+let loadedFileData = null;
+let loadedFileName = '';
+let deviceInfo = { size: 32768, pageSize: 64 };
+let readBuffer = '';
+let receivedData = [];
+let totalExpectedBytes = 0;
+
+// ── Helpers ────────────────────────────────────────────
+function log(msg, type = 'info') {
+    const c = document.getElementById('logContainer');
+    const e = document.createElement('div');
+    e.className = `log-entry log-${type}`;
+    e.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+    c.appendChild(e);
+    c.scrollTop = c.scrollHeight;
+}
+
+function updateProgress(pct) {
+    const f = document.getElementById('progressFill');
+    f.style.width = pct + '%';
+    f.textContent = Math.round(pct) + '%';
+}
+
+function showProgress(show) {
+    document.getElementById('progressBar').style.display = show ? 'block' : 'none';
+}
+
+function updateUI(connected) {
+    const s = document.getElementById('status');
+    s.textContent = connected ? 'Connected' : 'Disconnected';
+    s.className = 'status ' + (connected ? 'connected' : 'disconnected');
+    document.getElementById('connectBtn').disabled = connected;
+    document.getElementById('disconnectBtn').disabled = !connected;
+    document.getElementById('readAllBtn').disabled = !connected;
+    document.getElementById('saveFileBtn').disabled = !connected || Data.every(b => b === 0);
+    document.getElementById('writeAllBtn').disabled = !connected || !loadedFileData;
+}
+
+// ── Serial ─────────────────────────────────────────────
+async function connectSerial() {
+    try {
+        port = await navigator.serial.requestPort();
+        await port.open({ baudRate: 115200 });
+
+        const dec = new TextDecoderStream();
+        port.readable.pipeTo(dec.writable);
+        reader = dec.readable.getReader();
+
+        const enc = new TextEncoderStream();
+        enc.readable.pipeTo(port.writable);
+        writer = enc.writable.getWriter();
+
+        isConnected = true;
+        updateUI(true);
+        log('Connected to ESP8266', 'success');
+        readResponses();
+    } catch (err) {
+        log('Connection failed: ' + err.message, 'error');
+    }
+}
+
+async function disconnectSerial() {
+    isConnected = false;
+    if (reader) { await reader.cancel(); reader = null; }
+    if (writer) { await writer.close(); writer = null; }
+    if (port)   { await port.close();   port = null;   }
+    updateUI(false);
+    log('Disconnected', 'info');
+}
+
+async function sendCommand(cmd, params = {}) {
+    const str = JSON.stringify({ cmd, ...params });
+    await writer.write(str + '\r');
+    log(`Sent: ${cmd}`, 'info');
+}
+
+async function readResponses() {
+    try {
+        while (isConnected) {
+            const { value, done } = await reader.read();
+            if (done) break;
+            readBuffer += value;
+
+            let idx;
+            while ((idx = readBuffer.indexOf('\n')) !== -1) {
+                const line = readBuffer.substring(0, idx).trim();
+                readBuffer = readBuffer.substring(idx + 1);
+                if (!line) continue;
+                try { handleResponse(JSON.parse(line)); }
+                catch { log('Parse error: ' + line, 'error'); }
+            }
+        }
+    } catch (err) {
+        if (isConnected) log('Read error: ' + err.message, 'error');
+    }
+}
+
+function handleResponse(json) {
+    if (json.status === 'ready') {
+        log(`Device ready: ${json.device}`, 'success');
+        deviceInfo.size = json._size;
+        deviceInfo.pageSize = json.page_size;
+        return;
+    }
+    if (json.status === 'error') {
+        log(`Error: ${json.message}`, 'error');
+        showProgress(false);
+        return;
+    }
+    if (json.data === true) {
+        const hex = json.hex, offset = json.offset;
+        for (let i = 0; i < hex.length; i += 2)
+            Data[offset + i / 2] = parseInt(hex.substr(i, 2), 16);
+        receivedData.push({ offset, length: hex.length / 2 });
+        if (totalExpectedBytes > 0) {
+            const got = receivedData.reduce((s, c) => s + c.length, 0);
+            updateProgress((got / totalExpectedBytes) * 100);
+        }
+        return;
+    }
+    if (json.complete === true) {
+        log(`${json.cmd} completed`, 'success');
+        updateProgress(100);
+        setTimeout(() => showProgress(false), 1200);
+        if (receivedData.length > 0) {
+            const first = receivedData[0];
+            const total = receivedData.reduce((s, c) => s + c.length, 0);
+            displayHex(first.offset, Math.min(512, total));
+        }
+        receivedData = [];
+        totalExpectedBytes = 0;
+        // enable save after read
+        document.getElementById('saveFileBtn').disabled = false;
+    }
+    if (json.status === 'ok' && json.cmd === 'read_all') {
+        totalExpectedBytes = json.size;
+        log(`Reading ${json.size} bytes...`, 'info');
+    }
+}
+
+// ──  Ops ─────────────────────────────────────────
+async function readAll() {
+    receivedData = [];
+    totalExpectedBytes = 0;
+    showProgress(true);
+    updateProgress(0);
+    await sendCommand('read_all');
+}
+
+function saveToFile() {
+    const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+
+    // .bin
+    const blob = new Blob([Data], { type: 'application/octet-stream' });
+    const a1 = Object.assign(document.createElement('a'), {
+        href: URL.createObjectURL(blob), download: `_${ts}.bin`
+    });
+    document.body.appendChild(a1); a1.click(); document.body.removeChild(a1);
+
+    // .hex (Intel HEX)
+    let hexContent = '';
+    const bpl = 16;
+    for (let addr = 0; addr < Data.length; addr += bpl) {
+        const len = Math.min(bpl, Data.length - addr);
+        let line = ':' + len.toString(16).padStart(2,'0').toUpperCase()
+                       + addr.toString(16).padStart(4,'0').toUpperCase() + '00';
+        let cs = len + ((addr >> 8) & 0xFF) + (addr & 0xFF);
+        for (let i = 0; i < len; i++) {
+            const b = Data[addr + i];
+            line += b.toString(16).padStart(2,'0').toUpperCase();
+            cs += b;
+        }
+        cs = ((~cs) + 1) & 0xFF;
+        hexContent += line + cs.toString(16).padStart(2,'0').toUpperCase() + '\n';
+    }
+    hexContent += ':00000001FF\n';
+
+    const blob2 = new Blob([hexContent], { type: 'text/plain' });
+    const a2 = Object.assign(document.createElement('a'), {
+        href: URL.createObjectURL(blob2), download: `_${ts}.hex`
+    });
+    document.body.appendChild(a2); a2.click(); document.body.removeChild(a2);
+
+    log(`Saved _${ts}.bin + .hex`, 'success');
+}
+
+async function loadFile(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    try {
+        const buf = await file.arrayBuffer();
+        const ext = file.name.split('.').pop().toLowerCase();
+        loadedFileData = (ext === 'hex') ? parseIntelHex(buf) : new Uint8Array(buf);
+        loadedFileName = file.name;
+
+        // Pad / trim to  size
+        if (loadedFileData.length > deviceInfo.size)
+            loadedFileData = loadedFileData.slice(0, deviceInfo.size);
+        if (loadedFileData.length < deviceInfo.size) {
+            const padded = new Uint8Array(deviceInfo.size);
+            padded.fill(0xFF);
+            padded.set(loadedFileData);
+            loadedFileData = padded;
+        }
+
+        const drop = document.getElementById('fileDrop');
+        drop.textContent = `✅ ${file.name} (${file.size} bytes) — ready to write`;
+        drop.classList.add('has-file');
+
+        document.getElementById('writeAllBtn').disabled = !isConnected;
+        log(`File loaded: ${file.name} (${loadedFileData.length} bytes)`, 'success');
+
+        // preview
+        const prev = Data;
+        Data = loadedFileData;
+        displayHex(0, Math.min(512, loadedFileData.length));
+        Data = prev;
+    } catch (err) {
+        log('Load failed: ' + err.message, 'error');
+    }
+    event.target.value = '';
+}
+
+function parseIntelHex(arrayBuffer) {
+    const text = new TextDecoder().decode(arrayBuffer);
+    const data = new Uint8Array(32768).fill(0xFF);
+    for (const line of text.split('\n')) {
+        const t = line.trim();
+        if (!t.startsWith(':')) continue;
+        const cnt = parseInt(t.substr(1,2),16);
+        const adr = parseInt(t.substr(3,4),16);
+        const typ = parseInt(t.substr(7,2),16);
+        if (typ === 0)
+            for (let i = 0; i < cnt; i++)
+                if (adr + i < data.length)
+                    data[adr + i] = parseInt(t.substr(9 + i*2, 2), 16);
+        else if (typ === 1) break;
+    }
+    return data;
+}
+
+async function writeAll() {
+    if (!loadedFileData) { log('No file loaded', 'error'); return; }
+    if (!confirm(`Write "${loadedFileName}" to entire ?\n${loadedFileData.length} bytes will be written.`)) return;
+
+    try {
+        log(`Writing "${loadedFileName}" to ...`, 'info');
+        showProgress(true);
+        updateProgress(0);
+
+        const chunk = 64;
+        for (let offset = 0; offset < loadedFileData.length; offset += chunk) {
+            const slice = loadedFileData.slice(offset, offset + chunk);
+            const hex = Array.from(slice).map(b => b.toString(16).padStart(2,'0')).join('');
+            await sendCommand('write_range', { offset, data: hex });
+            updateProgress((offset / loadedFileData.length) * 100);
+            await new Promise(r => setTimeout(r, 50));
+        }
+
+        Data.set(loadedFileData);
+        updateProgress(100);
+        log('✅ Write All complete!', 'success');
+        displayHex(0, Math.min(512, loadedFileData.length));
+        setTimeout(() => showProgress(false), 1500);
+    } catch (err) {
+        log('Write failed: ' + err.message, 'error');
+        showProgress(false);
+    }
+}
+
+// ── Hex Display ────────────────────────────────────────
+function displayHex(offset, length) {
+    const viewer = document.getElementById('hexViewer');
+    viewer.innerHTML = '';
+    const end = Math.min(offset + length, Data.length);
+    const start = Math.floor(offset / 16) * 16;
+
+    for (let addr = start; addr < end; addr += 16) {
+        const row = document.createElement('div');
+        row.className = 'hex-row';
+
+        const addrEl = document.createElement('span');
+        addrEl.className = 'hex-address';
+        addrEl.textContent = addr.toString(16).padStart(4,'0').toUpperCase() + ':';
+        row.appendChild(addrEl);
+
+        let hexStr = '', ascii = '';
+        for (let i = 0; i < 16; i++) {
+            const a = addr + i;
+            if (a < Data.length && a >= offset && a < end) {
+                const b = Data[a];
+                hexStr += b.toString(16).padStart(2,'0').toUpperCase() + ' ';
+                ascii += (b >= 32 && b < 127) ? String.fromCharCode(b) : '.';
+            } else { hexStr += '   '; ascii += ' '; }
+            if (i === 7) hexStr += ' ';
+        }
+
+        const dataEl = document.createElement('span');
+        dataEl.className = 'hex-data';
+        dataEl.textContent = hexStr;
+        row.appendChild(dataEl);
+
+        const ascEl = document.createElement('span');
+        ascEl.className = 'hex-ascii';
+        ascEl.textContent = ascii;
+        row.appendChild(ascEl);
+
+        viewer.appendChild(row);
+    }
+}
+
+// ── Event Listeners ────────────────────────────────────
+document.getElementById('connectBtn').addEventListener('click', connectSerial);
+document.getElementById('disconnectBtn').addEventListener('click', disconnectSerial);
+document.getElementById('readAllBtn').addEventListener('click', readAll);
+document.getElementById('saveFileBtn').addEventListener('click', saveToFile);
+document.getElementById('fileInput').addEventListener('change', loadFile);
+document.getElementById('writeAllBtn').addEventListener('click', writeAll);
+
+if (!('serial' in navigator)) {
+    log('Web Serial API tidak didukung. Gunakan browser Chrome/Edge.', 'error');
+    document.getElementById('connectBtn').disabled = true;
+}
+</script>
+</body>
+</html>
