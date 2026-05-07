@@ -165,6 +165,8 @@
             <div class="btn-group">
                 <button class="btn-primary" id="connectBtn">🔌 Connect Device</button>
                 <button class="btn-danger" id="disconnectBtn" disabled>⛔ Disconnect</button>
+                 <button class="btn-primary" id="hold" >🔌 HOLD</button>
+                 <button class="btn-primary" id="rls">🔌 RLS</button>
             </div>
         </div>
 
@@ -293,6 +295,12 @@ async function disconnectSerial() {
     if (port)   { await port.close();   port = null;   }
     updateUI(false);
     log('Disconnected', 'info');
+}
+    async function hold() {
+     await sendCommand('holdrst');
+}
+async function rilis() {
+ await sendCommand("normal");
 }
 
 async function sendCommand(cmd, params = {}) {
@@ -539,6 +547,9 @@ function displayHex(offset, length) {
 
 // ── Event Listeners ────────────────────────────────────
 document.getElementById('connectBtn').addEventListener('click', connectSerial);
+document.getElementById('hold').addEventListener('click', hold);
+document.getElementById('rls').addEventListener('click', rilis);
+
 document.getElementById('disconnectBtn').addEventListener('click', disconnectSerial);
 document.getElementById('readAllBtn').addEventListener('click', readAll);
 document.getElementById('saveFileBtn').addEventListener('click', saveToFile);
