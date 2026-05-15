@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HUAWEI Status Monitor Single</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #0099ff;
+            --success: #00d566;
+            --warning: #ffb800;
+            --danger: #ff3333;
+            --dark-bg: #0a0e27;
+            --card-bg: #141829;
+            --border: #2a2f4a;
+            --text-primary: #e8eef8;
+            --text-secondary: #a0a8c0;
+            --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: linear-gradient(135deg, var(--dark-bg) 0%, #0f1535 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 16px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* ===== HEADER ===== */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .header-title {
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 16px;
+            border-radius: 8px;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.connected {
+            background: var(--success);
+            box-shadow: 0 0 8px rgba(0, 213, 102, 0.6);
+        }
+
+        .status-dot.disconnected {
+            background: var(--text-secondary);
+            animation: none;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        /* ===== MAIN GRID ===== */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        @media (max-width: 1024px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* ===== CONTROL PANEL ===== */
+        .control-panel {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            height: fit-content;
+            position: sticky;
+            top: 16px;
+        }
+
+        .panel-title {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+        }
+
+        .button-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 24px;
+        }
+
+        .button-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .btn {
+            padding: 12px 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, transparent, rgba(255,255,255,0.1), transparent);
+            transform: translateX(-100%);
+            transition: transform var(--transition);
+        }
+
+        .btn:hover::before {
+            transform: translateX(100%);
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: #000;
+            font-weight: 700;
+            box-shadow: 0 4px 12px rgba(0, 153, 255, 0.3);
+        }
+
+        .btn-primary:hover {
+            background: #00a8ff;
+            box-shadow: 0 6px 16px rgba(0, 153, 255, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: var(--card-bg);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.05);
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        /* ===== DASHBOARD ===== */
+        .dashboard {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            transition: all var(--transition);
+        }
+
+        .card:hover {
+            border-color: var(--primary);
+            box-shadow: 0 4px 12px rgba(0, 153, 255, 0.15);
+        }
+
+        .card-title {
+            font-size: 14px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+        }
+
+        /* ===== STATUS GRID ===== */
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+        }
+
+        .status-item {
+            background: linear-gradient(135deg, rgba(10,14,39,0.8), rgba(20,24,41,0.8));
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            text-align: center;
+            transition: all var(--transition);
+        }
+
+        .status-item:hover {
+            border-color: var(--primary);
+            background: linear-gradient(135deg, rgba(10,14,39,0.95), rgba(20,24,41,0.95));
+        }
+
+        .status-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .status-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--primary);
+            font-family: 'Monaco', 'Menlo', monospace;
+            word-break: break-all;
+        }
+
+        /* ===== ALARMS LOG ===== */
+        .log-container {
+            max-height: 400px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column-reverse;
+            gap: 8px;
+            padding: 4px;
+        }
+
+        .log-entry {
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            border-left: 3px solid;
+            animation: slideIn 0.3s ease-out;
+            font-family: 'Monaco', 'Menlo', monospace;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .log-entry.success {
+            background: rgba(0, 213, 102, 0.1);
+            border-color: var(--success);
+            color: var(--success);
+        }
+
+        .log-entry.error {
+            background: rgba(255, 51, 51, 0.1);
+            border-color: var(--danger);
+            color: var(--danger);
+        }
+
+        .log-entry.warning {
+            background: rgba(255, 184, 0, 0.1);
+            border-color: var(--warning);
+            color: var(--warning);
+        }
+
+        .log-timestamp {
+            display: inline-block;
+            color: var(--text-secondary);
+            font-size: 11px;
+            margin-right: 8px;
+        }
+
+        /* ===== SCROLLBAR ===== */
+        .log-container::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .log-container::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .log-container::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+
+        .log-container::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 16px;
+                text-align: center;
+            }
+
+            .status-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .panel-title {
+                font-size: 14px;
+            }
+
+            .btn {
+                padding: 10px 12px;
+                font-size: 13px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- HEADER -->
+        <div class="header">
+            <div class="header-title">☢️ HUAWEI Status Monitor</div>
+            <div class="status-indicator">
+                <span class="status-dot disconnected" id="connectionDot"></span>
+                <span id="connectionStatus">Disconnected</span>
+            </div>
+        </div>
+
+        <!-- MAIN GRID -->
+        <div class="main-grid">
+            <!-- CONTROL PANEL -->
+            <div class="control-panel">
+                <div class="panel-title">Connection</div>
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="connectDevice()">
+                        🔌 Connect Device
+                    </button>
+                </div>
+
+                <div class="panel-title">Readings</div>
+                <div class="button-group">
+                    <button class="btn btn-secondary" onclick="readAction('alarm')">
+                        🚨 Read Alarm
+                    </button>
+                    <button class="btn btn-secondary" onclick="readAction('voltage')">
+                        🔋 Read Voltage
+                    </button>
+                    <button class="btn btn-secondary" onclick="readAction('soc')">
+                        📊 Read SOC
+                    </button>
+                    <button class="btn btn-secondary" onclick="readAction('soh')">
+                        ❤️ Read SOH
+                    </button>
+                </div>
+
+                <div class="panel-title">Advanced</div>
+                <div class="button-group">
+                    <button class="btn btn-secondary" onclick="readAction('cycle')">
+                        🔄 Read Cycle
+                    </button>
+                    <button class="btn btn-secondary" onclick="readAction('gyro')">
+                        🌀 Read Gyro
+                    </button>
+                     <button class="btn btn-secondary" onclick="readAction('bc')">
+                         𝄃𝄃𝄂𝄂𝄀𝄁𝄃𝄂𝄂𝄃 Read Barcode
+                    </button>
+                    <button class="btn btn-secondary" onclick="readAction('cell')">
+                        🔬 Read Cell Voltage
+                    </button>
+                </div>
+
+                <div class="panel-title">Tools</div>
+                <div class="button-group">
+                    <button class="btn btn-secondary" onclick="clearLog()">
+                        🗑️ Clear Log
+                    </button>
+                </div>
+            </div>
+
+            <!-- DASHBOARD -->
+            <div class="dashboard">
+                <!-- STATUS OVERVIEW -->
+                <div class="card">
+                    <div class="card-title">📡 System Status</div>
+                    <div class="status-grid">
+                        <div class="status-item" hidden>
+                            <div class="status-label">Connection</div>
+                            <div class="status-value" id="statusConn">—</div>
+                        </div>
+                        <div class="status-item">
+                            <div class="status-label">Voltage</div>
+                            <div class="status-value" id="statusVolt">—</div>
+                        </div>
+                        <div class="status-item">
+                            <div class="status-label">SOC</div>
+                            <div class="status-value" id="statusSOC">—</div>
+                        </div>
+                        <div class="status-item">
+                            <div class="status-label">SOH</div>
+                            <div class="status-value" id="statusSOH">—</div>
+                        </div>
+                        <div class="status-item">
+                            <div class="status-label">CYCLE</div>
+                            <div class="status-value" id="statusCycle">—</div>
+                        </div>
+                        <div class="status-item">
+                            <div class="status-label">GYRO</div>
+                            <div class="status-value" id="statusGyro">—</div>
+                        </div>
+                        <div class="status-item">
+                            <div class="status-label">Barcode</div>
+                            <div class="status-value" id="statusBC">—</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ALARMS LOG -->
+                <div class="card">
+                    <div class="card-title">📋 Activity Log</div>
+                    <div class="log-container" id="log"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ================= STATE =================
+        let port, reader, writer;
+        let lastReadings = {};
+        let isWaitingResponse = false;
+
+        // ================= CRC =================
+        function crc16(buf) {
+            let crc = 0xFFFF;
+            for (let b of buf) {
+                crc ^= b;
+                for (let i = 0; i < 8; i++) {
+                    if (crc & 1) crc = (crc >> 1) ^ 0xA001;
+                    else crc >>= 1;
+                }
+            }
+            return crc;
+        }
+
+        // ================= CONNECTION =================
+        async function connectDevice() {
+            try {
+                port = await navigator.serial.requestPort();
+                await port.open({ baudRate: 9600 });
+
+                writer = port.writable.getWriter();
+                reader = port.readable.getReader();
+
+                updateConnectionStatus(true);
+                addLog('Connected to device', 'success');
+            } catch (err) {
+                addLog('Connection failed: ' + err.message, 'error');
+                updateConnectionStatus(false);
+            }
+        }
+
+        function updateConnectionStatus(connected) {
+            const dot = document.getElementById('connectionDot');
+            const status = document.getElementById('connectionStatus');
+            
+            if (connected) {
+                dot.className = 'status-dot connected';
+                status.textContent = 'Connected';
+                document.getElementById('statusConn').textContent = '✓';
+            } else {
+                dot.className = 'status-dot disconnected';
+                status.textContent = 'Disconnected';
+                document.getElementById('statusConn').textContent = '✗';
+            }
+        }
+
+        // ================= READ ACTIONS =================
+        function setButtonsDisabled(disabled) {
+            const buttons = document.querySelectorAll('.btn-secondary, .btn-primary');
+            buttons.forEach(btn => {
+                btn.disabled = disabled;
+            });
+        }
+
+        async function readAction(type) {
+            if (!port) {
+                addLog('Error: Device not connected. Click "Connect Device" first.', 'error');
+                return;
+            }
+
+            if (isWaitingResponse) {
+                addLog('Waiting for previous response... (3s timeout)', 'warning');
+                return;
+            }
+
+            isWaitingResponse = true;
+            setButtonsDisabled(true);
+
+            try {
+                // Set 3 second timeout
+                const timeoutPromise = new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('Response timeout (3s)')), 3000)
+                );
+
+                const actionPromise = (async () => {
+                    switch(type) {
+                        case 'alarm': await readAlarm(); break;
+                        case 'voltage': await readVolt(); break;
+                        case 'soc': await readSOC(); break;
+                        case 'soh': await readSOH(); break;
+                        case 'cycle': await readCycle(); break;
+                        case 'gyro': await readGyro(); break;
+                        case 'cell': await readCell(); break;
+                        case 'bc': await readBC(); break;
+                    }
+                })();
+
+                await Promise.race([actionPromise, timeoutPromise]);
+            } catch (err) {
+                addLog(`Error: ${err.message}`, 'error');
+            } finally {
+                isWaitingResponse = false;
+                setButtonsDisabled(false);
+            }
+        }
+
+        // ================= SEND =================
+        async function send(frame) {
+            let crc = crc16(frame);
+            frame.push(crc & 0xFF, (crc >> 8) & 0xFF);
+            await writer.write(new Uint8Array(frame));
+        }
+
+        // ================= READ =================
+        async function readResponse(timeoutMs = 3000) {
+            let buffer = [];
+            const startTime = Date.now();
+            
+            while (true) {
+                if (Date.now() - startTime > timeoutMs) {
+                    throw new Error('Response timeout');
+                }
+                
+                const { value, done } = await reader.read();
+                if (done) break;
+                buffer.push(...value);
+                if (buffer.length >= 5) break;
+            }
+            return buffer;
+        }
+
+        // ================= READ FUNCTIONS =================
+        async function readAlarm() {
+            try {
+                let frame = [0xD6, 0x03, 0x00, 0x46, 0x00, 0x05];
+                await send(frame);
+                let res = await readResponse();
+                parseAlarm(res);
+            } catch (err) {
+                addLog('Read alarm error: ' + err.message, 'error');
+            }
+        }
+
+        async function readVolt() {
+            try {
+                let frame = [0xD6, 0x03, 0x00, 0x00, 0x00, 0x02];
+                await send(frame);
+                let res = await readResponse();
+                let cy = res[3] << 8 | res[4];
+                let voltage = (cy / 100.0).toFixed(2);
+                lastReadings.voltage = voltage;
+                document.getElementById('statusVolt').textContent = voltage + 'V';
+                addLog(`Voltage: ${voltage}V`, 'success');
+            } catch (err) {
+                addLog('Read voltage error: ' + err.message, 'error');
+            }
+        }
+
+        async function readSOC() {
+            try {
+                let frame = [0xD6, 0x03, 0x00, 0x03, 0x00, 0x02];
+                await send(frame);
+                let res = await readResponse();
+                let cy = res[3] << 8 | res[4];
+                lastReadings.soc = cy;
+                document.getElementById('statusSOC').textContent = cy + '%';
+                addLog(`SOC: ${cy}%`, 'success');
+            } catch (err) {
+                addLog('Read SOC error: ' + err.message, 'error');
+            }
+        }
+
+        async function readSOH() {
+            try {
+                let frame = [0xD6, 0x03, 0x00, 0x04, 0x00, 0x02];
+                await send(frame);
+                let res = await readResponse();
+                let cy = res[3] << 8 | res[4];
+                lastReadings.soh = cy;
+                document.getElementById('statusSOH').textContent = cy + '%';
+                addLog(`SOH: ${cy}%`, 'success');
+            } catch (err) {
+                addLog('Read SOH error: ' + err.message, 'error');
+            }
+        }
+
+        async function readCycle() {
+            try {
+                let frame = [0xD6, 0x03, 0x7D, 0x6B, 0x00, 0x02];
+                await send(frame);
+                let res = await readResponse();
+                let cy = res[3] << 24 | res[4] << 16 | res[5] << 8 | res[6];
+                addLog(`Cycle: ${cy}`, 'success');
+                document.getElementById('statusCycle').textContent = cy + ' X';
+            } catch (err) {
+                addLog('Read cycle error: ' + err.message, 'error');
+            }
+        }
+
+        async function readGyro() {
+            try {
+                let frame = [0xD6, 0x03, 0x11, 0x18, 0x00, 0x01];
+                await send(frame);
+                let res = await readResponse();
+                if (res[4] == 1) {
+                    addLog('Gyro Status: Enabled', 'success');
+                    document.getElementById('statusGyro').textContent = 'Enable';
+                } else if (res[4] == 0) {
+                    addLog('Gyro Status: Disabled', 'warning');
+                    document.getElementById('statusGyro').textContent = 'Disable';
+                }
+            } catch (err) {
+                addLog('Read gyro error: ' + err.message, 'error');
+            }
+        }
+
+        async function readCell() {
+            try {
+                let frame = [0xD6, 0x03, 0x00, 0x22, 0x00, 0x0f];
+                await send(frame);
+                let data = await readResponse();
+                let cell = [];
+                for (let i = 0; i < 30; i += 2) {
+                    let val = (data[3 + i] << 8) | data[4 + i];
+                    cell.push(val);
+                }
+                addLog(`Cell Voltages: [${cell.join(', ')}]`, 'success');
+            } catch (err) {
+                addLog('Read cell error: ' + err.message, 'error');
+            }
+        }
+
+        
+        function decodeAndFilter(list) {
+            return list
+                .map(num => String.fromCharCode(num)) // Ubah angka ke karakter
+                .filter(char => /[a-zA-Z0-9]/.test(char)) // Hapus jika bukan 0-9, a-z, A-Z
+                .join(''); // Gabungkan kembali menjadi string
+        }
+        async function readBC() {
+            let frame = [
+                0xD6,       // slave
+                0x03,       // FC
+                0x02, 0x11, // start addr
+                0x00, 0x0a  // qty
+            ];
+
+            await send(frame);
+            let res = await readResponse();
+
+            let cell = [];
+            for (let i = 0; i < 20; i += 1) {
+                let val = res[3+i];
+                cell.push(val);
+            }
+            addLog(`Barcode: [${decodeAndFilter(cell)}]`, 'success');
+            document.getElementById('statusBC').textContent = decodeAndFilter(cell);
+            // log(decodeAndFilter(cell));
+        }
+
+
+
+        // ================= ALARM PARSER =================
+        function parseAlarm(data) {
+            if (data.length < 15) {
+                addLog('Invalid alarm response', 'error');
+                return;
+            }
+
+            let byteCount = data[2];
+            let regs = [];
+            for (let i = 0; i < byteCount; i += 2) {
+                let val = (data[3 + i] << 8) | data[4 + i];
+                regs.push(val);
+            }
+
+            if (regs[0] == 0 && regs[1] == 0 && regs[2] == 0 && regs[3] == 0 && regs[4] == 0) {
+                addLog('✓ No Alarm State', 'success');
+            }
+            decodeAlarms(regs);
+        }
+
+        function decodeAlarms(regs) {
+            let map = {
+                0x0046: [
+                    "Heater Fault", "Cell Voltage Detection Failure", "Cell Temperature Detection Failure",
+                    "Charging Output Short Circuit", "Relay Short Fault", "Overload Lock", "Bidirectional MOS Fault"
+                ],
+                0x0047: Array.from({length:16},(_,i)=> (i+1)+"th Cell Fault"),
+                0x0048: [
+                    "Charging Low Temp", "Charging High Temp", "Discharging Low Temp", "Discharging High Temp",
+                    "Pack Over Voltage", "Cell Over Voltage", "Pack Under Voltage", "Cell Under Voltage",
+                    "Output Over Voltage", "Module Temp", "Output Short Circuit Protection",
+                    "Pro DiChg Low Voltage Disconnect", "Input The Reverse", "Anti-thieft Alarm Locked",
+                    "Overload Protection"
+                ],
+                0x0049: [
+                    "Under Temperature", "Charge Over Temperature", "Under Temperature",
+                    "Discharge Over Temperature", "Over Voltage Alarm", "Over Voltage Alarm",
+                    "Under Voltage Alarm", "Under Voltage Alarm", "Converter Open-loop Alarm",
+                    "Serial Number Conflict Alarm"
+                ],
+                0x004A: [
+                    "Command Shutdown", "Li-bat Fault", "Anti-theft Handshake State", "Li-bat Protection",
+                    "Discharge Over Current", "Li-bat Protection", "Li-bat Protection", "Li-bat Protection",
+                    "Li-bat Protection", "Readed FRU Failure", "Charge Over Current", "Li-bat Protection",
+                    "Gyroscope Fault Alarm", "Li-bat Fault"
+                ]
+            };
+
+            let base = 0x0046;
+            let alarmFound = false;
+
+            for (let i = 0; i < regs.length; i++) {
+                let addr = base + i;
+                let val = regs[i];
+                let list = map[addr] || [];
+
+                for (let b = 0; b < 16; b++) {
+                    if (val & (1 << b)) {
+                        let name = list[b] || ("Bit " + b);
+                        addLog(`⚠️ [0x${addr.toString(16)}] ${name}`, 'warning');
+                        alarmFound = true;
+                    }
+                }
+            }
+        }
+
+        // ================= LOGGING =================
+        function addLog(msg, type = 'success') {
+            let el = document.getElementById('log');
+            let div = document.createElement('div');
+            div.className = `log-entry ${type}`;
+
+            let time = new Date().toLocaleTimeString('en-US', { hour12: false });
+            div.innerHTML = `<span class="log-timestamp">${time}</span>${msg}`;
+
+            el.insertAdjacentElement('afterbegin', div);
+
+            // Keep only last 100 entries
+            while (el.children.length > 100) {
+                el.removeChild(el.lastChild);
+            }
+        }
+
+        function clearLog() {
+            if (confirm('Clear all log entries?')) {
+                document.getElementById('log').innerHTML = '';
+                addLog('Log cleared', 'success');
+            }
+        }
+
+        // Initialize
+        updateConnectionStatus(false);
+        addLog('Ready to connect', 'success');
+    </script>
+</body>
+</html>
