@@ -591,6 +591,53 @@ https://fatkhurrr.github.io/lipo4Mon/index.html?id=1234567890
                     </div>
                 </div>
 
+                <h3>🚫 DILARANG Cabut RS485 Saat Modul ON</h3>
+                <div class="alert alert-danger">
+                    <div class="alert-icon">⛔</div>
+                    <div>
+                        <strong>JANGAN mencabut atau mecolok RS485 port saat modul dalam kondisi ON/menyala</strong>
+                        <p style="margin-top: 10px;"><strong>Risiko Kerusakan:</strong> Aktivitas ini dapat memicu transient voltage yang merusak chip RS485 secara permanen.</p>
+                        <p><strong>Solusi Aman:</strong></p>
+                        <ul style="margin-left: 20px; margin-top: 8px;">
+                            <li>Matikan modul sepenuhnya sebelum melakukan perubahan koneksi RS485</li>
+                            <li>Tunggu minimal 5 detik setelah modul mati sebelum mencabut kabel</li>
+                            <li>Setelah koneksi diperbaiki, tunggu 10 detik sebelum menyalakan modul kembali</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <h3>📦 Modul HARUS Berada dalam Box saat Menyala</h3>
+                <div class="alert alert-danger">
+                    <div class="alert-icon">⛔</div>
+                    <div>
+                        <strong>Jangan operasikan modul tanpa box/casing saat modul menyala</strong>
+                        <p style="margin-top: 10px;"><strong>Risiko Kerusakan:</strong> Soldering di PCB terekspos dapat mengalami short circuit dari debu, kelembaban, atau kontak fisik yang tidak disengaja.</p>
+                        <p><strong>Praktek Aman:</strong></p>
+                        <ul style="margin-left: 20px; margin-top: 8px;">
+                            <li>Selalu tempatkan modul di dalam box yang sesuai sebelum power on</li>
+                            <li>Jika perlu troubleshooting, matikan modul sebelum membuka box</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <h3>🔌 Pre-Check Koneksi Sebelum Power ON</h3>
+                <div class="alert alert-danger">
+                    <div class="alert-icon">⛔</div>
+                    <div>
+                        <strong>Pastikan SEMUA koneksi sudah tersambung dengan sempurna sebelum mengaktifkan power modul</strong>
+                        <p style="margin-top: 10px;"><strong>Checklist sebelum Power ON:</strong></p>
+                        <ul style="margin-left: 20px; margin-top: 8px;">
+                            <li>✓ Kabel power (VCC dan GND) sudah terkoneksi dengan aman dan sempurna dari Power supply ke modul</li>
+                            <li>✓ Port RS485 sudah terhubung ke Port BMS/Baterai</li>
+                            <li>✓ Semua konektor kabel sudah terkunci atau terpasang dengan kuat</li>
+                            <li>✓ Tidak ada kabel yang lepas atau tergantung</li>
+                            <li>✓ Grounding sudah terhubung dengan benar</li>
+                            <li>✓ Modul sudah berada dalam box/casing yang aman</li>
+                        </ul>
+                        <p style="margin-top: 10px;"><strong>Alasan:</strong> Koneksi yang tidak stabil atau lepas saat operasi dapat menyebabkan kerusakan hardware dan data corruption.</p>
+                    </div>
+                </div>
+
                 <h3>🔧 Grounding System</h3>
                 <p>Beberapa modul memerlukan penanganan grounding khusus, terutama pada sistem yang menggunakan:</p>
                 <ul style="margin-left: 20px; margin-bottom: 15px;">
