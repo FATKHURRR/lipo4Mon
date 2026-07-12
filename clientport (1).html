@@ -435,7 +435,7 @@
   // Strategi: setiap kali ada data masuk, tunggu FRAME_TIMEOUT ms. Jika dalam waktu
   // itu ada data baru lagi, timer di-reset dan data digabungkan. Kalau sudah tidak
   // ada data baru selama FRAME_TIMEOUT ms, baru dianggap 1 frame lengkap dan dikirim.
-  const FRAME_TIMEOUT = 200; // ms
+  const FRAME_TIMEOUT = 50; // ms
   let serialRxChunks = [];
   let serialRxTimer = null;
 
