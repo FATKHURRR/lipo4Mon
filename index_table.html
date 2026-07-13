@@ -1,9 +1,10 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Modul Sakti Monitoring</title>
+  <title>Modul Sakti Tabel View</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -443,7 +444,7 @@
     }
 
     .summary-item-label {
-      font-size: 8.5px;
+      font-size: 12.5px;
       text-transform: uppercase;
       letter-spacing: 0.3px;
       color: var(--card-subtext);
@@ -454,7 +455,7 @@
       margin-bottom: 1px;
     }
     .summary-item-value {
-      font-size: 0.78rem;
+      font-size: 1.0rem;
       font-weight: 1000;
       font-family: 'JetBrains Mono', 'Courier New', monospace;
       color: var(--card-text);
@@ -858,8 +859,8 @@
     .bms-scroll-hint {
       display: none;
       align-items: center;
-      gap: 6px;
-      font-size: 11px;
+      gap: 2px;
+      font-size: 15px;
       color: var(--card-subtext);
       padding: 6px 14px;
       border-bottom: 1px solid rgba(0,0,0,0.06);
@@ -883,7 +884,8 @@
       border-spacing: 0;
       width: 100%;
       min-width: 820px;
-      font-size: 0.84rem;
+      font-size: 1rem;
+      font-style: bold;
     }
 
     .bms-table thead th {
@@ -894,7 +896,7 @@
       color: var(--card-subtext);
       text-transform: uppercase;
       letter-spacing: 0.4px;
-      font-size: 10.5px;
+      font-size: 15.5px;
       font-weight: 800;
       font-style: bold;
       text-align: center;
@@ -924,15 +926,18 @@
       border-bottom-color: rgba(255,255,255,0.06);
     }
     .bms-table tbody td:first-child,
-    .bms-table tbody td:nth-child(2) {
+    .bms-table tbody td:nth-child(3) {
       text-align: left;
+      position: sticky;
     }
     .bms-table tbody td:first-child {
       position: sticky;
       left: 0;
       z-index: 5;
-      font-weight: 600;
+      font-weight: 1000;
     }
+
+   
 
     .bms-table tbody tr {
       transition: background-color 0.3s ease;
@@ -962,7 +967,7 @@
     .bms-battery-name {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 4px;
     }
     .bms-battery-name .bms-name-text {
       display: flex;
@@ -970,7 +975,7 @@
       line-height: 1.25;
     }
     .bms-battery-name .bms-name-text small {
-      font-weight: 500;
+      font-weight: 700;
       font-size: 10.5px;
       color: var(--card-subtext);
     }
@@ -1029,7 +1034,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 11.5px;
+      font-size: 17.5px;
       font-weight: 800;
       color: #fff;
       text-shadow: 0 1px 2px rgba(0,0,0,0.55);
@@ -1247,21 +1252,21 @@
 <main class="flex-1 p-4 sm:p-6 w-full">
   <div class="max-w-7xl mx-auto">
     <div class="mb-6 flex justify-between items-center">
-      <h2 class="text-xl font-semibold" style="color: var(--card-subtext);">Summary</h2>
-      <div class="flex items-center gap-4">
-        <div class="text-sm" style="color: var(--card-subtext);">
-          <span id="total-batteries">0</span> batteries connected
-        </div>
-      </div>
+      <h2 class="text-xl font-semibold" style="color: var(--card-subtext);" hidden>Summary</h2>
+     
     </div>
 
     <!-- Summary Section -->
     <div id="summarySection" class="mb-6 hidden">
       <div class="summary-card rounded-xl shadow-sm p-3 sm:p-4">
         <div class="summary-top-row">
-          <span class="summary-title"><i class="fas fa-chart-line"></i> Summary</span>
-          <span id="summary-status-pill" class="bms-status-pill standby">STB</span>
-        </div>
+          <span class="summary-title" hidden><i class="fas fa-chart-line"></i> Summary</span>
+          <span id="summary-status-pill" class="bms-status-pill standby" hidden>STB</span>
+          <div class="flex items-center gap-4">
+            <div class="text-sm" style="color: var(--card-subtext);">
+            <span id="total-batteries">0</span> batteries connected
+         </div>
+      </div>        </div>
         <div class="summary-grid">
           <div class="summary-item">
             <div class="summary-item-label">SOC</div>
@@ -1310,15 +1315,15 @@
           <thead>
             <tr>
               <th>Battery</th>
-              <th>Status</th>
+              <th hidden>Status</th>
               <th>SOC</th>
               <th>Diff Cell</th>
-              <th>Volt Pack</th>
-              <th>Volt Bus</th>
-              <th>I Pack</th>
-              <th>I Bus</th>
-              <th>Power Pack</th>
-              <th>Power Bus</th>
+              <th>V-Pack</th>
+              <th>V-Bus</th>
+              <th>I-Pack</th>
+              <th>I-Bus</th>
+              <th>P-Pack</th>
+              <th>P-Bus</th>
               <th hidden>Time</th>
             </tr>
           </thead>
@@ -1560,7 +1565,7 @@
             </div>
           </div>
         </td>
-        <td style="text-align:left;"><span class="bms-status-pill ${statusClass}" id="status-pill-${batt.loggerId}-${batt.typeBattery}-${batt.addr}">${statusLabel}</span></td>
+        <td style="text-align:left;" hidden><span class="bms-status-pill ${statusClass}" id="status-pill-${batt.loggerId}-${batt.typeBattery}-${batt.addr}">${statusLabel}</span></td>
         <td>
           <div class="bms-soc-cell">
             <div class="bms-android-battery">
