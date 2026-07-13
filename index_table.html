@@ -2025,7 +2025,7 @@
     document.getElementById("bus-current").textContent = `${totalbusCurrent.toFixed(2)} A`;
     document.getElementById("bus-power").textContent = `${(totalbusVoltage / count *totalbusCurrent).toFixed(2)} W`;
     // if((totalbusVoltage / count *totalbusCurrent)>totalPower){
-      document.getElementById("sum-eff").textContent = `${(totalPower/ (totalbusVoltage / count *totalbusCurrent)).toFixed(2)} %`;
+      document.getElementById("sum-eff").textContent = `${(totalPower/ (totalbusVoltage / count *totalbusCurrent)*100).toFixed(2)} %`;
     // }
     // else if(totalPower>(totalbusVoltage / count *totalbusCurrent)){
     //   document.getElementById("sum-eff").textContent = `${((totalbusVoltage / count *totalbusCurrent)/totalPower).toFixed(2)} %`;
