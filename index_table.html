@@ -385,39 +385,87 @@
       }
     }
 
-    /* Text highlight untuk summary card */
-    .summary-card.summary-charging #avg-voltage,
-    .summary-card.summary-charging #avg-soc,
-    .summary-card.summary-charging #avg-soh,
-    .summary-card.summary-charging #total-current,
-    .summary-card.summary-charging #total-power {
-      color: #22c55e;
-      font-weight: 700;
+    /* Text highlight untuk summary card berdasarkan status charging/discharging */
+    .summary-card.summary-charging .summary-item-value {
+      color: #16803d;
     }
-
-    .summary-card.summary-discharging #avg-voltage,
-    .summary-card.summary-discharging #avg-soc,
-    .summary-card.summary-discharging #avg-soh,
-    .summary-card.summary-discharging #total-current,
-    .summary-card.summary-discharging #total-power {
-      color: #ef4444;
-      font-weight: 700;
+    .summary-card.summary-discharging .summary-item-value {
+      color: #b91c1c;
     }
-
-    body[data-theme="dark"] .summary-card.summary-charging #avg-voltage,
-    body[data-theme="dark"] .summary-card.summary-charging #avg-soc,
-    body[data-theme="dark"] .summary-card.summary-charging #avg-soh,
-    body[data-theme="dark"] .summary-card.summary-charging #total-current,
-    body[data-theme="dark"] .summary-card.summary-charging #total-power {
+    body[data-theme="dark"] .summary-card.summary-charging .summary-item-value {
       color: #4ade80;
     }
-
-    body[data-theme="dark"] .summary-card.summary-discharging #avg-voltage,
-    body[data-theme="dark"] .summary-card.summary-discharging #avg-soc,
-    body[data-theme="dark"] .summary-card.summary-discharging #avg-soh,
-    body[data-theme="dark"] .summary-card.summary-discharging #total-current,
-    body[data-theme="dark"] .summary-card.summary-discharging #total-power {
+    body[data-theme="dark"] .summary-card.summary-discharging .summary-item-value {
       color: #f87171;
+    }
+
+    /* ===================================================
+       SUMMARY SECTION — compact, mobile-friendly strip
+       =================================================== */
+    .summary-top-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .summary-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      color: var(--card-subtext);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+    .summary-title i { color: var(--primary); }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 4px 6px;
+    }
+    @media (min-width: 640px) {
+      .summary-grid { grid-template-columns: repeat(9, 1fr); gap: 6px; }
+    }
+
+    .summary-item {
+      background: rgba(0,0,0,0.03);
+      border-radius: 8px;
+      padding: 5px 2px;
+      text-align: center;
+      min-width: 0;
+    }
+    body[data-theme="dark"] .summary-item {
+      background: rgba(255,255,255,0.045);
+    }
+
+    .summary-item-label {
+      font-size: 8.5px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      color: var(--card-subtext);
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 1px;
+    }
+    .summary-item-value {
+      font-size: 0.78rem;
+      font-weight: 1000;
+      font-family: 'JetBrains Mono', 'Courier New', monospace;
+      color: var(--card-text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    @media (max-width: 400px) {
+      .summary-item-value { font-size: 0.7rem; }
+      .summary-item-label { font-size: 8px; }
     }
     
     .sort-indicator {
@@ -834,8 +882,8 @@
       border-collapse: separate;
       border-spacing: 0;
       width: 100%;
-      min-width: 980px;
-      font-size: 0.82rem;
+      min-width: 820px;
+      font-size: 0.84rem;
     }
 
     .bms-table thead th {
@@ -847,15 +895,16 @@
       text-transform: uppercase;
       letter-spacing: 0.4px;
       font-size: 10.5px;
-      font-weight: 700;
-      text-align: right;
+      font-weight: 800;
+      font-style: bold;
+      text-align: center;
       padding: 12px 14px;
       white-space: nowrap;
       border-bottom: 2px solid rgba(37, 99, 235, 0.15);
     }
     .bms-table thead th:first-child,
     .bms-table thead th:nth-child(2) {
-      text-align: left;
+      text-align: center;
     }
     .bms-table thead th:first-child {
       left: 0;
@@ -864,9 +913,10 @@
 
     .bms-table tbody td {
       padding: 10px 14px;
-      text-align: right;
+      text-align: center;
       white-space: nowrap;
       color: var(--card-text);
+      font-weight: 700;
       border-bottom: 1px solid rgba(0,0,0,0.05);
       vertical-align: middle;
     }
@@ -944,35 +994,65 @@
     body[data-theme="dark"] .bms-status-pill.discharging { color: #f87171; }
     body[data-theme="dark"] .bms-status-pill.standby { color: #9ca3af; }
 
+    /* SOC — gaya indikator baterai Android: kapsul gemuk + nub + label di tengah */
     .bms-soc-cell {
       display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      gap: 4px;
-      min-width: 68px;
+      align-items: center;
+      gap: 0;
+      min-width: 108px;
     }
-    .bms-soc-cell .bms-soc-bar {
-      width: 100%;
-      height: 5px;
-      border-radius: 3px;
-      background-color: #e5e7eb;
+    .bms-android-battery {
+      position: relative;
+      flex: 1;
+      height: 26px;
+      min-width: 74px;
+      border-radius: 8px 4px 4px 8px;
+      background-color: #cbd5e1;
       overflow: hidden;
+      border: 1.5px solid rgba(0,0,0,0.18);
     }
-    body[data-theme="dark"] .bms-soc-cell .bms-soc-bar {
-      background-color: rgba(255,255,255,0.1);
+    body[data-theme="dark"] .bms-android-battery {
+      background-color: #374151;
+      border-color: rgba(255,255,255,0.18);
     }
-    .bms-soc-cell .bms-soc-fill {
-      height: 100%;
-      border-radius: 3px;
+    .bms-android-battery-fill {
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      border-radius: 6px 0 0 6px;
       transition: width 0.5s ease;
+    }
+    .bms-android-battery-label {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11.5px;
+      font-weight: 800;
+      color: #fff;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.55);
+      letter-spacing: 0.2px;
+    }
+    .bms-android-battery-nub {
+      width: 4px;
+      height: 12px;
+      background-color: rgba(0,0,0,0.25);
+      border-radius: 0 3px 3px 0;
+      flex-shrink: 0;
+    }
+    body[data-theme="dark"] .bms-android-battery-nub {
+      background-color: rgba(255,255,255,0.28);
     }
 
     .bms-cell-mono {
       font-family: 'JetBrains Mono', 'Courier New', monospace;
+      font-weight: 700;
     }
 
-    .bms-delta-warn { color: #f59e0b; font-weight: 700; }
-    .bms-delta-danger { color: #ef4444; font-weight: 700; }
+    .bms-delta-warn { color: #f59e0b; font-weight: 800; }
+    .bms-delta-danger { color: #ef4444; font-weight: 800; }
 
     .bms-detail-btn {
       display: inline-flex;
@@ -1176,54 +1256,49 @@
     </div>
 
     <!-- Summary Section -->
-    <div id="summarySection" class="mb-8 hidden">
-      <div class="summary-card rounded-xl shadow-sm p-8">
-        <div class="grid grid-cols-2 md:grid-cols-9 gap-5 text-sm">
-           <div class="space-y-1">
-            <div style="color: var(--card-subtext);">Avg SOC</div>
-            <div id="avg-soc" class="font-semibold">-</div>
+    <div id="summarySection" class="mb-6 hidden">
+      <div class="summary-card rounded-xl shadow-sm p-3 sm:p-4">
+        <div class="summary-top-row">
+          <span class="summary-title"><i class="fas fa-chart-line"></i> Summary</span>
+          <span id="summary-status-pill" class="bms-status-pill standby">STB</span>
+        </div>
+        <div class="summary-grid">
+          <div class="summary-item">
+            <div class="summary-item-label">SOC</div>
+            <div id="avg-soc" class="summary-item-value">-</div>
           </div>
-          <div class="space-y-1">
-            <div style="color: var(--card-subtext);">Avg SOH</div>
-            <div id="avg-soh" class="font-semibold">-</div>
+          <div class="summary-item">
+            <div class="summary-item-label">SOH</div>
+            <div id="avg-soh" class="summary-item-value">-</div>
           </div>
-
-          <div class="space-y-1">
-            <div style="color: var(--card-subtext);">Pack Volt</div>
-            <div id="avg-voltage" class="font-semibold">-</div>
+          <div class="summary-item">
+            <div class="summary-item-label">Eff</div>
+            <div id="sum-eff" class="summary-item-value">-</div>
           </div>
-          
-          <div class="space-y-1">
-            <div style="color: var(--card-subtext);">Pack Current</div>
-            <div id="total-current" class="font-semibold">-</div>
+          <div class="summary-item">
+            <div class="summary-item-label">Pack V</div>
+            <div id="avg-voltage" class="summary-item-value">-</div>
           </div>
-
-          <div class="space-y-1">
-            <div style="color: var(--card-subtext);"> Pack Power</div>
-            <div id="total-power" class="font-semibold">-</div>
+          <div class="summary-item">
+            <div class="summary-item-label">Pack I</div>
+            <div id="total-current" class="summary-item-value">-</div>
           </div>
-
-           <div class="space-y-1">
-            <div style="color: var(--card-subtext);">Bus Volt</div>
-            <div id="bus-voltage" class="font-semibold">-</div>
+          <div class="summary-item">
+            <div class="summary-item-label">Pack P</div>
+            <div id="total-power" class="summary-item-value">-</div>
           </div>
-          
-          <div class="space-y-1">
-            <div style="color: var(--card-subtext);">Bus Current</div>
-            <div id="bus-current" class="font-semibold">-</div>
+          <div class="summary-item">
+            <div class="summary-item-label">Bus V</div>
+            <div id="bus-voltage" class="summary-item-value">-</div>
           </div>
-          <div class="space-y-1">
-            <div style="color: var(--card-subtext);">Bus Power</div>
-            <div id="bus-power" class="font-semibold">-</div>
+          <div class="summary-item">
+            <div class="summary-item-label">Bus I</div>
+            <div id="bus-current" class="summary-item-value">-</div>
           </div>
-
-          <div class="space-y-1">
-            <div style="color: var(--card-subtext);">Eff</div>
-            <div id="sum-eff" class="font-semibold">-</div>
+          <div class="summary-item">
+            <div class="summary-item-label">Bus P</div>
+            <div id="bus-power" class="summary-item-value">-</div>
           </div>
-
-
-         
         </div>
       </div>
     </div>
@@ -1237,16 +1312,14 @@
               <th>Battery</th>
               <th>Status</th>
               <th>SOC</th>
+              <th>Diff Cell</th>
               <th>Volt Pack</th>
               <th>Volt Bus</th>
               <th>I Pack</th>
               <th>I Bus</th>
-              <th>Cell Min</th>
-              <th>Cell Max</th>
-              <th>&Delta; Cell</th>
               <th>Power Pack</th>
               <th>Power Bus</th>
-              <th>Time</th>
+              <th hidden>Time</th>
             </tr>
           </thead>
           <tbody id="batteryGrid"></tbody>
@@ -1456,15 +1529,15 @@
       
       // Tentukan class & status berdasarkan charging/discharging/standby
       const current = parseFloat(batt.current);
-      let statusLabel = "Standby";
+      let statusLabel = "STB";
       let statusClass = "standby";
       if (current > 0.1) {
         row.classList.add('row-charging');
-        statusLabel = "Charging";
+        statusLabel = "CHG";
         statusClass = "charging";
       } else if (current < -0.1) {
         row.classList.add('row-discharging');
-        statusLabel = "Discharging";
+        statusLabel = "DSG";
         statusClass = "discharging";
       } else {
         row.classList.add('row-standby');
@@ -1490,29 +1563,30 @@
         <td style="text-align:left;"><span class="bms-status-pill ${statusClass}" id="status-pill-${batt.loggerId}-${batt.typeBattery}-${batt.addr}">${statusLabel}</span></td>
         <td>
           <div class="bms-soc-cell">
-            <span id="soc-value-${batt.loggerId}-${batt.typeBattery}-${batt.addr}" class="font-semibold">${batt.soc}%</span>
-            <div class="bms-soc-bar"><div id="soc-bar-${batt.loggerId}-${batt.typeBattery}-${batt.addr}" class="bms-soc-fill" style="width: ${batt.soc}%"></div></div>
+            <div class="bms-android-battery">
+              <div id="soc-bar-${batt.loggerId}-${batt.typeBattery}-${batt.addr}" class="bms-android-battery-fill" style="width: ${batt.soc}%"></div>
+              <span id="soc-value-${batt.loggerId}-${batt.typeBattery}-${batt.addr}" class="bms-android-battery-label">${batt.soc}</span>
+            </div>
+            <div class="bms-android-battery-nub"></div>
           </div>
         </td>
+        <td class="bms-cell-mono ${deltaClass}" id="voltagedif-${batt.loggerId}-${batt.typeBattery}-${batt.addr}">${batt.cell_vdif} mV</td>
         <td class="bms-cell-mono" id="voltage-${batt.loggerId}-${batt.typeBattery}-${batt.addr}">${batt.voltage} V</td>
         <td class="bms-cell-mono" id="busvoltage-${batt.loggerId}-${batt.typeBattery}-${batt.addr}">${batt.busVoltage} V</td>
         <td class="bms-cell-mono" id="current-${batt.loggerId}-${batt.typeBattery}-${batt.addr}">${batt.current} A</td>
         <td class="bms-cell-mono" id="buscurrent-${batt.loggerId}-${batt.typeBattery}-${batt.addr}">${batt.bus_current} A</td>
-        <td class="bms-cell-mono" id="cellmin-${batt.loggerId}-${batt.typeBattery}-${batt.addr}">${batt.cell_vmin} V</td>
-        <td class="bms-cell-mono" id="cellmax-${batt.loggerId}-${batt.typeBattery}-${batt.addr}">${batt.cell_vmax} V</td>
-        <td class="bms-cell-mono ${deltaClass}" id="voltagedif-${batt.loggerId}-${batt.typeBattery}-${batt.addr}">${batt.cell_vdif} mV</td>
         <td class="bms-cell-mono" id="power-${batt.loggerId}-${batt.typeBattery}-${batt.addr}">${packPower} W</td>
         <td class="bms-cell-mono" id="buspower-${batt.loggerId}-${batt.typeBattery}-${batt.addr}">${busPower} W</td>
-        <td class="last-update"><i class="far fa-clock mr-1"></i>${batt.time}</td>
+        <td class="last-update" hidden><i class="far fa-clock mr-1" ></i>${batt.time}</td>
         `;
       row.onclick = () => openModal(batt.loggerId, batt.addr, batt.typeBattery);
       grid.appendChild(row);
 
       // Set SOC bar color
       const socBar = document.getElementById(`soc-bar-${batt.loggerId}-${batt.typeBattery}-${batt.addr}`);
-      if (batt.soc > 70) socBar.className = 'bms-soc-fill bg-green-500';
-      else if (batt.soc > 30) socBar.className = 'bms-soc-fill bg-yellow-500';
-      else socBar.className = 'bms-soc-fill bg-red-500';
+      if (batt.soc > 70) socBar.className = 'bms-android-battery-fill bg-green-500';
+      else if (batt.soc > 30) socBar.className = 'bms-android-battery-fill bg-yellow-500';
+      else socBar.className = 'bms-android-battery-fill bg-red-500';
 
       // Blink LED
       const led = document.getElementById(`led-card-${batt.loggerId}-${batt.typeBattery}-${batt.addr}`);
@@ -1867,14 +1941,12 @@
     else if (deltaVal >= 50) deltaClass = "bms-delta-warn";
 
     // Update sel-sel tabel yang sudah ada
-    document.getElementById(`soc-value-${batt.loggerId}-${batt.typeBattery}-${batt.addr}`).textContent = `${batt.soc}%`;
+    document.getElementById(`soc-value-${batt.loggerId}-${batt.typeBattery}-${batt.addr}`).textContent = `${batt.soc}`;
     document.getElementById(`soc-bar-${batt.loggerId}-${batt.typeBattery}-${batt.addr}`).style.width = `${batt.soc}%`;
     document.getElementById(`voltage-${batt.loggerId}-${batt.typeBattery}-${batt.addr}`).innerHTML = `${batt.voltage} V`;
     document.getElementById(`busvoltage-${batt.loggerId}-${batt.typeBattery}-${batt.addr}`).innerHTML = `${batt.busVoltage} V`;
     document.getElementById(`current-${batt.loggerId}-${batt.typeBattery}-${batt.addr}`).innerHTML = `${batt.current} A`;
     document.getElementById(`buscurrent-${batt.loggerId}-${batt.typeBattery}-${batt.addr}`).innerHTML = `${batt.bus_current} A`;
-    document.getElementById(`cellmin-${batt.loggerId}-${batt.typeBattery}-${batt.addr}`).innerHTML = `${batt.cell_vmin} V`;
-    document.getElementById(`cellmax-${batt.loggerId}-${batt.typeBattery}-${batt.addr}`).innerHTML = `${batt.cell_vmax} V`;
     document.getElementById(`power-${batt.loggerId}-${batt.typeBattery}-${batt.addr}`).innerHTML = `${packPower} W`;
     document.getElementById(`buspower-${batt.loggerId}-${batt.typeBattery}-${batt.addr}`).innerHTML = `${busPower} W`;
 
@@ -1883,9 +1955,9 @@
     voltagedifEl.className = `bms-cell-mono ${deltaClass}`;
 
     const socBar = document.getElementById(`soc-bar-${batt.loggerId}-${batt.typeBattery}-${batt.addr}`);
-    if (batt.soc > 70) socBar.className = 'bms-soc-fill bg-green-500';
-    else if (batt.soc > 30) socBar.className = 'bms-soc-fill bg-yellow-500';
-    else socBar.className = 'bms-soc-fill bg-red-500';
+    if (batt.soc > 70) socBar.className = 'bms-android-battery-fill bg-green-500';
+    else if (batt.soc > 30) socBar.className = 'bms-android-battery-fill bg-yellow-500';
+    else socBar.className = 'bms-android-battery-fill bg-red-500';
 
     card.querySelector(".last-update").innerHTML = `<i class="far fa-clock mr-1"></i>${batt.time}`;
 
@@ -1914,6 +1986,12 @@
       document.getElementById("avg-soh").textContent = "-";
       document.getElementById("total-current").textContent = "-";
       document.getElementById("total-power").textContent = "-";
+      document.getElementById("bus-voltage").textContent = "-";
+      document.getElementById("bus-current").textContent = "-";
+      document.getElementById("bus-power").textContent = "-";
+      document.getElementById("sum-eff").textContent = "-";
+      const pill0 = document.getElementById("summary-status-pill");
+      if (pill0) { pill0.textContent = "Standby"; pill0.className = "bms-status-pill standby"; }
       return;
     }
 
@@ -1946,20 +2024,21 @@
     document.getElementById("bus-voltage").textContent = `${(totalbusVoltage / count).toFixed(2)} V`;
     document.getElementById("bus-current").textContent = `${totalbusCurrent.toFixed(2)} A`;
     document.getElementById("bus-power").textContent = `${(totalbusVoltage / count *totalbusCurrent).toFixed(2)} W`;
-    if((totalbusVoltage / count *totalbusCurrent)>totalPower){
+    // if((totalbusVoltage / count *totalbusCurrent)>totalPower){
       document.getElementById("sum-eff").textContent = `${(totalPower/ (totalbusVoltage / count *totalbusCurrent)).toFixed(2)} %`;
-    }
-    else if(totalPower>(totalbusVoltage / count *totalbusCurrent)){
-      document.getElementById("sum-eff").textContent = `${((totalbusVoltage / count *totalbusCurrent)/totalPower).toFixed(2)} %`;
-    }
-    else{
-      document.getElementById("sum-eff").textContent = `100.00%`;
-    }
+    // }
+    // else if(totalPower>(totalbusVoltage / count *totalbusCurrent)){
+    //   document.getElementById("sum-eff").textContent = `${((totalbusVoltage / count *totalbusCurrent)/totalPower).toFixed(2)} %`;
+    // }
+    // else{
+    //   document.getElementById("sum-eff").textContent = `100.00%`;
+    // }
     
 
 
     // ===== UPDATE SUMMARY CARD STYLING BERDASARKAN TOTAL CURRENT =====
     const summaryCard = document.querySelector('.summary-card');
+    const summaryPill = document.getElementById('summary-status-pill');
     if (summaryCard) {
       // Reset semua classes
       summaryCard.classList.remove('summary-charging', 'summary-discharging', 'summary-standby');
@@ -1971,14 +2050,17 @@
         summaryCard.classList.add('summary-charging');
         const intensityLevel = getIntensityLevel(totalCurrent);
         summaryCard.classList.add(`summary-charging-level-${intensityLevel}`);
+        if (summaryPill) { summaryPill.textContent = 'CHG'; summaryPill.className = 'bms-status-pill charging'; }
       } else if (totalCurrent < -0.1) {
         // Discharging
         summaryCard.classList.add('summary-discharging');
         const intensityLevel = getIntensityLevel(totalCurrent);
         summaryCard.classList.add(`summary-discharge-level-${intensityLevel}`);
+        if (summaryPill) { summaryPill.textContent = 'DSG'; summaryPill.className = 'bms-status-pill discharging'; }
       } else {
         // Standby
         summaryCard.classList.add('summary-standby');
+        if (summaryPill) { summaryPill.textContent = 'STB'; summaryPill.className = 'bms-status-pill standby'; }
       }
     }
   }
