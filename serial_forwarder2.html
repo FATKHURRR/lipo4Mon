@@ -66,7 +66,7 @@
     function sendPoll1() {
       if (mqttClient?.connected && mqttMainTopic) {
         let settpic = mqttMainTopic + "/seting";
-        mqttClient.publish(settpic, "POOL1");
+        mqttClient.publish(settpic, "POLL1");
 
       }
     }
