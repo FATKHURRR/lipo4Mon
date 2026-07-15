@@ -11,6 +11,8 @@
     let mqttMainTopic;
     let mqttRxTopic;
     let mqttTxTopic;
+    let pollTimer = null;
+    let pollTimerEnabled = true;
 
     const mqttBroker = "wss://broker.emqx.io:8084/mqtt";
     const mqttUser = "emqx";
@@ -47,7 +49,6 @@
           if (done) break;
           if (mqttClient?.connected && mqttTxTopic) {
             mqttClient.publish(mqttTxTopic, new Uint8Array(value));
-            console.log("publish", mqttTxTopic,value);
             flashIndicator("mqtt-out");
           }
         }
@@ -60,6 +61,29 @@
       let settpic=mqttMainTopic+"/seting";
       mqttClient.publish(settpic,"POLL0");
       
+    }
+
+    function sendPoll1() {
+      if (mqttClient?.connected && mqttMainTopic) {
+        let settpic = mqttMainTopic + "/seting";
+        mqttClient.publish(settpic, "POOL1");
+
+      }
+    }
+
+    function startPollTimer() {
+      stopPollTimer();
+      if (pollTimerEnabled) {
+        pollTimer = setInterval(sendPoll1, 30000);
+
+      }
+    }
+
+    function stopPollTimer() {
+      if (pollTimer) {
+        clearInterval(pollTimer);
+        pollTimer = null;
+      }
     }
 
     function flashIndicator(id) {
@@ -77,18 +101,18 @@
       mqttClient.on("connect", () => {
         document.getElementById("mqtt-status").textContent = "Connected";
         mqttClient.subscribe(mqttRxTopic);
-        console.log("Topic subscribed:", mqttRxTopic);
+
       });
 
       mqttClient.on("message", (topic, payload) => {
-        console.log("receive:",topic,payload);
+
         if(topic === mqttRxTopic) {
           flashIndicator("mqtt-in");
           if (writer){
-            console.log("Serial Oke", payload);
+
             writer.write(payload);
           } else {
-            console.log("Serial not connected", payload);
+
           }
         }
       });
@@ -107,8 +131,11 @@
       mqttMainTopic = getQueryParam("id") || "defaultTopic";
       mqttRxTopic = mqttMainTopic + "/TX";
       mqttTxTopic = mqttMainTopic + "/RX";
-      console.log("Using MainTopic:", mqttMainTopic);
+
+      pollTimerEnabled = getQueryParam("timer") !== "off";
+
       connectMQTT();
+      startPollTimer();
     });
   </script>
 </head>
