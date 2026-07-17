@@ -1,10 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Modul Sakti Tabel View</title>
+  <title>Modul Sakti Monitoring</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -38,6 +37,8 @@
       font-family: 'Inter', sans-serif;
       background-color: var(--light);
       color: var(--dark);
+      font-weight: 500;
+      -webkit-font-smoothing: antialiased;
       transition: background-color 0.3s, color 0.3s;
     }
     
@@ -271,8 +272,8 @@
     }
     
     .led.active {
-      background: #10b981;
-      box-shadow: 0 0 8px #10b981;
+      background: #0703ed;
+      box-shadow: 0 0 8px #1e72b7;
     }
     
     #id_monitoring_footer {
@@ -429,7 +430,7 @@
       gap: 4px 6px;
     }
     @media (min-width: 640px) {
-      .summary-grid { grid-template-columns: repeat(9, 1fr); gap: 6px; }
+      .summary-grid { grid-template-columns: repeat(6, 1fr); gap: 6px; }
     }
 
     .summary-item {
@@ -444,7 +445,7 @@
     }
 
     .summary-item-label {
-      font-size: 12.5px;
+      font-size: 8.5px;
       text-transform: uppercase;
       letter-spacing: 0.3px;
       color: var(--card-subtext);
@@ -455,17 +456,34 @@
       margin-bottom: 1px;
     }
     .summary-item-value {
-      font-size: 1.0rem;
-      font-weight: 1000;
-      font-family: 'JetBrains Mono', 'Courier New', monospace;
+      font-size: 0.78rem;
+      font-weight: 800;
+      font-family: 'JetBrains Mono', 'Consolas', monospace;
       color: var(--card-text);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
+    .summary-item-value-sub {
+      font-size: 0.78rem;
+      font-weight: 800;
+      font-family: 'JetBrains Mono', 'Consolas', monospace;
+      color: var(--card-text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-top: 2px;
+    }
+    /* SOC/SOH/Eff cuma 1 baris — dibesarkan supaya seimbang secara visual
+       dengan Voltage/Current/Power yang isinya 2 baris (Pack & Bus) */
+    .summary-item-value-solo {
+      font-size: 1.15rem;
+      padding: 4px 0;
+    }
 
     @media (max-width: 400px) {
-      .summary-item-value { font-size: 0.7rem; }
+      .summary-item-value, .summary-item-value-sub { font-size: 0.7rem; }
+      .summary-item-value-solo { font-size: 0.95rem; }
       .summary-item-label { font-size: 8px; }
     }
     
@@ -859,8 +877,8 @@
     .bms-scroll-hint {
       display: none;
       align-items: center;
-      gap: 2px;
-      font-size: 15px;
+      gap: 6px;
+      font-size: 11px;
       color: var(--card-subtext);
       padding: 6px 14px;
       border-bottom: 1px solid rgba(0,0,0,0.06);
@@ -882,10 +900,14 @@
     .bms-table {
       border-collapse: separate;
       border-spacing: 0;
-      width: 100%;
-      min-width: 820px;
-      font-size: 1rem;
-      font-style: bold;
+      width: auto;
+      font-size: 0.92rem;
+    }
+    /* Di layar lebar (PC/tablet), tabel melebar mengisi kontainer supaya
+       tidak menyisakan area kosong besar di sisi kanan. Di HP tetap auto
+       (mepet sesuai konten) supaya kolom tidak melebar tak perlu. */
+    @media (min-width: 768px) {
+      .bms-table { width: 100%; }
     }
 
     .bms-table thead th {
@@ -896,7 +918,7 @@
       color: var(--card-subtext);
       text-transform: uppercase;
       letter-spacing: 0.4px;
-      font-size: 15.5px;
+      font-size: 11.5px;
       font-weight: 800;
       font-style: bold;
       text-align: center;
@@ -926,18 +948,15 @@
       border-bottom-color: rgba(255,255,255,0.06);
     }
     .bms-table tbody td:first-child,
-    .bms-table tbody td:nth-child(3) {
+    .bms-table tbody td:nth-child(2) {
       text-align: left;
-      position: sticky;
     }
     .bms-table tbody td:first-child {
       position: sticky;
       left: 0;
       z-index: 5;
-      font-weight: 1000;
+      font-weight: 600;
     }
-
-   
 
     .bms-table tbody tr {
       transition: background-color 0.3s ease;
@@ -967,7 +986,7 @@
     .bms-battery-name {
       display: flex;
       align-items: center;
-      gap: 4px;
+      gap: 8px;
     }
     .bms-battery-name .bms-name-text {
       display: flex;
@@ -975,7 +994,7 @@
       line-height: 1.25;
     }
     .bms-battery-name .bms-name-text small {
-      font-weight: 700;
+      font-weight: 500;
       font-size: 10.5px;
       color: var(--card-subtext);
     }
@@ -1034,7 +1053,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 17.5px;
+      font-size: 11.5px;
       font-weight: 800;
       color: #fff;
       text-shadow: 0 1px 2px rgba(0,0,0,0.55);
@@ -1052,8 +1071,28 @@
     }
 
     .bms-cell-mono {
-      font-family: 'JetBrains Mono', 'Courier New', monospace;
+      font-family: 'JetBrains Mono', 'Consolas', monospace;
       font-weight: 700;
+    }
+
+    /* ===== Stacked two-value cells (Pack/Bus, Max/Min, Diff/Cycle) =====
+       Dua nilai posisi atas-bawah, UKURAN SAMA — cukup pakai div block
+       biasa (JANGAN display:flex di dalam <td>, ini merusak table layout
+       di sejumlah browser/webview: kolom jadi tumpuk vertikal semua). */
+    .bms-stack {
+      line-height: 1.5;
+    }
+    .bms-stack-top,
+    .bms-stack-bottom {
+      font-weight: 800;
+      font-size: 0.9rem;
+      color: var(--card-text);
+      white-space: nowrap;
+    }
+    /* Kolom angka (Voltage/Current/Power/Cell V) rata kanan;
+       kolom Battery/SOC/Diff/Cycle tetap rata kiri (default td:first-child). */
+    .bms-stack-right {
+      text-align: right;
     }
 
     .bms-delta-warn { color: #f59e0b; font-weight: 800; }
@@ -1091,13 +1130,19 @@
       transition: background-color 0.3s ease, box-shadow 0.3s ease;
     }
     .bms-led.active {
-      background: #10b981;
-      box-shadow: 0 0 6px #10b981;
+      background: #f63302;
+      box-shadow: 0 0 6px #eb787b;
     }
 
     @media (max-width: 640px) {
-      .bms-table { font-size: 0.78rem; }
-      .bms-table thead th, .bms-table tbody td { padding: 9px 10px; }
+      .bms-table { font-size: 0.9rem; }
+      .bms-table thead th, .bms-table tbody td { padding: 9px 5px; }
+
+      /* Perpendek ikon baterai SOC di HP supaya tidak makan banyak tempat */
+      .bms-soc-cell { min-width: 54px; }
+      .bms-android-battery { height: 20px; min-width: 40px; }
+      .bms-android-battery-label { font-size: 9.5px; }
+      .bms-android-battery-nub { height: 9px; }
     }
   </style>
 </head>
@@ -1252,57 +1297,48 @@
 <main class="flex-1 p-4 sm:p-6 w-full">
   <div class="max-w-7xl mx-auto">
     <div class="mb-6 flex justify-between items-center">
-      <h2 class="text-xl font-semibold" style="color: var(--card-subtext);" hidden>Summary</h2>
-     
+      <h2 class="text-xl font-semibold" style="color: var(--card-subtext);">Summary</h2>
+      <div class="flex items-center gap-4">
+        <div class="text-sm" style="color: var(--card-subtext);">
+          
+        </div>
+      </div>
     </div>
 
     <!-- Summary Section -->
     <div id="summarySection" class="mb-6 hidden">
       <div class="summary-card rounded-xl shadow-sm p-3 sm:p-4">
-        <div class="summary-top-row">
-          <span class="summary-title" hidden><i class="fas fa-chart-line"></i> Summary</span>
+        <div class="summary-top-row" hidden >
           <span id="summary-status-pill" class="bms-status-pill standby" hidden>STB</span>
-          <div class="flex items-center gap-4">
-            <div class="text-sm" style="color: var(--card-subtext);">
-            <span id="total-batteries">0</span> batteries connected
-         </div>
-      </div>        </div>
+          <span  class="summary-title" id="total-batteries">0</span> batteries connected
+        </div>
         <div class="summary-grid">
           <div class="summary-item">
             <div class="summary-item-label">SOC</div>
-            <div id="avg-soc" class="summary-item-value">-</div>
+            <div id="avg-soc" class="summary-item-value summary-item-value-solo">-</div>
           </div>
           <div class="summary-item">
             <div class="summary-item-label">SOH</div>
-            <div id="avg-soh" class="summary-item-value">-</div>
+            <div id="avg-soh" class="summary-item-value summary-item-value-solo">-</div>
           </div>
           <div class="summary-item">
             <div class="summary-item-label">Eff</div>
-            <div id="sum-eff" class="summary-item-value">-</div>
+            <div id="sum-eff" class="summary-item-value summary-item-value-solo">-</div>
           </div>
           <div class="summary-item">
-            <div class="summary-item-label">Pack V</div>
+            <div class="summary-item-label">Voltage</div>
             <div id="avg-voltage" class="summary-item-value">-</div>
+            <div id="bus-voltage" class="summary-item-value-sub">-</div>
           </div>
           <div class="summary-item">
-            <div class="summary-item-label">Pack I</div>
+            <div class="summary-item-label">Current</div>
             <div id="total-current" class="summary-item-value">-</div>
+            <div id="bus-current" class="summary-item-value-sub">-</div>
           </div>
           <div class="summary-item">
-            <div class="summary-item-label">Pack P</div>
+            <div class="summary-item-label">Power</div>
             <div id="total-power" class="summary-item-value">-</div>
-          </div>
-          <div class="summary-item">
-            <div class="summary-item-label">Bus V</div>
-            <div id="bus-voltage" class="summary-item-value">-</div>
-          </div>
-          <div class="summary-item">
-            <div class="summary-item-label">Bus I</div>
-            <div id="bus-current" class="summary-item-value">-</div>
-          </div>
-          <div class="summary-item">
-            <div class="summary-item-label">Bus P</div>
-            <div id="bus-power" class="summary-item-value">-</div>
+            <div id="bus-power" class="summary-item-value-sub">-</div>
           </div>
         </div>
       </div>
@@ -1316,14 +1352,11 @@
             <tr>
               <th>Battery</th>
               <th hidden>Status</th>
-              <th>SOC</th>
-              <th>Diff Cell</th>
-              <th>V-Pack</th>
-              <th>V-Bus</th>
-              <th>I-Pack</th>
-              <th>I-Bus</th>
-              <th>P-Pack</th>
-              <th>P-Bus</th>
+              <th hidden>SOC</th>
+              <th>Voltage</th>
+              <th>Current</th>
+              <th>Power</th>
+              <th>Cells</th>
               <th hidden>Time</th>
             </tr>
           </thead>
@@ -1348,7 +1381,10 @@
     <div class="text-sm">
       © 2025 BMS Monitor System | Modul Sakti | 
       <a href="https://wa.me/628972309993" class="no-underline hover:text-white">
-        Hubungi Developer
+        Hubungi Developer | 
+      </a>
+       <a href="javascript:void(0);" onclick="location.href='https://fatkhurrr.github.io/lipo4Mon/index.html' + window.location.search">
+        Normal View
       </a>
       <label id="id_monitoring_footer" style="display:block;"></label>
     </div>
@@ -1559,29 +1595,40 @@
         <td>
           <div class="bms-battery-name">
             <span class="bms-led" id="led-card-${batt.loggerId}-${batt.typeBattery}-${batt.addr}"></span>
+          
+            <span>
+                <div class="bms-soc-cell">
+                  <div class="bms-android-battery">
+                    <div id="soc-bar-${batt.loggerId}-${batt.typeBattery}-${batt.addr}" class="bms-android-battery-fill" style="width: ${batt.soc}%"></div>
+                    <span id="soc-value-${batt.loggerId}-${batt.typeBattery}-${batt.addr}" class="bms-android-battery-label">${batt.soc}</span>
+                  </div>
+                  <div class="bms-android-battery-nub"></div>
+                </div>
+            </span>
             <div class="bms-name-text">
               <span>${batt.typeBattery} #${batt.addr}</span>
-              <small>Cycles: ${batt.cycles}</small>
+              <small>Diff: <span class="${deltaClass}" id="voltagedif-${batt.loggerId}-${batt.typeBattery}-${batt.addr}">${batt.cell_vdif} mV</span> &middot; Cycles: <span id="cycles-${batt.loggerId}-${batt.typeBattery}-${batt.addr}">${batt.cycles}</span></small>
             </div>
           </div>
         </td>
         <td style="text-align:left;" hidden><span class="bms-status-pill ${statusClass}" id="status-pill-${batt.loggerId}-${batt.typeBattery}-${batt.addr}">${statusLabel}</span></td>
-        <td>
-          <div class="bms-soc-cell">
-            <div class="bms-android-battery">
-              <div id="soc-bar-${batt.loggerId}-${batt.typeBattery}-${batt.addr}" class="bms-android-battery-fill" style="width: ${batt.soc}%"></div>
-              <span id="soc-value-${batt.loggerId}-${batt.typeBattery}-${batt.addr}" class="bms-android-battery-label">${batt.soc}</span>
-            </div>
-            <div class="bms-android-battery-nub"></div>
-          </div>
+
+        <td class="bms-stack bms-cell-mono bms-stack-right">
+          <div class="bms-stack-top" id="voltage-${batt.loggerId}-${batt.typeBattery}-${batt.addr}">${batt.voltage} V</div>
+          <div class="bms-stack-bottom" id="busvoltage-${batt.loggerId}-${batt.typeBattery}-${batt.addr}">${batt.busVoltage} V</div>
         </td>
-        <td class="bms-cell-mono ${deltaClass}" id="voltagedif-${batt.loggerId}-${batt.typeBattery}-${batt.addr}">${batt.cell_vdif} mV</td>
-        <td class="bms-cell-mono" id="voltage-${batt.loggerId}-${batt.typeBattery}-${batt.addr}">${batt.voltage} V</td>
-        <td class="bms-cell-mono" id="busvoltage-${batt.loggerId}-${batt.typeBattery}-${batt.addr}">${batt.busVoltage} V</td>
-        <td class="bms-cell-mono" id="current-${batt.loggerId}-${batt.typeBattery}-${batt.addr}">${batt.current} A</td>
-        <td class="bms-cell-mono" id="buscurrent-${batt.loggerId}-${batt.typeBattery}-${batt.addr}">${batt.bus_current} A</td>
-        <td class="bms-cell-mono" id="power-${batt.loggerId}-${batt.typeBattery}-${batt.addr}">${packPower} W</td>
-        <td class="bms-cell-mono" id="buspower-${batt.loggerId}-${batt.typeBattery}-${batt.addr}">${busPower} W</td>
+        <td class="bms-stack bms-cell-mono bms-stack-right">
+          <div class="bms-stack-top" id="current-${batt.loggerId}-${batt.typeBattery}-${batt.addr}">${batt.current} A</div>
+          <div class="bms-stack-bottom" id="buscurrent-${batt.loggerId}-${batt.typeBattery}-${batt.addr}">${batt.bus_current} A</div>
+        </td>
+        <td class="bms-stack bms-cell-mono bms-stack-right">
+          <div class="bms-stack-top" id="power-${batt.loggerId}-${batt.typeBattery}-${batt.addr}">${packPower} W</div>
+          <div class="bms-stack-bottom" id="buspower-${batt.loggerId}-${batt.typeBattery}-${batt.addr}">${busPower} W</div>
+        </td>
+        <td class="bms-stack bms-cell-mono bms-stack-right">
+          <div class="bms-stack-top" id="cellvmax-${batt.loggerId}-${batt.typeBattery}-${batt.addr}">${batt.cell_vmax} V</div>
+          <div class="bms-stack-bottom" id="cellvmin-${batt.loggerId}-${batt.typeBattery}-${batt.addr}">${batt.cell_vmin} V</div>
+        </td>
         <td class="last-update" hidden><i class="far fa-clock mr-1" ></i>${batt.time}</td>
         `;
       row.onclick = () => openModal(batt.loggerId, batt.addr, batt.typeBattery);
@@ -1957,7 +2004,16 @@
 
     const voltagedifEl = document.getElementById(`voltagedif-${batt.loggerId}-${batt.typeBattery}-${batt.addr}`);
     voltagedifEl.innerHTML = `${batt.cell_vdif} mV`;
-    voltagedifEl.className = `bms-cell-mono ${deltaClass}`;
+    voltagedifEl.className = deltaClass;
+
+    const cyclesEl = document.getElementById(`cycles-${batt.loggerId}-${batt.typeBattery}-${batt.addr}`);
+    if (cyclesEl) cyclesEl.textContent = batt.cycles;
+
+    const cellVMaxEl = document.getElementById(`cellvmax-${batt.loggerId}-${batt.typeBattery}-${batt.addr}`);
+    if (cellVMaxEl) cellVMaxEl.textContent = `${batt.cell_vmax} V`;
+
+    const cellVMinEl = document.getElementById(`cellvmin-${batt.loggerId}-${batt.typeBattery}-${batt.addr}`);
+    if (cellVMinEl) cellVMinEl.textContent = `${batt.cell_vmin} V`;
 
     const socBar = document.getElementById(`soc-bar-${batt.loggerId}-${batt.typeBattery}-${batt.addr}`);
     if (batt.soc > 70) socBar.className = 'bms-android-battery-fill bg-green-500';
@@ -2028,16 +2084,18 @@
     document.getElementById("total-power").textContent = `${totalPower.toFixed(2)} W`;
     document.getElementById("bus-voltage").textContent = `${(totalbusVoltage / count).toFixed(2)} V`;
     document.getElementById("bus-current").textContent = `${totalbusCurrent.toFixed(2)} A`;
-    document.getElementById("bus-power").textContent = `${(totalbusVoltage / count *totalbusCurrent).toFixed(2)} W`;
-    // if((totalbusVoltage / count *totalbusCurrent)>totalPower){
-      document.getElementById("sum-eff").textContent = `${(totalPower/ (totalbusVoltage / count *totalbusCurrent)*100).toFixed(2)} %`;
-    // }
-    // else if(totalPower>(totalbusVoltage / count *totalbusCurrent)){
-    //   document.getElementById("sum-eff").textContent = `${((totalbusVoltage / count *totalbusCurrent)/totalPower).toFixed(2)} %`;
-    // }
-    // else{
-    //   document.getElementById("sum-eff").textContent = `100.00%`;
-    // }
+
+    const busPowerCalc = (totalbusVoltage / count) * totalbusCurrent;
+    document.getElementById("bus-power").textContent = `${busPowerCalc.toFixed(2)} W`;
+
+    // Efisiensi = (nilai power yang lebih kecil / nilai power yang lebih besar) x 100%
+    // dibandingkan antara total Power Pack vs Power Bus
+    const packPowerAbs = Math.abs(totalPower);
+    const busPowerAbs = Math.abs(busPowerCalc);
+    const largerPower = Math.max(packPowerAbs, busPowerAbs);
+    const smallerPower = Math.min(packPowerAbs, busPowerAbs);
+    const effValue = largerPower > 0 ? (smallerPower / largerPower) * 100 : 0;
+    document.getElementById("sum-eff").textContent = `${effValue.toFixed(2)} %`;
     
 
 
