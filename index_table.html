@@ -1978,8 +1978,7 @@
       }
       client.subscribe("sysMon/"+xxx[0]+"/info/#");
       updateConnectionStatus(true);
-      statusBadge.innerText = "Connected";
-      statusBadge.className = "px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30";
+     
             
     });
 
@@ -1993,8 +1992,7 @@
     
     client.on("error", (error) => {
       updateConnectionStatus(false);
-      tatusBadge.innerText = "Error";
-      statusBadge.className = "px-3 py-1 rounded-full text-xs font-semibold bg-red-500/20 text-red-400 border border-red-500/30";
+     
        
     });
 
@@ -2013,8 +2011,7 @@
       }
       client2.subscribe("sysMon/"+xxx[0]+"/info/#");
       updateConnectionStatus(true);
-       statusBadge.innerText = "Connected";
-      statusBadge.className = "px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30";
+     
       
     });
 
@@ -2028,8 +2025,7 @@
     
     client2.on("error", (error) => {
       updateConnectionStatus(false);
-      tatusBadge.innerText = "Error";
-      statusBadge.className = "px-3 py-1 rounded-full text-xs font-semibold bg-red-500/20 text-red-400 border border-red-500/30";
+    
        
     });
   }
