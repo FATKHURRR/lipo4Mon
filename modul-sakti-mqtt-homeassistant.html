@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Integrasi Modul Sakti ke Home Assistant — MQTT Sensor Guide</title>
+<style>
+  :root{
+    --bg: #0d1117;
+    --bg-elevated: #131a22;
+    --panel: #161d26;
+    --border: #232c38;
+    --text: #d7dee6;
+    --text-dim: #8b98a8;
+    --accent: #4fb0ae;
+    --accent-soft: rgba(79,176,174,0.12);
+    --warn: #e0a94d;
+    --code-bg: #0a0f14;
+    --mono: "SF Mono", "JetBrains Mono", Consolas, Menlo, monospace;
+    --sans: "Inter", "Segoe UI", system-ui, sans-serif;
+  }
+
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--sans);
+    line-height:1.65;
+    font-size:15.5px;
+  }
+
+  a{color:var(--accent); text-decoration:none;}
+  a:hover{text-decoration:underline;}
+
+  .layout{
+    display:grid;
+    grid-template-columns: 260px 1fr;
+    max-width:1240px;
+    margin:0 auto;
+  }
+
+  /* ---------- Sidebar ---------- */
+  nav.toc{
+    position:sticky;
+    top:0;
+    align-self:start;
+    height:100vh;
+    overflow-y:auto;
+    padding:32px 20px 40px 28px;
+    border-right:1px solid var(--border);
+  }
+  nav.toc .logo{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:28px;
+  }
+  nav.toc .logo-mark{
+    width:30px; height:30px;
+    border-radius:7px;
+    background:linear-gradient(135deg, var(--accent), #2c6f6d);
+    display:flex; align-items:center; justify-content:center;
+    font-weight:700; color:#08130f; font-size:14px;
+    flex-shrink:0;
+  }
+  nav.toc .logo-text{font-weight:600; font-size:14.5px; color:var(--text); letter-spacing:0.2px;}
+  nav.toc .logo-sub{font-size:11.5px; color:var(--text-dim);}
+
+  nav.toc ul{list-style:none; margin:0; padding:0;}
+  nav.toc li{margin:0;}
+  nav.toc a{
+    display:block;
+    padding:7px 10px;
+    border-radius:6px;
+    font-size:13.5px;
+    color:var(--text-dim);
+    border-left:2px solid transparent;
+  }
+  nav.toc a:hover{color:var(--text); background:var(--accent-soft); text-decoration:none;}
+  nav.toc a.active{color:var(--accent); border-left-color:var(--accent); background:var(--accent-soft);}
+  nav.toc .section-label{
+    font-size:11px; text-transform:uppercase; letter-spacing:0.08em;
+    color:#556072; margin:18px 0 6px 10px;
+  }
+
+  /* ---------- Main content ---------- */
+  main{padding:48px 56px 120px 56px; min-width:0;}
+
+  .eyebrow{
+    display:inline-flex; align-items:center; gap:8px;
+    font-size:12px; letter-spacing:0.1em; text-transform:uppercase;
+    color:var(--accent); font-weight:600; margin-bottom:14px;
+  }
+  .eyebrow::before{
+    content:""; width:6px; height:6px; border-radius:50%; background:var(--accent);
+    box-shadow:0 0 8px var(--accent);
+  }
+
+  h1{
+    font-size:2.3rem;
+    line-height:1.15;
+    margin:0 0 14px 0;
+    color:#fff;
+    letter-spacing:-0.02em;
+  }
+  .lede{
+    color:var(--text-dim);
+    font-size:1.05rem;
+    max-width:66ch;
+    margin:0 0 6px 0;
+  }
+
+  .callout{
+    margin:28px 0;
+    padding:16px 18px;
+    background:var(--accent-soft);
+    border-left:3px solid var(--accent);
+    border-radius:0 8px 8px 0;
+    font-size:14.2px;
+    color:var(--text);
+  }
+  .callout strong{color:var(--accent);}
+
+  h2{
+    font-size:1.5rem;
+    color:#fff;
+    margin:56px 0 16px 0;
+    padding-top:8px;
+    border-top:1px solid var(--border);
+    letter-spacing:-0.01em;
+  }
+  section:first-of-type h2:first-child{border-top:none; padding-top:0;}
+
+  h3{
+    font-size:1.1rem;
+    color:#fff;
+    margin:30px 0 12px 0;
+  }
+
+  p{color:var(--text); margin:12px 0;}
+  .dim{color:var(--text-dim);}
+
+  code.inline{
+    background:var(--code-bg);
+    border:1px solid var(--border);
+    padding:2px 6px;
+    border-radius:5px;
+    font-family:var(--mono);
+    font-size:0.87em;
+    color:#8fd3d1;
+  }
+
+  ul, ol{color:var(--text); padding-left:22px;}
+  li{margin:6px 0;}
+
+  table{
+    width:100%;
+    border-collapse:collapse;
+    margin:16px 0;
+    font-size:14px;
+  }
+  th, td{
+    text-align:left;
+    padding:9px 14px;
+    border:1px solid var(--border);
+  }
+  th{background:var(--bg-elevated); color:var(--text-dim); font-weight:600; font-size:12.5px; text-transform:uppercase; letter-spacing:0.04em;}
+  td{color:var(--text);}
+  tr:nth-child(even) td{background:rgba(255,255,255,0.015);}
+
+  /* ---------- Code blocks ---------- */
+  .code-block{
+    position:relative;
+    background:var(--code-bg);
+    border:1px solid var(--border);
+    border-radius:10px;
+    margin:16px 0 24px 0;
+    overflow:hidden;
+  }
+  .code-block .code-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:9px 14px;
+    background:var(--bg-elevated);
+    border-bottom:1px solid var(--border);
+  }
+  .code-block .filename{
+    font-family:var(--mono);
+    font-size:12.5px;
+    color:var(--text-dim);
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .code-block .filename::before{
+    content:"";
+    width:8px;height:8px;
+    border-radius:2px;
+    background:var(--accent);
+    opacity:0.7;
+  }
+  .copy-btn{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    background:transparent;
+    border:1px solid var(--border);
+    color:var(--text-dim);
+    font-family:var(--sans);
+    font-size:12px;
+    padding:5px 10px;
+    border-radius:6px;
+    cursor:pointer;
+    transition:all 0.15s ease;
+  }
+  .copy-btn:hover{
+    background:var(--accent-soft);
+    border-color:var(--accent);
+    color:var(--accent);
+  }
+  .copy-btn svg{width:13px; height:13px; flex-shrink:0;}
+  .copy-btn.copied{
+    background:var(--accent);
+    border-color:var(--accent);
+    color:#08130f;
+  }
+
+  pre{
+    margin:0;
+    padding:16px 18px;
+    overflow-x:auto;
+    font-family:var(--mono);
+    font-size:13px;
+    line-height:1.6;
+    color:#c3ccd6;
+  }
+  pre code{
+    font-family:var(--mono);
+    background:none;
+    border:none;
+    padding:0;
+    color:inherit;
+  }
+
+  /* subtle yaml token coloring, keyword-agnostic (no JS syntax highlighter needed) */
+  .tok-key{color:#7fc7ff;}
+  .tok-str{color:#c9d97a;}
+  .tok-comment{color:#5b6673; font-style:italic;}
+  .tok-anchor{color:#e0a94d;}
+
+  /* ---------- Troubleshoot cards ---------- */
+  .issue{
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:16px 18px;
+    margin:16px 0;
+    background:var(--panel);
+  }
+  .issue .issue-title{
+    font-family:var(--mono);
+    font-size:13px;
+    color:#f0a5a5;
+    background:rgba(240,165,165,0.08);
+    display:inline-block;
+    padding:5px 10px;
+    border-radius:6px;
+    margin-bottom:10px;
+  }
+  .issue .fix-label{
+    display:inline-block;
+    font-size:11.5px;
+    text-transform:uppercase;
+    letter-spacing:0.06em;
+    color:var(--accent);
+    font-weight:700;
+    margin:10px 0 4px 0;
+  }
+
+  .topic-diagram{
+    font-family:var(--mono);
+    background:var(--code-bg);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:20px 24px;
+    font-size:14px;
+    line-height:1.9;
+    color:#c3ccd6;
+    overflow-x:auto;
+    margin:18px 0;
+  }
+  .topic-diagram .seg1{color:#e0a94d;}
+  .topic-diagram .seg2{color:#7fc7ff;}
+  .topic-diagram .seg3{color:#8fd3d1;}
+
+  footer{
+    margin-top:60px;
+    padding-top:24px;
+    border-top:1px solid var(--border);
+    color:var(--text-dim);
+    font-size:13px;
+  }
+
+  ::-webkit-scrollbar{width:10px; height:10px;}
+  ::-webkit-scrollbar-track{background:var(--bg);}
+  ::-webkit-scrollbar-thumb{background:var(--border); border-radius:5px;}
+  ::-webkit-scrollbar-thumb:hover{background:#334;}
+
+  @media (max-width: 860px){
+    .layout{grid-template-columns:1fr;}
+    nav.toc{position:static; height:auto; border-right:none; border-bottom:1px solid var(--border);}
+    main{padding:32px 20px 80px 20px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="layout">
+
+  <nav class="toc" id="toc">
+    <div class="logo">
+      <div class="logo-mark">MS</div>
+      <div>
+        <div class="logo-text">Modul Sakti</div>
+        <div class="logo-sub">Home Assistant Integration</div>
+      </div>
+    </div>
+    <ul>
+      <li><a href="#overview">Gambaran Umum</a></li>
+      <li><a href="#topic-structure">Struktur Topic MQTT</a></li>
+      <li class="section-label">Setup</li>
+      <li><a href="#step1">1. Setup Integrasi MQTT</a></li>
+      <li><a href="#step2">2. Konfigurasi configuration.yaml</a></li>
+      <li><a href="#step3">3. Struktur Folder</a></li>
+      <li><a href="#step4">4. File Sensor Lengkap</a></li>
+      <li><a href="#step5">5. Validasi &amp; Reload</a></li>
+      <li><a href="#step6">6. Enable Entity Otomatis</a></li>
+      <li class="section-label">Lanjutan</li>
+      <li><a href="#expand">Menambah Perangkat/Logger</a></li>
+      <li><a href="#troubleshoot">Troubleshooting</a></li>
+      <li><a href="#reference">Referensi</a></li>
+    </ul>
+  </nav>
+
+  <main>
+    <div class="eyebrow">MQTT · Sensor · Home Assistant</div>
+    <h1>Integrasi Modul Sakti ke Home Assistant</h1>
+    <p class="lede">Panduan lengkap mengubah data JSON yang dipublish Modul Sakti lewat MQTT menjadi entity sensor di Home Assistant — lengkap dengan struktur file, precision angka, dan troubleshooting.</p>
+
+    <div class="callout">
+      <strong>Catatan:</strong> Contoh data pada tutorial ini menggunakan payload BMS Huawei sebagai ilustrasi. Struktur dan langkah yang sama berlaku untuk jenis data lain yang dipublish Modul Sakti — tinggal sesuaikan field JSON dan topic-nya.
+    </div>
+
+    <section id="overview">
+      <h2>Gambaran Umum</h2>
+      <p>Modul Sakti mem-publish data ke MQTT broker dalam format JSON, satu topic per perangkat/sub-device yang terhubung ke logger. Contoh payload (data BMS Huawei, sebagai ilustrasi):</p>
+
+      <div class="code-block" data-lang="json">
+        <div class="code-header">
+          <span class="filename">payload contoh — sysMon/9999999/AutoPoll/Huawei/0</span>
+          <button class="copy-btn" onclick="copyCode(this)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            <span>Copy</span>
+          </button>
+        </div>
+        <pre><code>{
+    "typeBattery": "Huawei",
+    "AddrBattery": 214,
+    "cell_count": 15,
+    "cell_voltages": [3316, 3316, 3316, 3316, 3316, 3316, 3316, 3316, 3316, 3316, 3316, 3315, 3316, 3316, 3316],
+    "cell_vmax": 3316,
+    "cell_vmin": 3315,
+    "cell_vdiff": 1,
+    "bus_voltage": 49.81,
+    "bat_voltage": 49.74,
+    "bus_current": 0,
+    "bat_current": -1.38,
+    "full_capacity": 0,
+    "rem_capacity": 0,
+    "SOC": 90,
+    "SOH": 97,
+    "cycle_count": 957
+}</code></pre>
+      </div>
+
+      <p>Home Assistant tidak bisa otomatis "mem-parse" satu payload JSON jadi banyak sensor — tiap field harus didefinisikan manual sebagai satu <code class="inline">mqtt sensor</code> dengan <code class="inline">value_template</code> masing-masing.</p>
+    </section>
+
+    <section id="topic-structure">
+      <h2>Struktur Topic MQTT Modul Sakti</h2>
+
+      <div class="topic-diagram">sysMon/<span class="seg1">9999999</span>/AutoPoll/<span class="seg2">Huawei</span>/<span class="seg3">0</span>
+        <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="seg1">└ ID Modul Sakti (logger)</span>
+        <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="seg2">└ Jenis/merk perangkat</span>
+        <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="seg3">└ Address/index perangkat</span></div>
+
+      <p>Artinya:</p>
+      <ul>
+        <li><strong>9999999</strong> = ID Modul Sakti (satu unit bisa membaca banyak perangkat)</li>
+        <li><strong>Huawei</strong> = jenis/merk perangkat yang terhubung (bisa berbeda tergantung perangkat yang dipasang)</li>
+        <li><strong>0</strong> = address/index perangkat pada Modul Sakti tersebut</li>
+      </ul>
+      <p>Karena satu Modul Sakti bisa membaca banyak perangkat, dan satu instalasi bisa punya banyak unit, konfigurasi dirancang <strong>satu file YAML per address perangkat</strong> — sehingga mudah diduplikasi saat menambah perangkat atau unit baru.</p>
+    </section>
+
+    <section id="step1">
+      <h2>Step 1 — Setup Integrasi MQTT</h2>
+      <p>Integrasi <code class="inline">mqtt:</code> di <code class="inline">configuration.yaml</code> <strong>hanya mendefinisikan entity</strong>, bukan koneksi ke broker. Koneksi broker diatur lewat UI:</p>
+      <ol>
+        <li>Settings → Devices &amp; Services → Add Integration</li>
+        <li>Cari <strong>MQTT</strong></li>
+        <li>Masukkan host broker, port, username, password (sesuaikan dengan broker yang dipakai Modul Sakti)</li>
+        <li>Pastikan status <strong>Connected</strong></li>
+      </ol>
+
+      <h3>Aktifkan auto-enable entity baru (penting!)</h3>
+      <p>Secara default, entity baru dari integrasi manual bisa dibuat dalam status <strong>disabled</strong>. Untuk mencegah ini:</p>
+      <ol>
+        <li>Settings → Devices &amp; Services</li>
+        <li>Cari card <strong>MQTT</strong> → klik <strong>Configure</strong></li>
+        <li>Centang: <em>Enable newly added entities</em> dan <em>Enable newly added devices</em></li>
+        <li>Submit</li>
+      </ol>
+
+      <h3>Verifikasi data masuk</h3>
+      <p>Developer Tools → MQTT → Listen to a topic, masukkan topic sesuai perangkat Modul Sakti kamu, contoh: <code class="inline">sysMon/9999999/AutoPoll/Huawei/0</code>. Klik Start Listening — kalau payload JSON muncul, berarti broker/topic sudah benar.</p>
+    </section>
+
+    <section id="step2">
+      <h2>Step 2 — Konfigurasi configuration.yaml</h2>
+
+      <div class="code-block">
+        <div class="code-header">
+          <span class="filename">configuration.yaml</span>
+          <button class="copy-btn" onclick="copyCode(this)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            <span>Copy</span>
+          </button>
+        </div>
+        <pre><code><span class="tok-comment"># Loads default set of integrations. Do not remove.</span>
+default_config:
+
+frontend:
+  themes: !include_dir_merge_named themes
+
+automation: !include automations.yaml
+script: !include scripts.yaml
+scene: !include scenes.yaml
+
+mqtt:
+  sensor: !include_dir_merge_list mqtt/sensor/</code></pre>
+      </div>
+
+      <div class="callout">
+        <strong>Penting:</strong> gunakan <code class="inline">!include_dir_merge_list</code>, bukan <code class="inline">!include_dir_list</code>.
+      </div>
+
+      <table>
+        <tr><th>Tag</th><th>Isi tiap file yang diharapkan</th></tr>
+        <tr><td><code class="inline">!include_dir_list</code></td><td>1 dict per file</td></tr>
+        <tr><td><code class="inline">!include_dir_merge_list</code></td><td>list of dict per file (semua digabung jadi 1 list besar)</td></tr>
+      </table>
+      <p class="dim">Karena tiap file berisi banyak sensor (list <code class="inline">- name: ...</code>), tag yang benar adalah <code class="inline">!include_dir_merge_list</code>.</p>
+    </section>
+
+    <section id="step3">
+      <h2>Step 3 — Struktur Folder</h2>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="filename">struktur direktori</span>
+          <button class="copy-btn" onclick="copyCode(this)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            <span>Copy</span>
+          </button>
+        </div>
+        <pre><code>config/
+├── configuration.yaml
+└── mqtt/
+    └── sensor/
+        ├── sakti_9999999_huawei_0.yaml   ← Modul Sakti 9999999, perangkat Huawei address 0
+        ├── sakti_9999999_huawei_1.yaml   ← Modul Sakti 9999999, perangkat Huawei address 1
+        └── sakti_&lt;id_modul_lain&gt;_&lt;jenis&gt;_0.yaml  ← unit Modul Sakti lain</code></pre>
+      </div>
+      <p class="dim">Path <code class="inline">mqtt/sensor/</code> di configuration.yaml bersifat relatif terhadap folder config HA — pastikan foldernya persis di sebelah configuration.yaml.</p>
+    </section>
+
+    <section id="step4">
+      <h2>Step 4 — File Sensor Lengkap (Contoh: BMS Huawei)</h2>
+      <p>File berikut adalah <strong>contoh</strong> untuk perangkat BMS Huawei yang terbaca oleh Modul Sakti dengan ID <code class="inline">9999999</code>. Mencakup semua field dari payload JSON, termasuk 15 cell voltage individual, dengan:</p>
+      <ul>
+        <li>Voltage &amp; current (pack/bus) → 2 desimal</li>
+        <li>SOC &amp; SOH → 1 desimal</li>
+        <li>Cell voltage (individual, min/max/diff) → 3 desimal</li>
+      </ul>
+
+      <div class="code-block">
+        <div class="code-header">
+          <span class="filename">mqtt/sensor/sakti_9999999_huawei_0.yaml</span>
+          <button class="copy-btn" onclick="copyCode(this)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            <span>Copy</span>
+          </button>
+        </div>
+        <pre id="full-sensor-yaml"><code><span class="tok-comment"># ===================================================
+# MODUL SAKTI: 9999999 — Perangkat Huawei Address 0
+# Topic: sysMon/9999999/AutoPoll/Huawei/0
+# ===================================================</span>
+
+- <span class="tok-anchor">&amp;tpl_bat_voltage</span>
+  name: <span class="tok-str">"Voltage"</span>
+  unique_id: <span class="tok-str">"sakti_9999999_huawei0_voltage"</span>
+  state_topic: <span class="tok-str">"sysMon/9999999/AutoPoll/Huawei/0"</span>
+  value_template: <span class="tok-str">"{{ (value_json.bat_voltage | float(0)) | round(2) }}"</span>
+  unit_of_measurement: <span class="tok-str">"V"</span>
+  device_class: <span class="tok-str">"voltage"</span>
+  state_class: <span class="tok-str">"measurement"</span>
+  suggested_display_precision: 2
+  device: <span class="tok-anchor">&amp;dev_huawei0</span>
+    identifiers: <span class="tok-str">"sakti_9999999_huawei0"</span>
+    name: <span class="tok-str">"9999999 Huawei 0"</span>
+    manufacturer: <span class="tok-str">"Huawei"</span>
+    model: <span class="tok-str">"BMS"</span>
+
+- <span class="tok-anchor">&amp;tpl_bus_voltage</span>
+  name: <span class="tok-str">"Bus Voltage"</span>
+  unique_id: <span class="tok-str">"sakti_9999999_huawei0_bus_voltage"</span>
+  state_topic: <span class="tok-str">"sysMon/9999999/AutoPoll/Huawei/0"</span>
+  value_template: <span class="tok-str">"{{ (value_json.bus_voltage | float(0)) | round(2) }}"</span>
+  unit_of_measurement: <span class="tok-str">"V"</span>
+  device_class: <span class="tok-str">"voltage"</span>
+  state_class: <span class="tok-str">"measurement"</span>
+  suggested_display_precision: 2
+  device: <span class="tok-anchor">*dev_huawei0</span>
+
+- <span class="tok-anchor">&amp;tpl_bat_current</span>
+  name: <span class="tok-str">"Current"</span>
+  unique_id: <span class="tok-str">"sakti_9999999_huawei0_current"</span>
+  state_topic: <span class="tok-str">"sysMon/9999999/AutoPoll/Huawei/0"</span>
+  value_template: <span class="tok-str">"{{ (value_json.bat_current | float(0)) | round(2) }}"</span>
+  unit_of_measurement: <span class="tok-str">"A"</span>
+  device_class: <span class="tok-str">"current"</span>
+  state_class: <span class="tok-str">"measurement"</span>
+  suggested_display_precision: 2
+  device: <span class="tok-anchor">*dev_huawei0</span>
+
+- <span class="tok-anchor">&amp;tpl_bus_current</span>
+  name: <span class="tok-str">"Bus Current"</span>
+  unique_id: <span class="tok-str">"sakti_9999999_huawei0_bus_current"</span>
+  state_topic: <span class="tok-str">"sysMon/9999999/AutoPoll/Huawei/0"</span>
+  value_template: <span class="tok-str">"{{ (value_json.bus_current | float(0)) | round(2) }}"</span>
+  unit_of_measurement: <span class="tok-str">"A"</span>
+  device_class: <span class="tok-str">"current"</span>
+  state_class: <span class="tok-str">"measurement"</span>
+  suggested_display_precision: 2
+  device: <span class="tok-anchor">*dev_huawei0</span>
+
+- <span class="tok-anchor">&amp;tpl_soc</span>
+  name: <span class="tok-str">"SOC"</span>
+  unique_id: <span class="tok-str">"sakti_9999999_huawei0_soc"</span>
+  state_topic: <span class="tok-str">"sysMon/9999999/AutoPoll/Huawei/0"</span>
+  value_template: <span class="tok-str">"{{ (value_json.SOC | float(0)) | round(1) }}"</span>
+  unit_of_measurement: <span class="tok-str">"%"</span>
+  device_class: <span class="tok-str">"battery"</span>
+  state_class: <span class="tok-str">"measurement"</span>
+  suggested_display_precision: 1
+  device: <span class="tok-anchor">*dev_huawei0</span>
+
+- <span class="tok-anchor">&amp;tpl_soh</span>
+  name: <span class="tok-str">"SOH"</span>
+  unique_id: <span class="tok-str">"sakti_9999999_huawei0_soh"</span>
+  state_topic: <span class="tok-str">"sysMon/9999999/AutoPoll/Huawei/0"</span>
+  value_template: <span class="tok-str">"{{ (value_json.SOH | float(0)) | round(1) }}"</span>
+  unit_of_measurement: <span class="tok-str">"%"</span>
+  state_class: <span class="tok-str">"measurement"</span>
+  suggested_display_precision: 1
+  icon: <span class="tok-str">"mdi:heart-pulse"</span>
+  device: <span class="tok-anchor">*dev_huawei0</span>
+
+- <span class="tok-anchor">&amp;tpl_full_capacity</span>
+  name: <span class="tok-str">"Full Capacity"</span>
+  unique_id: <span class="tok-str">"sakti_9999999_huawei0_full_capacity"</span>
+  state_topic: <span class="tok-str">"sysMon/9999999/AutoPoll/Huawei/0"</span>
+  value_template: <span class="tok-str">"{{ value_json.full_capacity | float(0) }}"</span>
+  unit_of_measurement: <span class="tok-str">"Ah"</span>
+  state_class: <span class="tok-str">"measurement"</span>
+  icon: <span class="tok-str">"mdi:battery-high"</span>
+  device: <span class="tok-anchor">*dev_huawei0</span>
+
+- <span class="tok-anchor">&amp;tpl_rem_capacity</span>
+  name: <span class="tok-str">"Remaining Capacity"</span>
+  unique_id: <span class="tok-str">"sakti_9999999_huawei0_rem_capacity"</span>
+  state_topic: <span class="tok-str">"sysMon/9999999/AutoPoll/Huawei/0"</span>
+  value_template: <span class="tok-str">"{{ value_json.rem_capacity | float(0) }}"</span>
+  unit_of_measurement: <span class="tok-str">"Ah"</span>
+  state_class: <span class="tok-str">"measurement"</span>
+  icon: <span class="tok-str">"mdi:battery-50"</span>
+  device: <span class="tok-anchor">*dev_huawei0</span>
+
+- <span class="tok-anchor">&amp;tpl_cycle_count</span>
+  name: <span class="tok-str">"Cycle Count"</span>
+  unique_id: <span class="tok-str">"sakti_9999999_huawei0_cycle_count"</span>
+  state_topic: <span class="tok-str">"sysMon/9999999/AutoPoll/Huawei/0"</span>
+  value_template: <span class="tok-str">"{{ value_json.cycle_count | int(0) }}"</span>
+  state_class: <span class="tok-str">"total_increasing"</span>
+  icon: <span class="tok-str">"mdi:battery-sync"</span>
+  device: <span class="tok-anchor">*dev_huawei0</span>
+
+- <span class="tok-anchor">&amp;tpl_cell_count</span>
+  name: <span class="tok-str">"Cell Count"</span>
+  unique_id: <span class="tok-str">"sakti_9999999_huawei0_cell_count"</span>
+  state_topic: <span class="tok-str">"sysMon/9999999/AutoPoll/Huawei/0"</span>
+  value_template: <span class="tok-str">"{{ value_json.cell_count | int(0) }}"</span>
+  icon: <span class="tok-str">"mdi:counter"</span>
+  device: <span class="tok-anchor">*dev_huawei0</span>
+
+- <span class="tok-anchor">&amp;tpl_cell_vmax</span>
+  name: <span class="tok-str">"Cell Voltage Max"</span>
+  unique_id: <span class="tok-str">"sakti_9999999_huawei0_cell_vmax"</span>
+  state_topic: <span class="tok-str">"sysMon/9999999/AutoPoll/Huawei/0"</span>
+  value_template: <span class="tok-str">"{{ ((value_json.cell_vmax | float(0)) / 1000) | round(3) }}"</span>
+  unit_of_measurement: <span class="tok-str">"V"</span>
+  device_class: <span class="tok-str">"voltage"</span>
+  state_class: <span class="tok-str">"measurement"</span>
+  suggested_display_precision: 3
+  device: <span class="tok-anchor">*dev_huawei0</span>
+
+- <span class="tok-anchor">&amp;tpl_cell_vmin</span>
+  name: <span class="tok-str">"Cell Voltage Min"</span>
+  unique_id: <span class="tok-str">"sakti_9999999_huawei0_cell_vmin"</span>
+  state_topic: <span class="tok-str">"sysMon/9999999/AutoPoll/Huawei/0"</span>
+  value_template: <span class="tok-str">"{{ ((value_json.cell_vmin | float(0)) / 1000) | round(3) }}"</span>
+  unit_of_measurement: <span class="tok-str">"V"</span>
+  device_class: <span class="tok-str">"voltage"</span>
+  state_class: <span class="tok-str">"measurement"</span>
+  suggested_display_precision: 3
+  device: <span class="tok-anchor">*dev_huawei0</span>
+
+- <span class="tok-anchor">&amp;tpl_cell_vdiff</span>
+  name: <span class="tok-str">"Cell Voltage Diff"</span>
+  unique_id: <span class="tok-str">"sakti_9999999_huawei0_cell_vdiff"</span>
+  state_topic: <span class="tok-str">"sysMon/9999999/AutoPoll/Huawei/0"</span>
+  value_template: <span class="tok-str">"{{ ((value_json.cell_vdiff | float(0)) / 1000) | round(3) }}"</span>
+  unit_of_measurement: <span class="tok-str">"V"</span>
+  device_class: <span class="tok-str">"voltage"</span>
+  state_class: <span class="tok-str">"measurement"</span>
+  suggested_display_precision: 3
+  device: <span class="tok-anchor">*dev_huawei0</span>
+
+<span class="tok-comment"># ---------------------------------------------------
+# Per-cell voltage (Cell 1 s/d 15) — 3 desimal
+# ---------------------------------------------------</span>
+- <span class="tok-anchor">&amp;tpl_cell_01</span>
+  name: <span class="tok-str">"Cell 1 Voltage"</span>
+  unique_id: <span class="tok-str">"sakti_9999999_huawei0_cell_01"</span>
+  state_topic: <span class="tok-str">"sysMon/9999999/AutoPoll/Huawei/0"</span>
+  value_template: <span class="tok-str">"{{ ((value_json.cell_voltages[0] | float(0)) / 1000) | round(3) }}"</span>
+  unit_of_measurement: <span class="tok-str">"V"</span>
+  device_class: <span class="tok-str">"voltage"</span>
+  state_class: <span class="tok-str">"measurement"</span>
+  suggested_display_precision: 3
+  device: <span class="tok-anchor">*dev_huawei0</span>
+
+- <span class="tok-anchor">&lt;&lt;: *tpl_cell_01</span>
+  name: <span class="tok-str">"Cell 2 Voltage"</span>
+  unique_id: <span class="tok-str">"sakti_9999999_huawei0_cell_02"</span>
+  value_template: <span class="tok-str">"{{ ((value_json.cell_voltages[1] | float(0)) / 1000) | round(3) }}"</span>
+
+- <span class="tok-anchor">&lt;&lt;: *tpl_cell_01</span>
+  name: <span class="tok-str">"Cell 3 Voltage"</span>
+  unique_id: <span class="tok-str">"sakti_9999999_huawei0_cell_03"</span>
+  value_template: <span class="tok-str">"{{ ((value_json.cell_voltages[2] | float(0)) / 1000) | round(3) }}"</span>
+
+- <span class="tok-anchor">&lt;&lt;: *tpl_cell_01</span>
+  name: <span class="tok-str">"Cell 4 Voltage"</span>
+  unique_id: <span class="tok-str">"sakti_9999999_huawei0_cell_04"</span>
+  value_template: <span class="tok-str">"{{ ((value_json.cell_voltages[3] | float(0)) / 1000) | round(3) }}"</span>
+
+- <span class="tok-anchor">&lt;&lt;: *tpl_cell_01</span>
+  name: <span class="tok-str">"Cell 5 Voltage"</span>
+  unique_id: <span class="tok-str">"sakti_9999999_huawei0_cell_05"</span>
+  value_template: <span class="tok-str">"{{ ((value_json.cell_voltages[4] | float(0)) / 1000) | round(3) }}"</span>
+
+- <span class="tok-anchor">&lt;&lt;: *tpl_cell_01</span>
+  name: <span class="tok-str">"Cell 6 Voltage"</span>
+  unique_id: <span class="tok-str">"sakti_9999999_huawei0_cell_06"</span>
+  value_template: <span class="tok-str">"{{ ((value_json.cell_voltages[5] | float(0)) / 1000) | round(3) }}"</span>
+
+- <span class="tok-anchor">&lt;&lt;: *tpl_cell_01</span>
+  name: <span class="tok-str">"Cell 7 Voltage"</span>
+  unique_id: <span class="tok-str">"sakti_9999999_huawei0_cell_07"</span>
+  value_template: <span class="tok-str">"{{ ((value_json.cell_voltages[6] | float(0)) / 1000) | round(3) }}"</span>
+
+- <span class="tok-anchor">&lt;&lt;: *tpl_cell_01</span>
+  name: <span class="tok-str">"Cell 8 Voltage"</span>
+  unique_id: <span class="tok-str">"sakti_9999999_huawei0_cell_08"</span>
+  value_template: <span class="tok-str">"{{ ((value_json.cell_voltages[7] | float(0)) / 1000) | round(3) }}"</span>
+
+- <span class="tok-anchor">&lt;&lt;: *tpl_cell_01</span>
+  name: <span class="tok-str">"Cell 9 Voltage"</span>
+  unique_id: <span class="tok-str">"sakti_9999999_huawei0_cell_09"</span>
+  value_template: <span class="tok-str">"{{ ((value_json.cell_voltages[8] | float(0)) / 1000) | round(3) }}"</span>
+
+- <span class="tok-anchor">&lt;&lt;: *tpl_cell_01</span>
+  name: <span class="tok-str">"Cell 10 Voltage"</span>
+  unique_id: <span class="tok-str">"sakti_9999999_huawei0_cell_10"</span>
+  value_template: <span class="tok-str">"{{ ((value_json.cell_voltages[9] | float(0)) / 1000) | round(3) }}"</span>
+
+- <span class="tok-anchor">&lt;&lt;: *tpl_cell_01</span>
+  name: <span class="tok-str">"Cell 11 Voltage"</span>
+  unique_id: <span class="tok-str">"sakti_9999999_huawei0_cell_11"</span>
+  value_template: <span class="tok-str">"{{ ((value_json.cell_voltages[10] | float(0)) / 1000) | round(3) }}"</span>
+
+- <span class="tok-anchor">&lt;&lt;: *tpl_cell_01</span>
+  name: <span class="tok-str">"Cell 12 Voltage"</span>
+  unique_id: <span class="tok-str">"sakti_9999999_huawei0_cell_12"</span>
+  value_template: <span class="tok-str">"{{ ((value_json.cell_voltages[11] | float(0)) / 1000) | round(3) }}"</span>
+
+- <span class="tok-anchor">&lt;&lt;: *tpl_cell_01</span>
+  name: <span class="tok-str">"Cell 13 Voltage"</span>
+  unique_id: <span class="tok-str">"sakti_9999999_huawei0_cell_13"</span>
+  value_template: <span class="tok-str">"{{ ((value_json.cell_voltages[12] | float(0)) / 1000) | round(3) }}"</span>
+
+- <span class="tok-anchor">&lt;&lt;: *tpl_cell_01</span>
+  name: <span class="tok-str">"Cell 14 Voltage"</span>
+  unique_id: <span class="tok-str">"sakti_9999999_huawei0_cell_14"</span>
+  value_template: <span class="tok-str">"{{ ((value_json.cell_voltages[13] | float(0)) / 1000) | round(3) }}"</span>
+
+- <span class="tok-anchor">&lt;&lt;: *tpl_cell_01</span>
+  name: <span class="tok-str">"Cell 15 Voltage"</span>
+  unique_id: <span class="tok-str">"sakti_9999999_huawei0_cell_15"</span>
+  value_template: <span class="tok-str">"{{ ((value_json.cell_voltages[14] | float(0)) / 1000) | round(3) }}"</span></code></pre>
+      </div>
+
+      <h3>Penjelasan pola konfigurasi</h3>
+      <ul>
+        <li><strong>YAML anchor (<code class="inline">&amp;nama</code>)</strong> dipakai di sensor pertama yang sudah lengkap (Voltage), lalu di-merge (<code class="inline">&lt;&lt;: *nama</code>) ke sensor berikutnya yang mirip — supaya tidak perlu tulis ulang field yang sama.</li>
+        <li><strong>device: block</strong> memakai anchor terpisah supaya semua sensor dari satu perangkat otomatis dikelompokkan sebagai satu device di UI HA.</li>
+        <li><strong>unique_id</strong> wajib unik di seluruh instalasi HA, formatnya: <code class="inline">sakti_&lt;id_modul&gt;_&lt;jenis_perangkat&gt;&lt;address&gt;_&lt;metric&gt;</code>.</li>
+        <li><strong>suggested_display_precision</strong> mengontrol jumlah desimal yang ditampilkan di UI — ini terpisah dari <code class="inline">round()</code> di value_template.</li>
+        <li>Field identitas statis (misal <code class="inline">typeBattery</code>, <code class="inline">AddrBattery</code> pada contoh ini) sengaja tidak dibuat jadi sensor karena sudah terwakili lewat nama device.</li>
+      </ul>
+    </section>
+
+    <section id="step5">
+      <h2>Step 5 — Validasi &amp; Reload</h2>
+      <p>Setiap kali mengubah file yaml:</p>
+      <ol>
+        <li>Developer Tools → YAML → <strong>Check Configuration</strong> (pastikan "Valid!")</li>
+        <li>Developer Tools → YAML → MQTT → <strong>Reload</strong> (tidak perlu restart penuh)</li>
+      </ol>
+      <p class="dim">Kalau ada error, baca pesannya — biasanya menyebutkan file dan baris yang bermasalah.</p>
+    </section>
+
+    <section id="step6">
+      <h2>Step 6 — Enable Entity Otomatis</h2>
+      <p>Kalau setting "Enable newly added entities" (Step 1) sudah dicentang sebelum reload pertama, seharusnya entity langsung aktif.</p>
+      <p>Kalau entity kadung dibuat dalam status disabled:</p>
+      <ol>
+        <li>Buka device terkait → klik link "+N disabled entities"</li>
+        <li>Select all entity di daftar</li>
+        <li>Klik Enable</li>
+      </ol>
+    </section>
+
+    <section id="expand">
+      <h2>Menambah Perangkat / Logger Baru</h2>
+
+      <h3>Perangkat baru di Modul Sakti yang sama (misal address 1)</h3>
+      <ol>
+        <li>Copy file <code class="inline">sakti_9999999_huawei_0.yaml</code> → rename jadi <code class="inline">sakti_9999999_huawei_1.yaml</code></li>
+        <li>Find &amp; replace di seluruh file: <code class="inline">Huawei/0</code>→<code class="inline">Huawei/1</code>, <code class="inline">huawei0</code>→<code class="inline">huawei1</code>, <code class="inline">9999999 Huawei 0</code>→<code class="inline">9999999 Huawei 1</code></li>
+      </ol>
+
+      <h3>Unit Modul Sakti baru (ID berbeda)</h3>
+      <ol>
+        <li>Copy file <code class="inline">sakti_9999999_huawei_0.yaml</code> → rename jadi <code class="inline">sakti_&lt;ID_BARU&gt;_huawei_0.yaml</code></li>
+        <li>Find &amp; replace <code class="inline">9999999</code> → ID Modul Sakti baru di seluruh file</li>
+      </ol>
+
+      <h3>Jenis perangkat berbeda</h3>
+      <p>Kalau Modul Sakti membaca jenis perangkat lain (bukan BMS Huawei), sesuaikan:</p>
+      <ul>
+        <li>Nama field di <code class="inline">value_template</code> sesuai struktur JSON perangkat tersebut</li>
+        <li><code class="inline">unit_of_measurement</code>, <code class="inline">device_class</code>, dan <code class="inline">icon</code> sesuai jenis data</li>
+        <li>Bagian topic "Huawei" di path diganti sesuai identifier perangkat pada payload Modul Sakti</li>
+      </ul>
+
+      <h3>Jumlah cell berbeda (khusus contoh BMS)</h3>
+      <p>Kalau baterai lain punya <code class="inline">cell_count</code> selain 15, tambah/kurangi blok Cell N Voltage sesuai kebutuhan (index array <code class="inline">cell_voltages[N]</code> dimulai dari 0).</p>
+    </section>
+
+    <section id="troubleshoot">
+      <h2>Troubleshooting</h2>
+
+      <div class="issue">
+        <div class="issue-title">Invalid config for 'mqtt': expected dict 'mqtt→0→sensor→0', got None</div>
+        <p><strong>Penyebab:</strong> pakai <code class="inline">!include_dir_list</code> padahal isi tiap file adalah list sensor (pakai <code class="inline">-</code>), bukan satu dict.</p>
+        <div class="fix-label">Fix</div>
+        <p>Ganti jadi <code class="inline">!include_dir_merge_list</code>.</p>
+      </div>
+
+      <div class="issue">
+        <div class="issue-title">required key 'state_topic' not provided</div>
+        <p><strong>Penyebab:</strong> ada item list yang jadi anchor "kosong" tanpa field lengkap. HA membaca semua item list sebagai sensor, termasuk anchor itu.</p>
+        <div class="fix-label">Fix</div>
+        <p>Anchor harus menempel pada sensor pertama yang sudah lengkap, bukan didefinisikan terpisah sebagai item kosong.</p>
+      </div>
+
+      <div class="issue">
+        <div class="issue-title">Sensor tampil "Unavailable"</div>
+        <p><strong>Penyebab:</strong> MQTT sensor tidak fetch histori — hanya update state saat ada pesan baru masuk setelah entity dibuat/reload. Ini normal.</p>
+        <div class="fix-label">Fix</div>
+        <p>Tunggu sampai Modul Sakti publish data berikutnya. Kalau publish pakai <code class="inline">retain: true</code>, biasanya langsung terisi saat reload.</p>
+      </div>
+
+      <div class="issue">
+        <div class="issue-title">Angka tidak muncul desimalnya walau sudah pakai round()</div>
+        <p><strong>Penyebab:</strong> <code class="inline">round()</code> di value_template hanya memengaruhi nilai state yang disimpan, tapi tampilan di UI dikontrol terpisah oleh Display Precision di entity registry — yang di-cache saat entity pertama kali dibuat.</p>
+        <div class="fix-label">Fix</div>
+        <ol>
+          <li>Tambahkan <code class="inline">suggested_display_precision: N</code> di config sensor</li>
+          <li>Hapus entity/device yang sudah terlanjur dibuat (Settings → Devices &amp; Services → Devices → cari device → menu titik tiga → Delete)</li>
+          <li>Reload MQTT, tunggu publish berikutnya — entity ter-generate ulang dengan precision baru</li>
+        </ol>
+      </div>
+
+      <div class="issue">
+        <div class="issue-title">Entity baru berstatus disabled</div>
+        <p><strong>Penyebab:</strong> setting "Enable newly added entities" belum dicentang saat entity pertama kali dibuat.</p>
+        <div class="fix-label">Fix</div>
+        <p>Cek Settings → Devices &amp; Services → MQTT → Configure → centang "Enable newly added entities" dan "Enable newly added devices". Untuk entity yang sudah kadung disabled, enable manual lewat link "+N disabled entities" di halaman device.</p>
+      </div>
+    </section>
+
+    <section id="reference">
+      <h2>Referensi</h2>
+      <ul>
+        <li><a href="https://www.home-assistant.io/integrations/sensor.mqtt/" target="_blank" rel="noopener">Home Assistant MQTT Sensor Documentation</a></li>
+        <li><a href="https://www.home-assistant.io/docs/configuration/splitting_configuration/" target="_blank" rel="noopener">Home Assistant YAML — Splitting configuration.yaml</a></li>
+      </ul>
+    </section>
+
+    <footer>
+      Modul Sakti × Home Assistant Integration Guide
+    </footer>
+  </main>
+</div>
+
+<script>
+function copyCode(btn){
+  const block = btn.closest('.code-block');
+  const codeEl = block.querySelector('pre code');
+  const text = codeEl.innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    const label = btn.querySelector('span:last-child');
+    const original = label.textContent;
+    btn.classList.add('copied');
+    label.textContent = 'Copied!';
+    setTimeout(() => {
+      btn.classList.remove('copied');
+      label.textContent = original;
+    }, 1800);
+  }).catch(() => {
+    // fallback for older environments
+    const range = document.createRange();
+    range.selectNode(codeEl);
+    window.getSelection().removeAllRanges();
+    window.getSelection().addRange(range);
+    document.execCommand('copy');
+    window.getSelection().removeAllRanges();
+  });
+}
+
+// active TOC link on scroll
+const sections = document.querySelectorAll('main section, main > h1');
+const tocLinks = document.querySelectorAll('nav.toc a');
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if(entry.isIntersecting){
+      const id = entry.target.getAttribute('id');
+      tocLinks.forEach(link => {
+        link.classList.toggle('active', link.getAttribute('href') === '#' + id);
+      });
+    }
+  });
+}, { rootMargin: '-10% 0px -75% 0px' });
+
+document.querySelectorAll('main section[id]').forEach(sec => observer.observe(sec));
+</script>
+
+</body>
+</html>
