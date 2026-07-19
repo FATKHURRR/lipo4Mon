@@ -343,6 +343,34 @@
   suggested_display_precision: 2
   device: *dev_bat${addr}
 
+- &tpl_pack_power
+  name: "Pack Power"
+  unique_id: "${lowerBrand}_${id}_bat${addr}_pack_power"
+  state_topic: "${mainTopic}"
+  value_template: >
+    {% set current = value_json.current | float(0) %}
+    {% set voltage = value_json.voltage | float(0) %}
+    {{ (current * voltage) | round(2) }}
+  unit_of_measurement: "W"
+  device_class: "power"
+  state_class: "measurement"
+  suggested_display_precision: 2
+  device: *dev_bat${addr}
+   
+- &tpl_bus_power
+  name: "Bus Power"
+  unique_id: "${lowerBrand}_${id}_bat${addr}_bus_power"
+  state_topic: "${mainTopic}"
+  value_template: >
+    {% set current = value_json.bus_current | float(0) %}
+    {% set voltage = value_json.bus_voltage | float(0) %}
+    {{ (current * voltage) | round(2) }}
+  unit_of_measurement: "W"
+  device_class: "power"
+  state_class: "measurement"
+  suggested_display_precision: 2
+  device: *dev_bat${addr}
+
 - &tpl_soc
   name: "SOC"
   unique_id: "${lowerBrand}_${id}_bat${addr}_soc"
