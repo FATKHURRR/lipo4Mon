@@ -348,8 +348,8 @@
   unique_id: "${lowerBrand}_${id}_bat${addr}_pack_power"
   state_topic: "${mainTopic}"
   value_template: >
-    {% set current = value_json.current | float(0) %}
-    {% set voltage = value_json.voltage | float(0) %}
+    {% set current = value_json.bat_current | float(0) %}
+    {% set voltage = value_json.bat_voltage | float(0) %}
     {{ (current * voltage) | round(2) }}
   unit_of_measurement: "W"
   device_class: "power"
