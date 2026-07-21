@@ -1775,6 +1775,25 @@
 <script>
   let id_logger = "-";
   let client;
+
+  // ===== OTORISASI ID LOGGER via Google Sheets (CSV) =====
+  const ALLOWED_IDS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRxTJX1kVRG50_XxNu1afGm67MgJ_0Pkydv0de-_vYKqZvjtjYVtWi0H_CJnA-JcRxq94sKWnfvajfi/pub?gid=948299467&single=true&output=csv";
+  let allowedIds = [];
+
+  async function fetchAllowedIds() {
+    try {
+      const res = await fetch(ALLOWED_IDS_CSV_URL, { cache: "no-store" });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const text = await res.text();
+      allowedIds = text
+        .split(/\r?\n/)
+        .map(line => line.trim())
+        .filter(line => line.length > 0);
+    } catch (err) {
+      allowedIds = [];
+    }
+    return allowedIds;
+  }
   let client2;
   let batteries = [];
   let pollingSts = false;
@@ -2115,7 +2134,6 @@
                     const data = JSON.parse(payloadString);
                     updateDashboard(data);
                 } catch (e) {
-                    console.error("Format JSON tidak valid", e);
                 }
             }
     else {
@@ -2136,7 +2154,6 @@
         updateSummary();
         updateModal(); 
       } catch (e) {
-        // console.error("Invalid JSON", e);
       }
     }
   }
@@ -2540,40 +2557,34 @@
     }, 250);
   }
 
-  window.onload = function() {
-    const params = new URLSearchParams(window.location.search);
-    
-    if ([...params].length > 0) {
-      let queryData = {};
-      for (const [key, value] of params.entries()) {
-        queryData[key] = value;
-      }
-      
-      id_logger = queryData.id;
-      
-      if(id_logger === undefined){
-        let userInput = prompt("Masukkan ID Logger:");
-        if (userInput === null || userInput.trim() === "") {
-          alert("Error: Please reload and input a value!");
-        } else {
-          id_logger = userInput;
-          startMQTT();
-          updateConnectionCount();
-        }
-      } else {
-        startMQTT();
-        updateConnectionCount();
-      }
-    } else {
-      let userInput = prompt("Masukkan ID Logger:");
-      if (userInput === null || userInput.trim() === "") {
-        alert("Error: Please reload and input a value!");
-      } else {
-        id_logger = userInput;
-        startMQTT();
-        updateConnectionCount();
-      }
+  async function initLogger(inputId) {
+    await fetchAllowedIds();
+
+    const requestedIds = inputId.split("-").map(s => s.trim()).filter(s => s.length > 0);
+    const validIds = requestedIds.filter(id => allowedIds.includes(id));
+
+    if (validIds.length === 0) {
+      return;
     }
+
+    id_logger = validIds.join("-");
+    startMQTT();
+    updateConnectionCount();
+  }
+
+  window.onload = async function() {
+    const params = new URLSearchParams(window.location.search);
+    let inputId = params.get("id");
+
+    if (inputId === null || inputId.trim() === "") {
+      const userInput = prompt("Masukkan ID Logger:");
+      if (userInput === null || userInput.trim() === "") {
+        return;
+      }
+      inputId = userInput;
+    }
+
+    await initLogger(inputId);
   };
 </script>
 
