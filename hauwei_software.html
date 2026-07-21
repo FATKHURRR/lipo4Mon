@@ -665,7 +665,7 @@
 
         async function readGyro() {
             try {
-                let frame = [0xD6, 0x03, 0x11, 0x18, 0x00, 0x01];
+                let frame = [0xD6, 0x06, 0x11, 0x18, 0x00, 0x01];
                 await send(frame);
                 let res = await readResponse();
                 if (res[4] == 1) {
