@@ -1,0 +1,1637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Modul Sakti Monitoring</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #2563eb;
+      --secondary: #10b981;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --dark: #1f2937;
+      --light: #f9fafb;
+      --card-bg: #0455D1;
+      --card-lapis: #ffffff;
+      --card-text: #1f2937;
+      --card-subtext: #4b5563;
+      --icon-voltage: #eab308;
+      --icon-current: #3b82f6;
+    }
+    
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--light);
+      color: var(--dark);
+      transition: background-color 0.3s, color 0.3s;
+    }
+    
+    body[data-theme="dark"] {
+      --card-bg: #525252;
+      --card-lapis: #1f2937;
+      --card-text: #f3f4f6;
+      --card-subtext: #d1d5db;
+      --icon-voltage: #f59e0b;
+      --icon-current: #60a5fa;
+      background-color: #111827;
+      color: #f3f4f6;
+    }
+    
+    .battery-card {
+      background-color: var(--card-lapis);
+      color: var(--card-text);
+      transition: all 0.3s ease;
+      border: 4px solid transparent;
+    }
+
+    /* Border Colors untuk Charging (Hijau) - Gradasi berdasarkan magnitude arus */
+    .battery-card.charge-level-1 {
+      border-color: #86efac;
+      box-shadow: 0 0 8px rgba(134, 239, 172, 0.3);
+    }
+    .battery-card.charge-level-2 {
+      border-color: #4ade80;
+      box-shadow: 0 0 12px rgba(74, 222, 128, 0.4);
+    }
+    .battery-card.charge-level-3 {
+      border-color: #22c55e;
+      box-shadow: 0 0 15px rgba(34, 197, 94, 0.5);
+    }
+    .battery-card.charge-level-4 {
+      border-color: #16a34a;
+      box-shadow: 0 0 18px rgba(22, 163, 74, 0.6);
+    }
+    .battery-card.charge-level-5 {
+      border-color: #15803d;
+      box-shadow: 0 0 20px rgba(21, 128, 61, 0.7);
+    }
+
+    /* Border Colors untuk Discharging (Merah) - Gradasi berdasarkan magnitude arus */
+    .battery-card.discharge-level-1 {
+      border-color: #fca5a5;
+      box-shadow: 0 0 8px rgba(252, 165, 165, 0.3);
+    }
+    .battery-card.discharge-level-2 {
+      border-color: #f87171;
+      box-shadow: 0 0 12px rgba(248, 113, 113, 0.4);
+    }
+    .battery-card.discharge-level-3 {
+      border-color: #ef4444;
+      box-shadow: 0 0 15px rgba(239, 68, 68, 0.5);
+    }
+    .battery-card.discharge-level-4 {
+      border-color: #dc2626;
+      box-shadow: 0 0 18px rgba(220, 38, 38, 0.6);
+    }
+    .battery-card.discharge-level-5 {
+      border-color: #b91c1c;
+      box-shadow: 0 0 20px rgba(185, 28, 28, 0.7);
+    }
+
+    /* Border Colors untuk Standby (Hitam/Transparan) */
+    .battery-card.standby {
+      border-color: rgba(0, 0, 0, 0.2);
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+    }
+
+    body[data-theme="dark"] .battery-card.standby {
+      border-color: rgba(255, 255, 255, 0.15);
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Pulse animation untuk charging/discharging */
+    .battery-card.charging {
+      animation: pulse-charge 2s ease-in-out infinite;
+    }
+
+    .battery-card.discharging {
+      animation: pulse-discharge 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse-charge {
+      0%, 100% {
+        box-shadow: 0 0 8px rgba(34, 197, 94, 0.3);
+      }
+      50% {
+        box-shadow: 0 0 20px rgba(34, 197, 94, 0.6);
+      }
+    }
+
+    @keyframes pulse-discharge {
+      0%, 100% {
+        box-shadow: 0 0 8px rgba(239, 68, 68, 0.3);
+      }
+      50% {
+        box-shadow: 0 0 20px rgba(239, 68, 68, 0.6);
+      }
+    }
+
+    .battery-card h3 {
+      color: var(--card-text);
+    }
+
+    .battery-card span {
+      color: var(--card-subtext);
+    }
+
+    .battery-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 15px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+    
+    .progress-bar {
+      height: 8px;
+      border-radius: 4px;
+      overflow: hidden;
+      background-color: #e5e7eb;
+    }
+
+    body[data-theme="dark"] .progress-bar {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    .progress-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.5s ease;
+    }
+    
+    .cell-voltage {
+      position: relative;
+    }
+    
+    .cell-voltage::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      height: 70%;
+      width: 4px;
+      border-radius: 2px;
+    }
+    
+    .cell-normal::before { background-color: #10b981; }
+    .cell-warning::before { background-color: #f59e0b; }
+    .cell-danger::before { background-color: #ef4444; }
+
+    /* FITUR BARU: Highlight untuk cell tertinggi dan terendah */
+    .cell-highest-voltage {
+      border: 2px solid #ef4444 !important;
+      box-shadow: 0 0 12px rgba(239, 68, 68, 0.5) !important;
+      animation: pulse-red 1.5s ease-in-out infinite;
+      background-color: rgba(239, 68, 68, 0.05) !important;
+    }
+
+    .cell-lowest-voltage {
+      border: 2px solid #fcd34d !important;
+      box-shadow: 0 0 12px rgba(252, 211, 77, 0.5) !important;
+      animation: pulse-yellow 1.5s ease-in-out infinite;
+      background-color: rgba(252, 211, 77, 0.05) !important;
+    }
+
+    body[data-theme="dark"] .cell-highest-voltage {
+      background-color: rgba(239, 68, 68, 0.1) !important;
+    }
+
+    body[data-theme="dark"] .cell-lowest-voltage {
+      background-color: rgba(252, 211, 77, 0.1) !important;
+    }
+
+    @keyframes pulse-red {
+      0%, 100% {
+        box-shadow: 0 0 12px rgba(239, 68, 68, 0.5);
+      }
+      50% {
+        box-shadow: 0 0 20px rgba(239, 68, 68, 0.8);
+      }
+    }
+
+    @keyframes pulse-yellow {
+      0%, 100% {
+        box-shadow: 0 0 12px rgba(252, 211, 77, 0.5);
+      }
+      50% {
+        box-shadow: 0 0 20px rgba(252, 211, 77, 0.8);
+      }
+    }
+    
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.5; }
+      100% { opacity: 1; }
+    }
+    
+    .pulse {
+      animation: pulse 2s infinite;
+    }
+    
+    .fade-in {
+      animation: fadeIn 0.5s ease-in;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .led {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-left: 6px;
+      background: #ccc;
+      transition: background-color 0.3s ease;
+      box-shadow: 0 0 5px rgba(0,0,0,0.2);
+    }
+    
+    .led.active {
+      background: #10b981;
+      box-shadow: 0 0 8px #10b981;
+    }
+    
+    #id_monitoring_footer {
+      display: none;
+    }
+
+    header {
+      background-color: #0455D1;
+      color: #ffffff;
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    body[data-theme="dark"] header {
+      background-color: #1f2937;
+      color: #ffffff;
+    }
+
+    footer {
+      background-color: #1f2937;
+      color: #9ca3af;
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    body[data-theme="dark"] footer {
+      background-color: #111827;
+      color: #d1d5db;
+    }
+
+    .summary-card {
+      background-color: var(--card-lapis);
+      color: var(--card-text);
+      border: 4px solid transparent;
+      transition: all 0.3s ease;
+    }
+
+    /* Summary Card - Charging (Hijau) */
+    .summary-card.summary-charging-level-1 {
+      border-color: #86efac;
+      box-shadow: 0 0 15px rgba(134, 239, 172, 0.3);
+    }
+    .summary-card.summary-charging-level-2 {
+      border-color: #4ade80;
+      box-shadow: 0 0 18px rgba(74, 222, 128, 0.4);
+    }
+    .summary-card.summary-charging-level-3 {
+      border-color: #22c55e;
+      box-shadow: 0 0 20px rgba(34, 197, 94, 0.5);
+    }
+    .summary-card.summary-charging-level-4 {
+      border-color: #16a34a;
+      box-shadow: 0 0 22px rgba(22, 163, 74, 0.6);
+    }
+    .summary-card.summary-charging-level-5 {
+      border-color: #15803d;
+      box-shadow: 0 0 25px rgba(21, 128, 61, 0.7);
+    }
+
+    /* Summary Card - Discharging (Merah) */
+    .summary-card.summary-discharge-level-1 {
+      border-color: #fca5a5;
+      box-shadow: 0 0 15px rgba(252, 165, 165, 0.3);
+    }
+    .summary-card.summary-discharge-level-2 {
+      border-color: #f87171;
+      box-shadow: 0 0 18px rgba(248, 113, 113, 0.4);
+    }
+    .summary-card.summary-discharge-level-3 {
+      border-color: #ef4444;
+      box-shadow: 0 0 20px rgba(239, 68, 68, 0.5);
+    }
+    .summary-card.summary-discharge-level-4 {
+      border-color: #dc2626;
+      box-shadow: 0 0 22px rgba(220, 38, 38, 0.6);
+    }
+    .summary-card.summary-discharge-level-5 {
+      border-color: #b91c1c;
+      box-shadow: 0 0 25px rgba(185, 28, 28, 0.7);
+    }
+
+    /* Summary Card - Standby (Netral) */
+    .summary-card.summary-standby {
+      border-color: var(--primary);
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
+    }
+
+    /* Pulse animation untuk summary charging */
+    .summary-card.summary-charging {
+      animation: pulse-summary-charge 2s ease-in-out infinite;
+    }
+
+    /* Pulse animation untuk summary discharging */
+    .summary-card.summary-discharging {
+      animation: pulse-summary-discharge 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse-summary-charge {
+      0%, 100% {
+        box-shadow: 0 0 15px rgba(34, 197, 94, 0.3);
+      }
+      50% {
+        box-shadow: 0 0 30px rgba(34, 197, 94, 0.6);
+      }
+    }
+
+    @keyframes pulse-summary-discharge {
+      0%, 100% {
+        box-shadow: 0 0 15px rgba(239, 68, 68, 0.3);
+      }
+      50% {
+        box-shadow: 0 0 30px rgba(239, 68, 68, 0.6);
+      }
+    }
+
+    /* Text highlight untuk summary card */
+    .summary-card.summary-charging #avg-voltage,
+    .summary-card.summary-charging #avg-soc,
+    .summary-card.summary-charging #avg-soh,
+    .summary-card.summary-charging #total-current,
+    .summary-card.summary-charging #total-power {
+      color: #22c55e;
+      font-weight: 700;
+    }
+
+    .summary-card.summary-discharging #avg-voltage,
+    .summary-card.summary-discharging #avg-soc,
+    .summary-card.summary-discharging #avg-soh,
+    .summary-card.summary-discharging #total-current,
+    .summary-card.summary-discharging #total-power {
+      color: #ef4444;
+      font-weight: 700;
+    }
+
+    body[data-theme="dark"] .summary-card.summary-charging #avg-voltage,
+    body[data-theme="dark"] .summary-card.summary-charging #avg-soc,
+    body[data-theme="dark"] .summary-card.summary-charging #avg-soh,
+    body[data-theme="dark"] .summary-card.summary-charging #total-current,
+    body[data-theme="dark"] .summary-card.summary-charging #total-power {
+      color: #4ade80;
+    }
+
+    body[data-theme="dark"] .summary-card.summary-discharging #avg-voltage,
+    body[data-theme="dark"] .summary-card.summary-discharging #avg-soc,
+    body[data-theme="dark"] .summary-card.summary-discharging #avg-soh,
+    body[data-theme="dark"] .summary-card.summary-discharging #total-current,
+    body[data-theme="dark"] .summary-card.summary-discharging #total-power {
+      color: #f87171;
+    }
+    
+    .sort-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      color: #6b7280;
+      margin-left: 8px;
+      cursor: pointer;
+    }
+    
+    .sort-indicator i {
+      font-size: 10px;
+    }
+
+    /* FITUR BARU: Bus Metrics Card */
+    .bus-metrics-modal {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 15px;
+      padding: 15px;
+      background: linear-gradient(135deg, #f0f4ff 0%, #fff0f4 100%);
+      border-radius: 8px;
+      margin: 15px 0;
+      border-left: 4px solid #2563eb;
+    }
+
+    body[data-theme="dark"] .bus-metrics-modal {
+      background: linear-gradient(135deg, rgba(37, 99, 235, 0.1) 0%, rgba(239, 68, 68, 0.1) 100%);
+    }
+
+    .bus-metric-item {
+      text-align: center;
+      padding: 10px;
+      background: white;
+      border-radius: 6px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    body[data-theme="dark"] .bus-metric-item {
+      background: rgba(31, 41, 55, 0.6);
+      color: #f3f4f6;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+
+    .bus-metric-item h4 {
+      font-size: 11px;
+      color: #6b7280;
+      font-weight: 600;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+      letter-spacing: 0.5px;
+    }
+
+    body[data-theme="dark"] .bus-metric-item h4 {
+      color: #9ca3af;
+    }
+
+    .bus-metric-item .value {
+      font-size: 20px;
+      font-weight: 700;
+      color: #1f2937;
+      font-family: 'Courier New', monospace;
+    }
+
+    body[data-theme="dark"] .bus-metric-item .value {
+      color: #f3f4f6;
+    }
+
+    .bus-metric-item .unit {
+      font-size: 10px;
+      color: #9ca3af;
+    }
+
+    /* Modal Styling untuk Dark Mode */
+    #batteryModal .bg-white {
+      background-color: var(--card-lapis);
+      color: var(--card-text);
+    }
+
+    body[data-theme="dark"] #batteryModal .text-gray-800 {
+      color: var(--card-text);
+    }
+
+    body[data-theme="dark"] #batteryModal .text-gray-600 {
+      color: var(--card-subtext);
+    }
+
+    body[data-theme="dark"] #batteryModal .border-b {
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    body[data-theme="dark"] #batteryModal .bg-blue-50 {
+      background: rgba(37, 99, 235, 0.1);
+      color: #f3f4f6;
+    }
+
+    body[data-theme="dark"] #batteryModal .bg-green-50 {
+      background: rgba(34, 197, 94, 0.1);
+      color: #f3f4f6;
+    }
+
+    body[data-theme="dark"] #batteryModal .bg-purple-50 {
+      background: rgba(147, 51, 234, 0.1);
+      color: #f3f4f6;
+    }
+
+    body[data-theme="dark"] #batteryModal .bg-gray-50 {
+      background: rgba(31, 41, 55, 0.4);
+      color: #f3f4f6;
+    }
+
+    body[data-theme="dark"] #batteryModal .text-blue-700 {
+      color: #60a5fa;
+    }
+
+    body[data-theme="dark"] #batteryModal .text-green-700 {
+      color: #4ade80;
+    }
+
+    body[data-theme="dark"] #batteryModal .text-purple-700 {
+      color: #a78bfa;
+    }
+
+    body[data-theme="dark"] #batteryModal .text-yellow-500 {
+      color: #fbbf24;
+    }
+
+    body[data-theme="dark"] #batteryModal .text-blue-500 {
+      color: #60a5fa;
+    }
+
+    body[data-theme="dark"] #batteryModal .text-green-500 {
+      color: #4ade80;
+    }
+
+    /* ===== FITUR MODAL DENGAN BORDER CHARGE/DISCHARGE ===== */
+    #batteryModal .modal-content {
+      border: 4px solid transparent;
+      transition: all 0.3s ease;
+    }
+
+    /* Border Modal untuk Charging */
+    #batteryModal .modal-content.modal-charging.modal-charge-level-1 {
+      border-color: #86efac;
+      box-shadow: 0 0 20px rgba(134, 239, 172, 0.3);
+    }
+    #batteryModal .modal-content.modal-charging.modal-charge-level-2 {
+      border-color: #4ade80;
+      box-shadow: 0 0 25px rgba(74, 222, 128, 0.4);
+    }
+    #batteryModal .modal-content.modal-charging.modal-charge-level-3 {
+      border-color: #22c55e;
+      box-shadow: 0 0 30px rgba(34, 197, 94, 0.5);
+    }
+    #batteryModal .modal-content.modal-charging.modal-charge-level-4 {
+      border-color: #16a34a;
+      box-shadow: 0 0 35px rgba(22, 163, 74, 0.6);
+    }
+    #batteryModal .modal-content.modal-charging.modal-charge-level-5 {
+      border-color: #15803d;
+      box-shadow: 0 0 40px rgba(21, 128, 61, 0.7);
+    }
+
+    /* Border Modal untuk Discharging */
+    #batteryModal .modal-content.modal-discharging.modal-discharge-level-1 {
+      border-color: #fca5a5;
+      box-shadow: 0 0 20px rgba(252, 165, 165, 0.3);
+    }
+    #batteryModal .modal-content.modal-discharging.modal-discharge-level-2 {
+      border-color: #f87171;
+      box-shadow: 0 0 25px rgba(248, 113, 113, 0.4);
+    }
+    #batteryModal .modal-content.modal-discharging.modal-discharge-level-3 {
+      border-color: #ef4444;
+      box-shadow: 0 0 30px rgba(239, 68, 68, 0.5);
+    }
+    #batteryModal .modal-content.modal-discharging.modal-discharge-level-4 {
+      border-color: #dc2626;
+      box-shadow: 0 0 35px rgba(220, 38, 38, 0.6);
+    }
+    #batteryModal .modal-content.modal-discharging.modal-discharge-level-5 {
+      border-color: #b91c1c;
+      box-shadow: 0 0 40px rgba(185, 28, 28, 0.7);
+    }
+
+    /* Border Modal untuk Standby */
+    #batteryModal .modal-content.modal-standby {
+      border-color: rgba(0, 0, 0, 0.2);
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    }
+
+    body[data-theme="dark"] #batteryModal .modal-content.modal-standby {
+      border-color: rgba(255, 255, 255, 0.15);
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Pulse animation untuk modal */
+    #batteryModal .modal-content.modal-charging {
+      animation: pulse-charge-modal 2s ease-in-out infinite;
+    }
+
+    #batteryModal .modal-content.modal-discharging {
+      animation: pulse-discharge-modal 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse-charge-modal {
+      0%, 100% {
+        box-shadow: 0 0 20px rgba(34, 197, 94, 0.3);
+      }
+      50% {
+        box-shadow: 0 0 40px rgba(34, 197, 94, 0.6);
+      }
+    }
+
+    @keyframes pulse-discharge-modal {
+      0%, 100% {
+        box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+      }
+      50% {
+        box-shadow: 0 0 40px rgba(239, 68, 68, 0.6);
+      }
+    }
+
+    @media (max-width: 768px) {
+      .bus-metrics-modal {
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+<!-- Header -->
+<header id="mainHeader" class="bg-gradient-to-r text-white shadow-lg w-full relative">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 py-2 flex justify-between items-center">
+    <div class="flex items-center">
+      <div class="bg-white/20 p-2 rounded-lg mr-3">
+        <i class="fas fa-car-battery text-2xl"></i>
+      </div>
+      <h1 class="text-2xl font-bold">Modul Sakti</h1>
+    </div>
+
+    <div class="flex items-center space-x-4">
+      <div class="hidden md:flex items-center space-x-2 text-sm bg-white/10 px-3 py-1 rounded-full">
+        <i class="fas fa-satellite-dish"></i>
+        <span id="id_monitoring">-</span>
+      </div>
+
+      <div class="relative">
+        <button id="settingsBtn" class="bg-white/10 hover:bg-white/20 p-2 rounded-full transition">
+          <i class="fas fa-cog"></i>
+        </button>
+
+        <div id="dropdownMenu" class="absolute right-0 mt-2 w-44 bg-white text-gray-800 rounded-lg shadow-lg hidden">
+          <a id="networkBtn" href="#" class="block px-4 py-2 hover:bg-gray-100">📡 Network</a>
+          <a id="pollingState" href="#" class="block px-4 py-2 hover:bg-gray-100">PollingState</a>
+          <hr class="my-1">
+          <a id="themeToggleLink" href="#" class="block px-4 py-2 hover:bg-gray-100">🌙 Dark Mode</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- Modal Network -->
+<div id="networkModal" class="fixed inset-0 bg-black/50 flex items-center justify-center hidden z-50">
+  <div class="bg-white rounded-lg shadow-lg w-96 p-6 relative" style="background-color: var(--card-lapis);">
+    <button id="closeNetwork" class="absolute top-2 right-2 text-gray-500 hover:text-gray-700">
+      ✖
+    </button>
+    <h2 class="text-xl font-bold mb-4">Network Info</h2>
+    <p id="network_ip" class="mb-2">IP Address: -</p>
+    <p id="network_signal">Signal: -</p>
+  </div>
+</div>
+
+<!-- Main content -->
+<main class="flex-1 p-4 sm:p-6 w-full">
+  <div class="max-w-7xl mx-auto">
+    <div class="mb-6 flex justify-between items-center">
+      <h2 class="text-xl font-semibold" style="color: var(--card-subtext);">Summary</h2>
+      <div class="flex items-center gap-4">
+        <div class="text-sm" style="color: var(--card-subtext);">
+          <span id="total-batteries">0</span> batteries connected
+        </div>
+      </div>
+    </div>
+
+    <!-- Summary Section -->
+    <div id="summarySection" class="mb-8 hidden">
+      <div class="summary-card rounded-xl shadow-sm p-5">
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
+          <div class="space-y-1">
+            <div style="color: var(--card-subtext);">Avg Pack Voltage</div>
+            <div id="avg-voltage" class="font-semibold">-</div>
+          </div>
+          <div class="space-y-1">
+            <div style="color: var(--card-subtext);">Avg SOC</div>
+            <div id="avg-soc" class="font-semibold">-</div>
+          </div>
+          <div class="space-y-1">
+            <div style="color: var(--card-subtext);">Avg SOH</div>
+            <div id="avg-soh" class="font-semibold">-</div>
+          </div>
+          <div class="space-y-1">
+            <div style="color: var(--card-subtext);">Total Current</div>
+            <div id="total-current" class="font-semibold">-</div>
+          </div>
+          <div class="space-y-1">
+            <div style="color: var(--card-subtext);">Total Power</div>
+            <div id="total-power" class="font-semibold">-</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div id="batteryGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5"></div>
+    
+    <div id="empty-state" class="hidden text-center py-12 bg-white rounded-xl shadow-sm" style="background-color: var(--card-lapis);">
+      <div class="text-blue-500 mb-4">
+        <i class="fas fa-car-battery text-5xl opacity-50"></i>
+      </div>
+      <h3 class="text-lg font-medium mb-2" style="color: var(--card-text);">No batteries connected</h3>
+      <p style="color: var(--card-subtext);">Battery data will appear here once your BMS systems are connected and sending data.</p>
+    </div>
+  </div>
+</main>
+
+<!-- Footer -->
+<footer class="text-gray-300 py-4 w-full" style="background-color: #1f2937;">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col items-center text-center">
+    <div class="text-sm">
+      © 2025 BMS Monitor System | Modul Sakti | 
+      <a href="https://wa.me/628972309993" class="no-underline hover:text-white">
+        Hubungi Developer |
+      </a>
+
+      <a href="javascript:void(0);" onclick="location.href='https://fatkhurrr.github.io/lipo4Mon/index_table.html' + window.location.search">
+        Table View
+      </a>
+      
+      <label id="id_monitoring_footer" style="display:block;"></label>
+    </div>
+  </div>
+</footer>
+
+<!-- Modal -->
+<div id="batteryModal" class="fixed inset-0 hidden bg-black/50 flex items-center justify-center z-50 p-4">
+  <div class="modal-content rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col" style="background-color: var(--card-lapis);">
+    <div class="flex items-center justify-between px-6 py-4" style="border-bottom: 1px solid rgba(0,0,0,0.1);">
+      <div class="flex items-center">
+        <div id="led-modal" class="w-3 h-3 rounded-full bg-gray-300 mr-3"></div>
+        <h2 id="modalTitle" class="text-xl font-semibold" style="color: var(--card-text);"></h2>
+      </div>
+      <button id="closeModal" class="text-gray-500 hover:text-gray-700">
+        <i class="fas fa-times text-xl"></i>
+      </button>
+    </div>
+
+    <div class="overflow-y-auto flex-1 p-6">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <div class="bg-blue-50 p-4 rounded-lg">
+          <div class="flex justify-between items-start mb-2">
+            <div class="text-blue-700 font-medium">State of Charge</div>
+            <div class="text-2xl font-bold text-blue-700" id="modalSOC"></div>
+          </div>
+          <div class="progress-bar">
+            <div id="soc-progress" class="progress-fill bg-blue-500"></div>
+          </div>
+          <div class="text-xs" style="color: var(--card-subtext); margin-top: 0.25rem;">Remaining: <span id="modalRemaining"></span> Ah</div>
+        </div>
+        
+        <div class="bg-green-50 p-4 rounded-lg">
+          <div class="flex justify-between items-start mb-2">
+            <div class="text-green-700 font-medium">State of Health</div>
+            <div class="text-2xl font-bold text-green-700" id="modalSOH"></div>
+          </div>
+          <div class="progress-bar">
+            <div id="soh-progress" class="progress-fill bg-green-500"></div>
+          </div>
+          <div class="text-xs" style="color: var(--card-subtext); margin-top: 0.25rem;">Full Capacity: <span id="modalCapacity"></span> Ah</div>
+        </div>
+        
+        <div class="bg-purple-50 p-4 rounded-lg">
+          <div class="flex justify-between items-center mb-2">
+            <div class="text-purple-700 font-medium">Cycle Count</div>
+            <div class="text-2xl font-bold text-purple-700" id="modalCycles"></div>
+          </div>
+          <div class="text-xs" style="color: var(--card-subtext); margin-top: 0.25rem;">Last updated: <span id="modalLastUpdate"></span></div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <div class="space-y-4">
+          <div class="bg-gray-50 p-4 rounded-lg">
+            <h3 class="font-medium mb-3 flex items-center" style="color: var(--card-text);">
+              <i class="fas fa-bolt text-yellow-500 mr-2"></i> Voltage Metrics
+            </h3>
+            <div class="space-y-3">
+              <div class="flex justify-between items-center">
+                <span style="color: var(--card-subtext);">Pack Voltage</span>
+                <span class="font-semibold" id="modalVoltage" style="color: var(--card-text);"></span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span style="color: var(--card-subtext);">Bus Voltage</span>
+                <span class="font-semibold" id="modalBusVoltage" style="color: var(--card-text);"></span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span style="color: var(--card-subtext);">Min Cell Voltage</span>
+                <span class="font-semibold" id="modalcellmin" style="color: var(--card-text);"></span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span style="color: var(--card-subtext);">Max Cell Voltage</span>
+                <span class="font-semibold" id="modalcellmax" style="color: var(--card-text);"></span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span style="color: var(--card-subtext);">Voltage Difference</span>
+                <span class="font-semibold" id="modalcelldif" style="color: var(--card-text);"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="space-y-4">
+          <div class="bg-gray-50 p-4 rounded-lg">
+            <h3 class="font-medium mb-3 flex items-center" style="color: var(--card-text);">
+              <i class="fas fa-tachometer-alt text-blue-500 mr-2"></i> Current Metrics
+            </h3>
+            <div class="space-y-3">
+              <div class="flex justify-between items-center">
+                <span style="color: var(--card-subtext);">Pack Current</span>
+                <span class="font-semibold" id="modalCurrent" style="color: var(--card-text);"></span>
+              </div>
+               <div class="flex justify-between items-center">
+                <span style="color: var(--card-subtext);">Bus Current</span>
+                <span class="font-semibold" id="modalBusCurrentValue" style="color: var(--card-text);"></span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span style="color: var(--card-subtext);">Pack Power</span>
+                <span class="font-semibold" id="modalPower" style="color: var(--card-text);"></span>
+              </div>
+               <div class="flex justify-between items-center">
+                <span style="color: var(--card-subtext);">Bus Power</span>
+                <span class="font-semibold" id="modalBusPowerValue" style="color: var(--card-text);"></span>
+              </div>
+               <div class="flex justify-between items-center">
+                <span style="color: var(--card-subtext);">Loss Power</span>
+                <span class="font-semibold" id="modalLossPower" style="color: var(--card-text);"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-gray-50 p-4 rounded-lg">
+        <h3 class="font-medium mb-4 flex items-center" style="color: var(--card-text);">
+          <i class="fas fa-battery-three-quarters text-green-500 mr-2"></i> Cell Voltages
+        </h3>
+        <div id="modalCells" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  let id_logger = "-";
+  let client;
+  let client2;
+
+  // ===== OTORISASI ID LOGGER via Google Sheets (CSV) =====
+  const ALLOWED_IDS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRxTJX1kVRG50_XxNu1afGm67MgJ_0Pkydv0de-_vYKqZvjtjYVtWi0H_CJnA-JcRxq94sKWnfvajfi/pub?gid=948299467&single=true&output=csv";
+  let allowedIds = [];
+
+  async function fetchAllowedIds() {
+    try {
+      const res = await fetch(ALLOWED_IDS_CSV_URL, { cache: "no-store" });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const text = await res.text();
+      allowedIds = text
+        .split(/\r?\n/)
+        .map(line => line.trim())
+        .filter(line => line.length > 0);
+    } catch (err) {
+      console.error("Gagal mengambil daftar ID yang diizinkan:", err);
+      allowedIds = [];
+    }
+    return allowedIds;
+  }
+  let batteries = [];
+  let pollingSts = false;
+  let timer_poll;
+  let xxx;
+  const cardTimers = {};
+  
+  // Fungsi untuk menentukan level intensitas berdasarkan magnitude arus
+  function getIntensityLevel(current) {
+    const absCurrent = Math.abs(current);
+    if (absCurrent <= 5) return 1;
+    if (absCurrent <= 10) return 2;
+    if (absCurrent <= 15) return 3;
+    if (absCurrent <= 20) return 4;
+    return 5;
+  }
+  
+  // Fungsi untuk mengurutkan baterai berdasarkan typeBattery dan address
+  function sortBatteries() {
+    batteries.sort((a, b) => {
+      // Urutkan berdasarkan typeBattery terlebih dahulu
+      if (a.typeBattery < b.typeBattery) return -1;
+      if (a.typeBattery > b.typeBattery) return 1;
+      
+      // Jika typeBattery sama, urutkan berdasarkan address
+      return parseInt(a.addr) - parseInt(b.addr);
+    });
+    
+    // Setelah mengurutkan array, re-render semua card
+    reRenderAllCards();
+  }
+  
+  // Fungsi untuk merender ulang semua card berdasarkan urutan terbaru
+  function reRenderAllCards() {
+    const grid = document.getElementById("batteryGrid");
+    
+    // Kosongkan grid
+    grid.innerHTML = '';
+    
+    // Render ulang semua baterai sesuai urutan terbaru
+    batteries.forEach(batt => {
+      let cardId = `card-${batt.loggerId}-${batt.typeBattery}-${batt.addr}`;
+      
+      // Hapus timer lama jika ada
+      if (cardTimers[cardId]) {
+        clearTimeout(cardTimers[cardId]);
+        delete cardTimers[cardId];
+      }
+
+      let card = document.createElement("div");
+      card.id = cardId;
+      card.className = "battery-card rounded-xl shadow-sm p-5 cursor-pointer hover:shadow-md fade-in";
+      card.dataset.loggerId = batt.loggerId;
+      card.dataset.addr = String(batt.addr);
+      card.dataset.typeBattery = batt.typeBattery;
+      
+      // Tentukan class berdasarkan status charging/discharging
+      const current = parseFloat(batt.current);
+      if (current > 0.1) {
+        // Charging
+        card.classList.add('charging');
+        const intensityLevel = getIntensityLevel(current);
+        card.classList.add(`charge-level-${intensityLevel}`);
+      } else if (current < -0.1) {
+        // Discharging
+        card.classList.add('discharging');
+        const intensityLevel = getIntensityLevel(current);
+        card.classList.add(`discharge-level-${intensityLevel}`);
+      } else {
+        // Standby
+        card.classList.add('standby');
+      }
+      
+      card.innerHTML = `
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-semibold" style="color: var(--card-text);">${batt.typeBattery} <span class="text-blue-600">#${batt.addr} </span></h3>
+          <div class="led" id="led-card-${batt.loggerId}-${batt.typeBattery}-${batt.addr}"></div>
+        </div>
+        <div class="mb-4">
+          <div class="flex justify-between items-center mb-1">
+            <span class="text-sm" style="color: var(--card-subtext);">SOC</span>
+            <span class="font-semibold" style="color: var(--card-text);" id="soc-value-${batt.loggerId}-${batt.typeBattery}-${batt.addr}">${batt.soc}%</span>
+          </div>
+          <div class="progress-bar">
+            <div id="soc-bar-${batt.loggerId}-${batt.typeBattery}-${batt.addr}" class="progress-fill" style="width: ${batt.soc}%"></div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-5 text-sm">
+          <div class="space-y-2">
+            <div class="flex items-center">
+              <i class="fas fa-bolt text-yellow-500 mr-2"></i>
+              <div>
+                <div style="color: var(--card-subtext);">Voltage</div>
+                <div id="voltage-${batt.loggerId}-${batt.typeBattery}-${batt.addr}" class="font-semibold" style="color: var(--card-text);">${batt.voltage} V</div>
+              </div>
+            </div>
+            <div class="flex items-center">
+              <i class="fas fa-minus-circle  text-blue-500 mr-2"></i>
+              <div>
+                <div style="color: var(--card-subtext);">Diff Cell</div>
+                <div id="voltagedif-${batt.loggerId}-${batt.typeBattery}-${batt.addr}" class="font-semibold" style="color: var(--card-text);">${batt.cell_vdif} mV</div>
+              </div>
+            </div>
+            <div class="flex items-center">
+              <i class="fas fa-minus-circle text-red-500 mr-2"></i>
+              <div>
+                <div style="color: var(--card-subtext);">Min Cell</div>
+                <div id="cellmin-${batt.loggerId}-${batt.typeBattery}-${batt.addr}" class="font-semibold" style="color: var(--card-text);">${batt.cell_vmin} V</div>
+              </div>
+            </div>
+          </div>
+          <div class="space-y-2">
+            <div class="flex items-center">
+              <i class="fas fa-tachometer-alt text-blue-500 mr-2"></i>
+              <div>
+                <div style="color: var(--card-subtext);">Current</div>
+                <div id="current-${batt.loggerId}-${batt.typeBattery}-${batt.addr}" class="font-semibold" style="color: var(--card-text);">${batt.current} A</div>
+              </div>
+            </div>
+            <div class="flex items-center">
+              <i class="fas fa-bolt text-red-500 mr-2"></i>
+              <div>
+                <div style="color: var(--card-subtext);">Power</div>
+                <div id="power-${batt.loggerId}-${batt.typeBattery}-${batt.addr}" class="font-semibold" style="color: var(--card-text);">${(batt.voltage*batt.current).toFixed(1)} W</div>
+              </div>
+            </div>
+            <div class="flex items-center">
+              <i class="fas fa-plus-circle text-green-500 mr-2"></i>
+              <div>
+                <div style="color: var(--card-subtext);">Max Cell</div>
+                <div id="cellmax-${batt.loggerId}-${batt.typeBattery}-${batt.addr}" class="font-semibold" style="color: var(--card-text);">${batt.cell_vmax} V</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="mt-4 pt-3 border-t text-xs flex justify-between" style="border-color: rgba(0,0,0,0.1); color: var(--card-subtext);">
+          <span>Cycles: ${batt.cycles}</span>
+          <span class="last-update"><i class="far fa-clock mr-1"></i>${batt.time}</span>
+        </div>
+      `;
+      card.onclick = () => openModal(batt.loggerId, batt.addr, batt.typeBattery);
+      grid.appendChild(card);
+
+      // Set SOC bar color
+      const socBar = document.getElementById(`soc-bar-${batt.loggerId}-${batt.typeBattery}-${batt.addr}`);
+      if (batt.soc > 70) socBar.className = 'progress-fill bg-green-500';
+      else if (batt.soc > 30) socBar.className = 'progress-fill bg-yellow-500';
+      else socBar.className = 'progress-fill bg-red-500';
+
+      // Blink LED
+      const led = document.getElementById(`led-card-${batt.loggerId}-${batt.typeBattery}-${batt.addr}`);
+      led.classList.add("active");
+      setTimeout(() => led.classList.remove("active"), 250);
+
+      // FITUR BARU: Highlight cell tertinggi dan terendah
+      highlightCellVoltages(batt.loggerId, batt.typeBattery, batt.addr);
+
+      // Set timeout untuk remove card
+      cardTimers[cardId] = setTimeout(() => {
+        let c = document.getElementById(cardId);
+        if (c) {
+          c.remove();
+          removeBatteryFromArray(batt.loggerId, batt.typeBattery, batt.addr);
+        }
+        delete cardTimers[cardId];
+      }, 30000);
+    });
+    
+    updateConnectionCount();
+  }
+
+  // FITUR BARU: Fungsi untuk highlight cell tertinggi dan terendah di modal
+  function highlightCellVoltages(loggerId, typeBattery, addr) {
+    const batt = batteries.find(b => b.loggerId === loggerId && b.typeBattery === typeBattery && b.addr === addr);
+    if (!batt || !batt.cells) return;
+
+    const cellVoltages = batt.cells.map(v => parseFloat(v));
+    const maxVoltage = Math.max(...cellVoltages);
+    const minVoltage = Math.min(...cellVoltages);
+
+    // Highlight di modal jika modal sedang terbuka
+    if (currentLoggerId === loggerId && currentTypeBattery === typeBattery && currentAddr === addr) {
+      setTimeout(() => {
+        const cellBoxes = document.querySelectorAll('#modalCells .cell-voltage');
+        cellBoxes.forEach((box, idx) => {
+          const voltage = parseFloat(batt.cells[idx]);
+          box.classList.remove('cell-highest-voltage', 'cell-lowest-voltage');
+          
+          if (voltage === maxVoltage) {
+            box.classList.add('cell-highest-voltage');
+          } else if (voltage === minVoltage) {
+            box.classList.add('cell-lowest-voltage');
+          }
+        });
+      }, 100);
+    }
+  }
+  
+  function startMQTT(){
+    client = mqtt.connect("wss://public.cloud.shiftr.io", {
+      username: "public",
+      password: "public"
+    });
+    
+    client.on("connect", () => {
+      xxx = id_logger.split("-");
+      for(var a=0; a<xxx.length;a++){
+        client.subscribe("sysMon/"+xxx[a]+"/AutoPoll/#");
+        client.publish(xxx[a]+"/seting","POLL1",0);
+      }
+      client.subscribe("sysMon/"+xxx[0]+"/info/#");
+      updateConnectionStatus(true);
+    });
+
+    client.on("message", (topic, message) => {
+      handleJSON(topic,message);
+    });
+    
+    client.on("close", () => {
+      updateConnectionStatus(false);
+    });
+    
+    client.on("error", (error) => {
+      updateConnectionStatus(false);
+    });
+
+    client2 = mqtt.connect("wss://broker.emqx.io:8084/mqtt", {
+      username: "emqx",
+      password: "emqx"
+    });
+    
+    client2.on("connect", () => {
+      xxx = id_logger.split("-");
+      for(var a=0; a<xxx.length;a++){
+        client2.subscribe("sysMon/"+xxx[a]+"/AutoPoll/#");
+        client2.publish(xxx[a]+"/seting","POLL1",0);
+      }
+      client2.subscribe("sysMon/"+xxx[0]+"/info/#");
+      updateConnectionStatus(true);
+    });
+
+    client2.on("message", (topic, message) => {
+      handleJSON(topic,message);
+    });
+    
+    client2.on("close", () => {
+      updateConnectionStatus(false);
+    });
+    
+    client2.on("error", (error) => {
+      updateConnectionStatus(false);
+    });
+  }
+
+  function handleJSON(topic, message){
+    if(topic == "sysMon/"+xxx[0]+"/info/" || topic == "sysMon/"+xxx[0]+"/info" ){
+      let a = message.toString().split(",");
+      document.getElementById("network_ip").innerText = "IP Address: " + a[0];
+      document.getElementById("network_signal").innerText = "Signal: " + a[1];
+      let varpol = document.getElementById("pollingState");
+      let text_head = " 🌐 " + a[0] + " 📶"+a[1];
+      if(a[3] === "1"){
+        varpol.innerHTML= "▶️ Active";
+        pollingSts =true;
+        text_head += " ▶️ "
+      }
+      else{
+        varpol.innerHTML= "⏹️ Passive";
+        pollingSts=false;
+        text_head += " ⏹️ "
+      }
+      document.getElementById("id_monitoring").innerText =text_head;
+      document.getElementById("id_monitoring_footer").innerText =text_head;
+    } else {
+      try {
+        const raw = JSON.parse(message.toString());
+        const batt = normalizeFromMqtt(raw, topic);
+
+        const idx = batteries.findIndex(b => b.loggerId === batt.loggerId && b.addr === batt.addr && b.typeBattery === batt.typeBattery);
+        if (idx >= 0) { 
+          batteries[idx] = batt;
+          update_cards(batt);
+        } else {
+          batt.elementId = `battery-${batt.loggerId}-${batt.typeBattery}-${batt.addr}`;
+          batteries.push(batt);
+          sortBatteries();
+        }
+
+        updateSummary();
+        updateModal(); 
+      } catch (e) {
+        // console.error("Invalid JSON", e);
+      }
+    }
+  }
+
+  function updateConnectionStatus(connected) {
+    const statusIndicator = document.getElementById('connection-status');
+    if (connected) {
+      document.body.classList.remove('disconnected');
+      document.body.classList.add('connected');
+    } else {
+      document.body.classList.remove('connected');
+      document.body.classList.add('disconnected');
+    }
+  }
+
+  function getCurrentTimeHHMMSS() {
+    const now = new Date();
+    let hours = now.getHours().toString().padStart(2, '0');
+    let minutes = now.getMinutes().toString().padStart(2, '0');
+    let seconds = now.getSeconds().toString().padStart(2, '0');
+    return `${hours}:${minutes}:${seconds}`;
+  }
+
+  function normalizeFromMqtt(data, topic) {
+    const cells = data.cell_voltages.map(v => (v/1000).toFixed(3));
+    const cell_vmax = Math.max(...data.cell_voltages) / 1000;
+    const cell_vmin = Math.min(...data.cell_voltages) / 1000;
+    const cell_vdiff = (cell_vmax - cell_vmin) * 1000;
+    
+    return {
+      loggerId: topic.split('/')[1],
+      typeBattery: data.typeBattery,
+      addr: data.AddrBattery,
+      soc: data.SOC.toFixed(1),
+      soh: data.SOH.toFixed(1),
+      voltage: data.bat_voltage.toFixed(2),
+      busVoltage: data.bus_voltage.toFixed(2),
+      current: data.bat_current.toFixed(2),
+      bus_current: data.bus_current.toFixed(2),
+      capacity: data.full_capacity.toFixed(2),
+      remaining: data.rem_capacity.toFixed(2),
+      cycles: data.cycle_count,
+      cycle_count: data.cycle_count,
+      cells,
+      cell_vmax: cell_vmax.toFixed(3),
+      cell_vmin: cell_vmin.toFixed(3),
+      cell_vdif: cell_vdiff.toFixed(0),
+      time: getCurrentTimeHHMMSS(),
+      power: (data.bat_voltage * data.bat_current).toFixed(2)
+    };
+  }
+
+  const grid = document.getElementById("batteryGrid");
+  const modal = document.getElementById("batteryModal");
+  const emptyState = document.getElementById("empty-state");
+  const summarySection = document.getElementById("summarySection");
+  let currentAddr = null;
+  let currentLoggerId = null;
+  let currentTypeBattery = null;
+
+  function updateConnectionCount() {
+    document.getElementById('total-batteries').textContent = batteries.length.toString();
+    
+    if (batteries.length === 0) {
+      grid.classList.add('hidden');
+      emptyState.classList.remove('hidden');
+      summarySection.classList.add('hidden');
+    } else {
+      grid.classList.remove('hidden');
+      emptyState.classList.add('hidden');
+      summarySection.classList.remove('hidden');
+    }
+  }
+
+  function removeBatteryFromArray(loggerId, typeBattery, addr) {
+    batteries = batteries.filter(b => !(b.loggerId === loggerId && b.typeBattery === typeBattery && b.addr === addr));
+    updateConnectionCount();
+    updateSummary();
+    sortBatteries();
+  }
+
+  function update_cards(batt) {
+    let cardId = `card-${batt.loggerId}-${batt.typeBattery}-${batt.addr}`;
+    let card = document.getElementById(cardId);
+    
+    if (!card) {
+      batt.elementId = `battery-${batt.loggerId}-${batt.typeBattery}-${batt.addr}`;
+      batteries.push(batt);
+      sortBatteries();
+      return;
+    }
+
+    // Update class berdasarkan status charging/discharging
+    const current = parseFloat(batt.current);
+    card.classList.remove('charging', 'discharging', 'standby');
+    card.classList.remove('charge-level-1', 'charge-level-2', 'charge-level-3', 'charge-level-4', 'charge-level-5');
+    card.classList.remove('discharge-level-1', 'discharge-level-2', 'discharge-level-3', 'discharge-level-4', 'discharge-level-5');
+    
+    if (current > 0.1) {
+      card.classList.add('charging');
+      const intensityLevel = getIntensityLevel(current);
+      card.classList.add(`charge-level-${intensityLevel}`);
+    } else if (current < -0.1) {
+      card.classList.add('discharging');
+      const intensityLevel = getIntensityLevel(current);
+      card.classList.add(`discharge-level-${intensityLevel}`);
+    } else {
+      card.classList.add('standby');
+    }
+
+    // Update card yang sudah ada
+    document.getElementById(`soc-value-${batt.loggerId}-${batt.typeBattery}-${batt.addr}`).textContent = `${batt.soc}%`;
+    document.getElementById(`soc-bar-${batt.loggerId}-${batt.typeBattery}-${batt.addr}`).style.width = `${batt.soc}%`;
+    document.getElementById(`voltage-${batt.loggerId}-${batt.typeBattery}-${batt.addr}`).innerHTML = `${batt.voltage} V`;
+    document.getElementById(`current-${batt.loggerId}-${batt.typeBattery}-${batt.addr}`).innerHTML = `${batt.current} A`;
+    document.getElementById(`cellmin-${batt.loggerId}-${batt.typeBattery}-${batt.addr}`).innerHTML = `${batt.cell_vmin} V`;
+    document.getElementById(`cellmax-${batt.loggerId}-${batt.typeBattery}-${batt.addr}`).innerHTML = `${batt.cell_vmax} V`;
+    document.getElementById(`power-${batt.loggerId}-${batt.typeBattery}-${batt.addr}`).innerHTML = `${(batt.voltage*batt.current).toFixed(1)} W`;
+    document.getElementById(`voltagedif-${batt.loggerId}-${batt.typeBattery}-${batt.addr}`).innerHTML = `${batt.cell_vdif} mV`;
+
+    const socBar = document.getElementById(`soc-bar-${batt.loggerId}-${batt.typeBattery}-${batt.addr}`);
+    if (batt.soc > 70) socBar.className = 'progress-fill bg-green-500';
+    else if (batt.soc > 30) socBar.className = 'progress-fill bg-yellow-500';
+    else socBar.className = 'progress-fill bg-red-500';
+
+    card.querySelector(".last-update").innerHTML = `<i class="far fa-clock mr-1"></i>${batt.time}`;
+
+    const led = document.getElementById(`led-card-${batt.loggerId}-${batt.typeBattery}-${batt.addr}`);
+    led.classList.add("active");
+    setTimeout(() => led.classList.remove("active"), 250);
+
+    // Reset timeout
+    if (cardTimers[cardId]) {
+      clearTimeout(cardTimers[cardId]);
+    }
+    cardTimers[cardId] = setTimeout(() => {
+      let c = document.getElementById(cardId);
+      if (c) {
+        c.remove();
+        removeBatteryFromArray(batt.loggerId, batt.typeBattery, batt.addr);
+      }
+      delete cardTimers[cardId];
+    }, 30000);
+  }
+
+  function updateSummary() {
+    if (batteries.length === 0) {
+      document.getElementById("avg-voltage").textContent = "-";
+      document.getElementById("avg-soc").textContent = "-";
+      document.getElementById("avg-soh").textContent = "-";
+      document.getElementById("total-current").textContent = "-";
+      document.getElementById("total-power").textContent = "-";
+      return;
+    }
+
+    let totalVoltage = 0;
+    let totalSoc = 0;
+    let totalSoh = 0;
+    let totalCurrent = 0;
+    let totalPower = 0;
+
+    batteries.forEach(batt => {
+      totalVoltage += parseFloat(batt.voltage);
+      totalSoc += parseFloat(batt.soc);
+      totalSoh += parseFloat(batt.soh);
+      totalCurrent += parseFloat(batt.current);
+      totalPower += parseFloat(batt.power);
+    });
+
+    const count = batteries.length;
+    document.getElementById("avg-voltage").textContent = `${(totalVoltage / count).toFixed(2)} V`;
+    document.getElementById("avg-soc").textContent = `${(totalSoc / count).toFixed(1)}%`;
+    document.getElementById("avg-soh").textContent = `${(totalSoh / count).toFixed(1)}%`;
+    document.getElementById("total-current").textContent = `${totalCurrent.toFixed(2)} A`;
+    document.getElementById("total-power").textContent = `${totalPower.toFixed(2)} W`;
+
+    // ===== UPDATE SUMMARY CARD STYLING BERDASARKAN TOTAL CURRENT =====
+    const summaryCard = document.querySelector('.summary-card');
+    if (summaryCard) {
+      // Reset semua classes
+      summaryCard.classList.remove('summary-charging', 'summary-discharging', 'summary-standby');
+      summaryCard.classList.remove('summary-charging-level-1', 'summary-charging-level-2', 'summary-charging-level-3', 'summary-charging-level-4', 'summary-charging-level-5');
+      summaryCard.classList.remove('summary-discharge-level-1', 'summary-discharge-level-2', 'summary-discharge-level-3', 'summary-discharge-level-4', 'summary-discharge-level-5');
+
+      if (totalCurrent > 0.1) {
+        // Charging
+        summaryCard.classList.add('summary-charging');
+        const intensityLevel = getIntensityLevel(totalCurrent);
+        summaryCard.classList.add(`summary-charging-level-${intensityLevel}`);
+      } else if (totalCurrent < -0.1) {
+        // Discharging
+        summaryCard.classList.add('summary-discharging');
+        const intensityLevel = getIntensityLevel(totalCurrent);
+        summaryCard.classList.add(`summary-discharge-level-${intensityLevel}`);
+      } else {
+        // Standby
+        summaryCard.classList.add('summary-standby');
+      }
+    }
+  }
+
+  function openModal(loggerId, addr, typeBattery) {
+    currentLoggerId = loggerId;
+    currentAddr = addr;
+    currentTypeBattery = typeBattery;
+    updateModal();
+    modal.classList.remove("hidden");
+    document.body.style.overflow = 'hidden';
+  }
+
+  function updateModal() {
+    if (currentAddr === null || currentLoggerId === null || currentTypeBattery === null) return;
+    const batt = batteries.find(b => b.loggerId === currentLoggerId && b.addr === currentAddr && b.typeBattery === currentTypeBattery);
+    if (!batt) return;
+
+    // ===== UPDATE BORDER MODAL SESUAI CHARGE/DISCHARGE STATUS =====
+    const modalContent = document.querySelector('#batteryModal .modal-content');
+    const current = parseFloat(batt.current);
+    
+    // Reset classes
+    modalContent.classList.remove('modal-charging', 'modal-discharging', 'modal-standby');
+    modalContent.classList.remove('modal-charge-level-1', 'modal-charge-level-2', 'modal-charge-level-3', 'modal-charge-level-4', 'modal-charge-level-5');
+    modalContent.classList.remove('modal-discharge-level-1', 'modal-discharge-level-2', 'modal-discharge-level-3', 'modal-discharge-level-4', 'modal-discharge-level-5');
+    
+    if (current > 0.1) {
+      modalContent.classList.add('modal-charging');
+      const intensityLevel = getIntensityLevel(current);
+      modalContent.classList.add(`modal-charge-level-${intensityLevel}`);
+    } else if (current < -0.1) {
+      modalContent.classList.add('modal-discharging');
+      const intensityLevel = getIntensityLevel(current);
+      modalContent.classList.add(`modal-discharge-level-${intensityLevel}`);
+    } else {
+      modalContent.classList.add('modal-standby');
+    }
+
+    document.getElementById("modalTitle").textContent = `${batt.typeBattery} #${batt.addr}`;
+    document.getElementById("modalSOC").textContent = `${batt.soc}%`;
+    document.getElementById("modalSOH").textContent = `${batt.soh}%`;
+    document.getElementById("modalCycles").textContent = batt.cycles;
+    document.getElementById("modalVoltage").textContent = `${batt.voltage} V`;
+    document.getElementById("modalBusVoltage").textContent = `${batt.busVoltage} V`;
+    document.getElementById("modalCurrent").textContent = `${batt.current} A`;
+    document.getElementById("modalCapacity").textContent = `${batt.capacity}`;
+    document.getElementById("modalRemaining").textContent = `${batt.remaining}`;
+    document.getElementById("modalLastUpdate").textContent = batt.time;
+    document.getElementById("modalcellmin").textContent = `${batt.cell_vmin} V`;
+    document.getElementById("modalcellmax").textContent = `${batt.cell_vmax} V`;
+    document.getElementById("modalcelldif").textContent = `${batt.cell_vdif} mV`;
+    document.getElementById("modalPower").textContent = `${batt.power} W`;
+
+    document.getElementById("modalBusCurrentValue").textContent = `${batt.bus_current} A`;
+    document.getElementById("modalBusPowerValue").textContent = `${(batt.busVoltage * batt.bus_current).toFixed(2)} W`;
+    document.getElementById("modalLossPower").textContent = `${Math.abs((batt.busVoltage * batt.bus_current)-batt.power).toFixed(2)} W`;
+
+    document.getElementById("soc-progress").style.width = `${batt.soc}%`;
+    document.getElementById("soh-progress").style.width = `${batt.soh}%`;
+    
+    const socProgress = document.getElementById("soc-progress");
+    const sohProgress = document.getElementById("soh-progress");
+    
+    if (batt.soc > 70) socProgress.className = "progress-fill bg-blue-500";
+    else if (batt.soc > 30) socProgress.className = "progress-fill bg-yellow-500";
+    else socProgress.className = "progress-fill bg-red-500";
+    
+    if (batt.soh > 80) sohProgress.className = "progress-fill bg-green-500";
+    else if (batt.soh > 60) sohProgress.className = "progress-fill bg-yellow-500";
+    else sohProgress.className = "progress-fill bg-red-500";
+
+    const cellsDiv = document.getElementById("modalCells");
+    cellsDiv.innerHTML = "";
+    
+    const cellVoltages = batt.cells.map(v => parseFloat(v));
+    const maxVoltage = Math.max(...cellVoltages);
+    const minVoltage = Math.min(...cellVoltages);
+
+    batt.cells.forEach((v, i) => {
+      const cellValue = parseFloat(v);
+      let statusClass = "cell-normal";
+      if (cellValue < 3.2) statusClass = "cell-danger";
+      else if (cellValue < 3.4) statusClass = "cell-warning";
+      
+      const cellBox = document.createElement("div");
+      cellBox.className = `cell-voltage ${statusClass} bg-white rounded-lg shadow-sm p-3 flex flex-col items-center`;
+      
+      if (cellValue === maxVoltage) {
+        cellBox.classList.add('cell-highest-voltage');
+      } else if (cellValue === minVoltage) {
+        cellBox.classList.add('cell-lowest-voltage');
+      }
+      
+      const label = document.createElement("div");
+      label.className = "text-xs font-medium text-gray-500 mb-1";
+      label.textContent = `Cell ${i + 1}`;
+
+      const value = document.createElement("div");
+      value.className = "text-sm font-bold";
+      value.textContent = `${v} V`;
+      
+      if (statusClass === "cell-danger") value.className += " text-red-600";
+      else if (statusClass === "cell-warning") value.className += " text-yellow-600";
+      else value.className += " text-green-600";
+
+      cellBox.appendChild(label);
+      cellBox.appendChild(value);
+      cellsDiv.appendChild(cellBox);
+    });
+    
+    blinkLed("led-modal");
+  }
+
+  document.getElementById("closeModal").onclick = () => {
+    modal.classList.add("hidden");
+    document.body.style.overflow = 'auto';
+    currentAddr = null;
+    currentLoggerId = null;
+    currentTypeBattery = null;
+  };
+  
+  modal.onclick = e => {
+    if (e.target === modal) {
+      modal.classList.add("hidden");
+      document.body.style.overflow = 'auto';
+      currentAddr = null;
+      currentLoggerId = null;
+      currentTypeBattery = null;
+    }
+  };
+
+  function blinkLed(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    
+    el.classList.remove("bg-gray-300");
+    el.classList.add("bg-green-500");
+    
+    setTimeout(() => {
+      el.classList.remove("bg-green-500");
+      el.classList.add("bg-gray-300");
+    }, 250);
+  }
+
+  // Memvalidasi ID yang diminta terhadap whitelist dari Google Sheets,
+  // lalu hanya melanjutkan MQTT untuk ID yang benar-benar terdaftar.
+  async function initLogger(inputId) {
+    await fetchAllowedIds();
+
+    const requestedIds = inputId.split("-").map(s => s.trim()).filter(s => s.length > 0);
+    const validIds = requestedIds.filter(id => allowedIds.includes(id));
+    const rejectedIds = requestedIds.filter(id => !allowedIds.includes(id));
+
+    if (rejectedIds.length > 0) {
+      console.warn("ID tidak terdaftar, tidak akan di-subscribe:", rejectedIds);
+    }
+
+    if (validIds.length === 0) {
+      alert("Error: ID Logger tidak terdaftar / tidak diizinkan. Silakan reload dan masukkan ID yang valid.");
+      return;
+    }
+
+    id_logger = validIds.join("-");
+    startMQTT();
+    updateConnectionCount();
+  }
+
+  window.onload = async function() {
+    const params = new URLSearchParams(window.location.search);
+    let inputId = params.get("id");
+
+    if (inputId === null || inputId.trim() === "") {
+      const userInput = prompt("Masukkan ID Logger:");
+      if (userInput === null || userInput.trim() === "") {
+        alert("Error: Please reload and input a value!");
+        return;
+      }
+      inputId = userInput;
+    }
+
+    await initLogger(inputId);
+  };
+</script>
+
+<script>
+  const btn = document.getElementById("settingsBtn");
+  const menu = document.getElementById("dropdownMenu");
+
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    menu.classList.toggle("hidden");
+  });
+
+  window.addEventListener("click", () => {
+    menu.classList.add("hidden");
+  });
+
+  const pollingStateData = document.getElementById("pollingState");
+
+  pollingStateData.addEventListener("click",(e) => {
+    if(pollingSts === true ){
+      client.publish(id_logger+"/seting", "POLL0",0);
+    }
+    else{
+      client.publish(id_logger+"/seting", "POLL1",0);
+    }
+  });
+
+  const networkModal = document.getElementById("networkModal");
+  const closeNetwork = document.getElementById("closeNetwork");
+
+  networkBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    networkModal.classList.remove("hidden");
+  });
+
+  closeNetwork.addEventListener("click", () => {
+    networkModal.classList.add("hidden");
+  });
+
+  window.addEventListener("click", (e) => {
+    if (e.target === networkModal) {
+      networkModal.classList.add("hidden");
+    }
+  });
+</script>
+
+<script>
+  const themeToggleLink = document.getElementById('themeToggleLink');
+  const body = document.body;
+  const header = document.getElementById('mainHeader');
+
+  function setTheme(theme) {
+    body.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
+
+    themeToggleLink.innerHTML = theme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode';
+
+    if (theme === 'dark') {
+      document.body.classList.add('dark');
+    } else {
+      document.body.classList.remove('dark');
+    }
+  }
+
+  const savedTheme = localStorage.getItem('theme') || 'light';
+  setTheme(savedTheme);
+
+  themeToggleLink.addEventListener('click', (e) => {
+    e.preventDefault();
+    const newTheme = body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    setTheme(newTheme);
+  });
+</script>
+</body>
+</html>
