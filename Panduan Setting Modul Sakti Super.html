@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="id"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Panduan Setting Modul Sakti Super</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#f3f6fb;--card:#fff;--tx:#14213d;--mut:#5b6b85;--ac:#1e6bff;--ac2:#00b4d8;--warn:#fff4d6;--wb:#f0b429;--bd:#dbe4f3}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1526;--card:#16223a;--tx:#eaf0ff;--mut:#9fb0cf;--warn:#3a3116;--bd:#26365a}}
+:root[data-theme="dark"]{--bg:#0d1526;--card:#16223a;--tx:#eaf0ff;--mut:#9fb0cf;--warn:#3a3116;--bd:#26365a}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.5}
+.wrap{max-width:760px;margin:0 auto;padding:16px}
+header{background:linear-gradient(135deg,#0b1f4d,#1e6bff 60%,#00b4d8);color:#fff;border-radius:20px;padding:28px 20px;text-align:center}
+header h1{margin:0 0 6px;font-size:1.7rem}
+header p{margin:0;opacity:.9}
+.badge{display:inline-block;background:rgba(255,255,255,.18);border-radius:99px;padding:4px 12px;font-size:.8rem;margin-bottom:10px}
+.part{margin-top:22px}
+.part h2{display:flex;align-items:center;gap:10px;font-size:1.2rem;margin:0 0 10px}
+.part h2 span{background:var(--ac);color:#fff;border-radius:10px;padding:2px 10px;font-size:.9rem}
+.step{display:flex;gap:12px;background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:12px 14px;margin-bottom:8px}
+.n{flex:none;width:30px;height:30px;border-radius:50%;background:var(--ac);color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center}
+.step b{display:block}
+.step small{color:var(--mut)}
+code{background:rgba(30,107,255,.12);color:var(--ac);padding:1px 6px;border-radius:6px;font-weight:600;word-break:break-all}
+.warn{background:var(--warn);border-left:5px solid var(--wb);border-radius:10px;padding:10px 14px;margin:8px 0}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media (max-width:520px){.grid{grid-template-columns:1fr}}
+.box{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:12px 14px}
+.box b{color:var(--ac)}
+.ok{background:linear-gradient(135deg,#0a7d4b,#22c55e);color:#fff;border-radius:16px;padding:16px;margin-top:22px;text-align:center}
+.tbl{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.92rem}
+td,th{border-bottom:1px solid var(--bd);padding:6px 8px;text-align:left}
+footer{text-align:center;color:var(--mut);font-size:.85rem;margin:20px 0}
+</style></head><body><div class="wrap">
+
+<header><div class="badge">⚙ Modul Sakti Super V1.0.0</div>
+<h1>Panduan Setting Step by Step</h1>
+<p>Mudah, cepat, cocok untuk pemula</p></header>
+
+<div class="part"><h2><span>1</span> Hubungkan Modul ke WiFi (Pertama Kali)</h2>
+<div class="step"><div class="n">1</div><div><b>Cari WiFi milik modul</b>Modul yang belum terhubung WiFi akan memancarkan hotspot bernama <code>MSS-XXXX_AP</code> (XXXX = 4 digit terakhir ID modul).</div></div>
+<div class="step"><div class="n">2</div><div><b>Masukkan password</b><code>password12345</code></div></div>
+<div class="step"><div class="n">3</div><div><b>Matikan paket data HP</b>Agar koneksi lebih stabil. Abaikan notifikasi "tidak ada internet".</div></div>
+<div class="step"><div class="n">4</div><div><b>Buka browser, ketik alamat</b><code>http://192.168.4.1</code></div></div>
+<div class="step"><div class="n">5</div><div><b>Halaman setup terbuka</b>Cari bagian <b style="display:inline">WiFi Settings</b>.</div></div>
+<div class="step"><div class="n">6</div><div><b>Klik "Scan WiFi"</b>Tunggu 5–10 detik sampai daftar WiFi muncul.</div></div>
+<div class="step"><div class="n">7</div><div><b>Pilih nama WiFi</b>Pilih WiFi (SSID) yang ingin dipasangkan ke modul.</div></div>
+<div class="step"><div class="n">8</div><div><b>Isi password WiFi</b>Pastikan penulisan benar (huruf besar/kecil berpengaruh).</div></div>
+<div class="step"><div class="n">9</div><div><b>Simpan</b>Scroll ke bawah, klik <b style="display:inline">Save Configuration &amp; Reboot</b>.</div></div>
+<div class="step"><div class="n">10</div><div><b>Tunggu modul terhubung</b>Berhasil jika: hotspot modul <b style="display:inline">hilang</b> dan LED hijau <b style="display:inline">berkedip tiap 1 detik</b>.</div></div>
+</div>
+
+<div class="part"><h2><span>2</span> Buka Menu Modul (Sudah Terhubung WiFi)</h2>
+<div class="step"><div class="n">1</div><div><b>Satu WiFi yang sama</b>HP/laptop harus terhubung ke WiFi yang sama dengan modul.</div></div>
+<div class="step"><div class="n">2</div><div><b>Buka browser, ketik</b><code>http://mss-XXXX.local</code><small>Contoh: http://mss-0002.local</small></div></div>
+</div>
+
+<div class="part"><h2><span>3</span> Setting Baterai (Menu Port Config)</h2>
+<div class="step"><div class="n">1</div><div><b>Buka menu "Port Config"</b>Di bagian BMS Monitoring tersedia <b style="display:inline">64 slot</b> baterai.</div></div>
+<div class="step"><div class="n">2</div><div><b>Klik slot yang diinginkan</b>Misal Slot 0.</div></div>
+<div class="step"><div class="n">3</div><div><b>Pilih Port</b>
+<div class="tbl"><table><tr><th>Port</th><th>Untuk</th></tr><tr><td>Port 2</td><td>Huawei, ZTE R321 / R311 / R421</td></tr><tr><td>Port 3</td><td>Shoto, Sacredsun</td></tr></table></div></div></div>
+<div class="step"><div class="n">4</div><div><b>Pilih Brand</b>Sesuai baterai yang terhubung, misal HUAWEI.</div></div>
+<div class="step"><div class="n">5</div><div><b>Baudrate</b>Sesuaikan dengan BMS. Standar: <code>9600</code>. Bingung? Hubungi developer.</div></div>
+<div class="step"><div class="n">6</div><div><b>Isi Address, lalu klik Save</b></div></div>
+<div class="step"><div class="n">7</div><div><b>Nonaktifkan slot</b>Klik tombol <b style="display:inline">Disabled</b>.</div></div>
+<div class="step"><div class="n">8</div><div><b>Ulangi untuk tiap baterai</b>Atur setiap slot sesuai baterai yang terpasang.</div></div>
+</div>
+
+<div class="part"><h2><span>4</span> Setting Inverter</h2>
+<div class="warn"><b>Tab Monitor</b> = tampilan data gabungan semua BMS. Hanya untuk pemantauan (tidak ada pengaturan).</div>
+<div class="step"><div class="n">1</div><div><b>Buka tab "Inverter Config"</b>Klik <b style="display:inline">Get Current Config</b> untuk melihat setting yang tersimpan.</div></div>
+<div class="grid">
+<div class="box"><b>Max Voltage</b><br>Tegangan maksimal baterai saat pengisian (charge).</div>
+<div class="box"><b>Min Voltage</b><br>Tegangan minimal agar inverter tetap bekerja.</div>
+<div class="box"><b>Max Charge Current</b><br>Arus pengisian maksimal.</div>
+<div class="box"><b>Max Discharge Current</b><br>Arus maksimal yang boleh diambil dari baterai.</div>
+</div>
+<div class="step" style="margin-top:8px"><div class="n">2</div><div><b>Ubah sesuai kebutuhan, klik Save Configuration</b></div></div>
+<div class="step"><div class="n">3</div><div><b>Cek ulang</b>Klik <b style="display:inline">Get Current Config</b> untuk memastikan setting sudah tersimpan.</div></div>
+</div>
+
+<div class="ok"><b style="font-size:1.15rem">✅ Modul Selesai di-Setup!</b><br>
+Pantau baterai secara online lewat menu <b>Online Monitor</b> di halaman menu Modul Sakti Super.<br>
+Ada pertanyaan? Klik <b>Chat Developer</b> — langsung terhubung ke WhatsApp developer.</div>
+<footer>Modul Sakti Super • Panduan Setup</footer>
+</div></body></html>
