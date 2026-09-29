@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ESP8266 Web Flasher - Modul Sakti Dev Team</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eff6ff',
+              500: '#3b82f6',
+              600: '#2563eb',
+              900: '#1e3a8a',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <!-- Custom Styling for Terminal & Scrollbar -->
+  <style>
+    .terminal-scroll::-webkit-scrollbar {
+      width: 8px;
+    }
+    .terminal-scroll::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    .terminal-scroll::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans antialiased">
+
+  <!-- HEADER -->
+  <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-50">
+    <div class="max-w-6xl mx-auto px-4 py-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div class="p-2 bg-blue-600/20 text-blue-400 rounded-lg border border-blue-500/30">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-xl font-bold tracking-tight text-white">ESP8266 Web Programmer</h1>
+          <p class="text-xs text-slate-400">WebSerial Firmware Flashing Interface</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="px-3 py-1 bg-slate-800 text-slate-300 border border-slate-700 text-xs font-semibold rounded-full flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          Modul Sakti Development Team
+        </span>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTENT -->
+  <main class="flex-1 max-w-6xl w-full mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+    
+    <!-- LEFT PANEL: CONFIGURATION & ACTIONS -->
+    <section class="lg:col-span-5 space-y-6">
+      
+      <!-- CARD 1: CONNECTION -->
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-xl space-y-4">
+        <h2 class="text-sm font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+          <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+          </svg>
+          1. Serial Connection
+        </h2>
+
+        <div class="space-y-3">
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Target Baud Rate</label>
+            <select id="baudRate" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500 transition">
+              <option value="115200">115200 (Standard)</option>
+              <option value="230400">230400 (Fast)</option>
+              <option value="460800" selected>460800 (High Speed)</option>
+              <option value="921600">921600 (Ultra Speed)</option>
+            </select>
+          </div>
+
+          <button id="btnConnect" class="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-medium text-sm rounded-lg transition duration-150 flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+            </svg>
+            Connect Serial Port
+          </button>
+        </div>
+      </div>
+
+      <!-- CARD 2: FILE SELECTION -->
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-xl space-y-4">
+        <h2 class="text-sm font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+          <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+          </svg>
+          2. Firmware Binary
+        </h2>
+
+        <div class="space-y-3">
+          <label class="block">
+            <span class="sr-only">Choose Firmware .bin</span>
+            <input type="file" id="fileInput" accept=".bin" class="block w-full text-sm text-slate-400
+              file:mr-4 file:py-2 file:px-4
+              file:rounded-lg file:border-0
+              file:text-xs file:font-semibold
+              file:bg-slate-800 file:text-blue-400
+              hover:file:bg-slate-700
+              cursor-pointer border border-slate-800 rounded-lg bg-slate-950 p-1"/>
+          </label>
+
+          <div id="fileInfo" class="hidden text-xs text-slate-400 bg-slate-950 border border-slate-800 p-3 rounded-lg space-y-1">
+            <p><span class="text-slate-500">File:</span> <span id="fileName" class="text-slate-200 font-mono"></span></p>
+            <p><span class="text-slate-500">Size:</span> <span id="fileSize" class="text-slate-200 font-mono"></span> KB</p>
+            <p><span class="text-slate-500">Flash Offset:</span> <span class="text-blue-400 font-mono">0x00000</span></p>
+          </div>
+
+          <button id="btnProgram" disabled class="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-sm rounded-lg transition duration-150 flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            Start Flashing ESP8266
+          </button>
+        </div>
+      </div>
+
+      <!-- CARD 3: PROGRESS STATUS -->
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-xl space-y-3">
+        <div class="flex justify-between items-center text-xs">
+          <span class="text-slate-400 font-medium">Status Flashing</span>
+          <span id="speedIndicator" class="text-slate-500 font-mono">0 KB/s</span>
+        </div>
+        
+        <!-- Progress Bar Track -->
+        <div class="w-full bg-slate-950 rounded-full h-3 overflow-hidden border border-slate-800 p-0.5">
+          <div id="progressBar" class="bg-blue-500 h-full rounded-full transition-all duration-150 w-0"></div>
+        </div>
+
+        <div class="flex justify-between items-center text-xs text-slate-500">
+          <span id="progressText">Idle</span>
+          <span id="progressPercent" class="font-mono text-slate-300">0%</span>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- RIGHT PANEL: TERMINAL LOG -->
+    <section class="lg:col-span-7 flex flex-col">
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-xl flex-1 flex flex-col min-h-[450px]">
+        
+        <!-- Terminal Header -->
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-3">
+          <div class="flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full bg-rose-500/80 inline-block"></span>
+            <span class="w-3 h-3 rounded-full bg-amber-500/80 inline-block"></span>
+            <span class="w-3 h-3 rounded-full bg-emerald-500/80 inline-block"></span>
+            <span class="text-xs font-mono text-slate-400 ml-2">Console Monitor</span>
+          </div>
+          <button id="btnClearLog" class="text-xs text-slate-500 hover:text-slate-300 transition px-2 py-1 bg-slate-800 rounded border border-slate-700">
+            Clear Log
+          </button>
+        </div>
+
+        <!-- Terminal Body -->
+        <div id="terminal" class="flex-1 bg-slate-950 rounded-lg border border-slate-800/80 p-4 font-mono text-xs text-slate-300 overflow-y-auto terminal-scroll space-y-1 max-h-[500px]">
+          <p class="text-slate-600">// WebSerial ESP8266 Programmer initialized.</p>
+          <p class="text-slate-600">// Ready to connect serial port...</p>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="border-t border-slate-900 bg-slate-950 py-4 text-center text-xs text-slate-500">
+    <p>ESP8266 Web Flasher Platform &copy; 2026 <span class="text-slate-400 font-medium">Modul Sakti Development Team</span>. Built with esptool-js & WebSerial API.</p>
+  </footer>
+
+  <!-- SCRIPT ENGINE (ES MODULE) -->
+  <script type="module">
+    import { ESPLoader, Transport } from 'https://unpkg.com/esptool-js@0.4.0/lib/index.js';
+
+    // DOM Elements
+    const btnConnect = document.getElementById('btnConnect');
+    const btnProgram = document.getElementById('btnProgram');
+    const btnClearLog = document.getElementById('btnClearLog');
+    const fileInput = document.getElementById('fileInput');
+    const fileInfo = document.getElementById('fileInfo');
+    const fileName = document.getElementById('fileName');
+    const fileSize = document.getElementById('fileSize');
+    const baudRateSelect = document.getElementById('baudRate');
+    const progressBar = document.getElementById('progressBar');
+    const progressText = document.getElementById('progressText');
+    const progressPercent = document.getElementById('progressPercent');
+    const speedIndicator = document.getElementById('speedIndicator');
+    const terminal = document.getElementById('terminal');
+
+    // Application State
+    let device = null;
+    let transport = null;
+    let esploader = null;
+    let fileData = null;
+    let lastWrittenBytes = 0;
+    let lastTime = 0;
+
+    // Custom Terminal Logger
+    const log = (msg, type = 'info') => {
+      const p = document.createElement('p');
+      const time = new Date().toLocaleTimeString();
+      
+      let colorClass = 'text-slate-300';
+      if (type === 'error') colorClass = 'text-rose-400';
+      if (type === 'success') colorClass = 'text-emerald-400';
+      if (type === 'warn') colorClass = 'text-amber-400';
+      if (type === 'system') colorClass = 'text-blue-400';
+
+      p.className = `${colorClass} leading-relaxed`;
+      p.innerHTML = `<span class="text-slate-600">[${time}]</span> ${msg}`;
+      terminal.appendChild(p);
+      terminal.scrollTop = terminal.scrollHeight;
+    };
+
+    const termLogger = {
+      log: (str) => log(str, 'info'),
+      error: (str) => log(str, 'error'),
+      debug: (str) => console.log(str)
+    };
+
+    // Check WebSerial Support
+    if (!('serial' in navigator)) {
+      log('WebSerial API tidak didukung browser ini. Gunakan Chrome atau Edge desktop!', 'error');
+      btnConnect.disabled = true;
+      btnConnect.classList.add('opacity-50', 'cursor-not-allowed');
+    }
+
+    // Handle File Selection
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) {
+        fileData = null;
+        fileInfo.classList.add('hidden');
+        btnProgram.disabled = true;
+        return;
+      }
+
+      fileName.textContent = file.name;
+      fileSize.textContent = (file.size / 1024).toFixed(2);
+      fileInfo.classList.remove('hidden');
+
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        fileData = ev.target.result;
+        log(`Binary loaded: <b>${file.name}</b> (${file.size} bytes)`, 'success');
+        if (esploader) btnProgram.disabled = false;
+      };
+      reader.readAsBinaryString(file);
+    });
+
+    // Connect / Disconnect Handlers
+    btnConnect.addEventListener('click', async () => {
+      if (device) {
+        // Disconnect
+        try {
+          if (transport) await transport.disconnect();
+          log('Serial port disconnected.', 'warn');
+        } catch (err) {
+          log(`Disconnect Error: ${err.message}`, 'error');
+        } finally {
+          device = null;
+          transport = null;
+          esploader = null;
+          btnConnect.innerText = 'Connect Serial Port';
+          btnConnect.className = "w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-medium text-sm rounded-lg transition duration-150 flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20";
+          btnProgram.disabled = true;
+        }
+        return;
+      }
+
+      // Connect Sequence
+      try {
+        device = await navigator.serial.requestPort();
+        transport = new Transport(device);
+        const baudRate = parseInt(baudRateSelect.value);
+
+        log('Connecting to serial port...', 'system');
+        esploader = new ESPLoader({
+          transport,
+          baudrate: baudRate,
+          terminal: termLogger
+        });
+
+        log('Syncing with ESP8266 bootloader (DTR/RTS Toggling)...', 'info');
+        const chip = await esploader.main();
+        
+        log(`Connected to target: <b class="text-blue-400">${chip}</b>`, 'success');
+        
+        btnConnect.innerText = 'Disconnect Serial Port';
+        btnConnect.className = "w-full py-2.5 px-4 bg-rose-600 hover:bg-rose-500 active:bg-rose-700 text-white font-medium text-sm rounded-lg transition duration-150 flex items-center justify-center gap-2 shadow-lg shadow-rose-600/20";
+        
+        if (fileData) btnProgram.disabled = false;
+
+      } catch (err) {
+        log(`Connection failed: ${err.message}`, 'error');
+        device = null;
+        transport = null;
+        esploader = null;
+      }
+    });
+
+    // Start Flashing Process
+    btnProgram.addEventListener('click', async () => {
+      if (!esploader || !fileData) return;
+
+      btnProgram.disabled = true;
+      btnConnect.disabled = true;
+      fileInput.disabled = true;
+
+      try {
+        log('Starting flashing sequence on ESP8266...', 'system');
+        
+        lastWrittenBytes = 0;
+        lastTime = Date.now();
+
+        const fileArray = [{
+          data: fileData,
+          address: 0x00000 // Flash offset fixed for ESP8266
+        }];
+
+        await esploader.writeFlash({
+          fileArray,
+          flashSize: 'keep',
+          eraseAll: false,
+          compress: true,
+          reportProgress: (fileIndex, written, total) => {
+            const percent = Math.round((written / total) * 100);
+            progressBar.style.width = `${percent}%`;
+            progressPercent.textContent = `${percent}%`;
+            progressText.textContent = `Writing flash... (${written}/${total} bytes)`;
+
+            // Calculate transfer speed
+            const now = Date.now();
+            const timeDiff = (now - lastTime) / 1000;
+            if (timeDiff >= 0.5) {
+              const bytesDiff = written - lastWrittenBytes;
+              const speedKBps = ((bytesDiff / timeDiff) / 1024).toFixed(1);
+              speedIndicator.textContent = `${speedKBps} KB/s`;
+              lastWrittenBytes = written;
+              lastTime = now;
+            }
+          }
+        });
+
+        log('Flashing completed successfully! Resetting device...', 'success');
+        progressText.textContent = 'Flashing Complete!';
+        speedIndicator.textContent = '0 KB/s';
+
+        // Hard Reset Chip
+        await esploader.hardReset();
+        log('Device reset executed. Firmware running.', 'info');
+
+      } catch (err) {
+        log(`Flashing failed: ${err.message}`, 'error');
+        progressText.textContent = 'Flashing Error';
+      } finally {
+        btnProgram.disabled = false;
+        btnConnect.disabled = false;
+        fileInput.disabled = false;
+      }
+    });
+
+    // Clear Terminal Log
+    btnClearLog.addEventListener('click', () => {
+      terminal.innerHTML = '';
+      log('Console log cleared.', 'system');
+    });
+  </script>
+</body>
+</html>
