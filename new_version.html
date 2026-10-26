@@ -95,23 +95,18 @@
 
 <script>
   const _0x3f8a=["-",[],false,30000,"viewMode",{},0];
-  let _0x1a=_0x3f8a[0],_0x2b=_0x3f8a[1],_0x3c=_0x3f8a[2],_0x4d,_0x5e,_0x6f=_0x3f8a[4],_0x7g=_0x3f8a[5],_0x8h=_0x3f8a[6];
+  let _0x1a=_0x3f8a[0],_0x2b=_0x3f8a[1],_0x3c=_0x3f8a[2],_0x6f=_0x3f8a[4];
   function _0x9i(){try{return localStorage.getItem(_0x6f)==="card"?"card":"table";}catch(_0x0j){return "table";}}
   let _0x1k=_0x9i();
-  function _0x2l(_0x3m){return Math.abs(_0x3m)<=5?1:Math.abs(_0x3m)<=10?2:Math.abs(_0x3m)<=15?3:Math.abs(_0x3m)<=20?4:5;}
-  function _0x4n(){_0x2b.sort((_0x5o,_0x6p)=>{if(_0x5o.typeBattery<_0x6p.typeBattery)return -1;if(_0x5o.typeBattery>_0x6p.typeBattery)return 1;return parseInt(_0x5o.addr)-parseInt(_0x6p.addr);});_0x7q();}
-  function _0x7q(){if(_0x1k==="card"){tableBody.innerHTML="";_0x8r();}else{cardGrid.innerHTML="";_0x9s();} _0x0t();}
-  function _0x0t(){const _0x1u=_0x2b.length>0;document.getElementById('total-batteries').textContent=_0x2b.length.toString();batteryTableWrapper.classList.toggle('hidden',!_0x1u||_0x1k!=='table');cardGrid.classList.toggle('hidden',!_0x1u||_0x1k!=='card');viewToggleBar.classList.toggle('hidden',!_0x1u);empty-state.classList.toggle('hidden',_0x1u);summarySection.classList.toggle('hidden',!_0x1u);}
   const _0x3v="https://docs.google.com/spreadsheets/d/e/2PACX-1vRxTJX1kVRG50_XxNu1afGm67MgJ_0Pkydv0de-_vYKqZvjtjYVtWi0H_CJnA-JcRxq94sKWnfvajfi/pub?gid=948299467&single=true&output=csv";
   let _0x4w=[];
-  async function _0x5x(){try{const _0x6y=await fetch(_0x3v,{cache:"no-store"});if(!_0x6y.ok)throw new Error();const _0x7z=_0x6y.text();_0x4w=_0x7z.split(/\r?\n/).map(_0x8a=>_0x8a.trim()).filter(_0x8a=>_0x8a.length>0);}catch(_0x9b){_0x4w=[];}return _0x4w;}
+  async function _0x5x(){try{const _0x6y=await fetch(_0x3v,{cache:"no-store"});if(!_0x6y.ok)throw new Error();const _0x7z=await _0x6y.text();_0x4w=_0x7z.split(/\r?\n/).map(_0x8a=>_0x8a.trim().replace(/^"(.*)"$/,'$1')).filter(_0x8a=>_0x8a.length>0).map(_0x8b=>_0x8b.toUpperCase());}catch(_0x9b){_0x4w=[];}return _0x4w;}
   async function initLogger(_0x1c){
     await _0x5x();
-    const _0x2d=_0x1c.split("-").map(_0x3e=>_0x3e.trim()).filter(_0x3e=>_0x3e.length>0);
+    const _0x2d=_0x1c.split("-").map(_0x3e=>_0x3e.trim().toUpperCase()).filter(_0x3e=>_0x3e.length>0);
     const _0x4f=_0x2d.filter(_0x5g=>_0x4w.includes(_0x5g));
     if(_0x4f.length===0){document.getElementById("validationModal").classList.remove("hidden");return;}
     _0x1a=_0x4f.join("-");
-    // Start standard MQTT
   }
   window.onload=async function(){
     const _0x6h=new URLSearchParams(window.location.search);
