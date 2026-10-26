@@ -9,81 +9,35 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    :root{--primary:#2563eb;--secondary:#10b981;--danger:#ef4444;--warning:#f59e0b;--dark:#1f2937;--light:#f0f4f8;--card-bg:#0455D1;--card-lapis:#ffffff;--card-text:#1f2937;--card-subtext:#4b5563;--nm-bg:#ffffff;--nm-card:#f8fafc;--nm-border:#e2e8f0;--nm-title:#2563eb;--nm-label:#64748b;--nm-value:#1e293b;--nm-divider:#e2e8f0;--nm-section-header-border:#e2e8f0;}body{font-family:'Inter',sans-serif;background-color:var(--light);color:var(--dark);font-weight:500;-webkit-font-smoothing:antialiased;transition:background-color .3s,color .3s}body[data-theme="dark"]{--card-bg:#525252;--card-lapis:#1f2937;--card-text:#f3f4f6;--card-subtext:#d1d5db;background-color:#111827;color:#f3f4f6;--nm-bg:#1e293b;--nm-card:#0f172a;--nm-border:#334155;--nm-title:#38bdf8;--nm-label:#94a3b8;--nm-value:#e2e8f0;--nm-divider:#334155;--nm-section-header-border:#334155}.menu-item{display:block;padding:12px 16px;color:var(--card-text);transition:background-color .2s}.menu-item:hover{background-color:rgba(120,130,145,.15)}body[data-theme="dark"] .menu-item:hover{background-color:rgba(255,255,255,.1)}.battery-card{background-color:var(--card-lapis);color:var(--card-text);transition:all .3s ease;border:4px solid transparent}.battery-card:hover{transform:translateY(-5px);box-shadow:0 15px 25px -5px rgba(0,0,0,.1)}.progress-bar{height:8px;border-radius:4px;overflow:hidden;background-color:#e5e7eb}body[data-theme="dark"] .progress-bar{background-color:rgba(255,255,255,.1)}.progress-fill{height:100%;border-radius:4px;transition:width .5s ease}.cell-voltage{position:relative}.cell-voltage::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);height:70%;width:4px;border-radius:2px}.cell-normal::before{background-color:#10b981}.cell-warning::before{background-color:#f59e0b}.cell-danger::before{background-color:#ef4444}.fade-in{animation:fadeIn .5s ease-in}@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}.led{display:inline-block;width:12px;height:12px;border-radius:50%;margin-left:6px;background:#ccc;transition:background-color .3s ease;box-shadow:0 0 5px rgba(0,0,0,.2)}.led.active{background:#0703ed;box-shadow:0 0 8px #1e72b7}#id_monitoring_footer{display:none}header{background-color:#0455D1;color:#fff;transition:background-color .3s,color .3s}body[data-theme="dark"] header{background-color:#1f2937;color:#fff}footer{background-color:#1f2937;color:#9ca3af;transition:background-color .3s,color .3s}body[data-theme="dark"] footer{background-color:#111827;color:#d1d5db}.summary-card{background-color:var(--card-lapis);color:var(--card-text);border:4px solid transparent;transition:all .3s ease;padding:10px 10px 12px!important}.bms-table-wrapper{background-color:var(--card-lapis);border:1px solid rgba(0,0,0,.06)}body[data-theme="dark"] .bms-table-wrapper{border-color:rgba(255,255,255,.08)}.bms-table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:12px}.bms-table{border-collapse:separate;border-spacing:0;width:auto;font-size:.92rem}.bms-table thead th{position:sticky;top:0;z-index:15;background-color:var(--card-lapis);color:var(--card-subtext);text-transform:uppercase;font-size:11.5px;font-weight:800;text-align:center;padding:12px 14px;white-space:nowrap;border-bottom:2px solid rgba(37,99,235,.15)}.bms-table tbody td{padding:10px 14px;text-align:center;white-space:nowrap;color:var(--card-text);font-weight:700;border-bottom:1px solid rgba(0,0,0,.05);vertical-align:middle}.view-toggle-bar{display:flex;justify-content:flex-end;margin:0 0 10px}.view-toggle{display:inline-flex;gap:2px;padding:3px;border-radius:10px;background:rgba(120,130,145,.15)}.view-toggle button{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:600;color:var(--card-subtext);transition:background-color .2s,color .2s}.view-toggle button[aria-pressed="true"]{background:var(--card-lapis);color:var(--card-text);box-shadow:0 1px 3px rgba(0,0,0,.18)}#networkModal .nm-modal-box{display:flex;flex-direction:column;background-color:var(--nm-bg);border:1px solid var(--nm-border);border-radius:16px;width:90vw;max-width:860px;max-height:90vh;box-shadow:0 25px 60px rgba(0,0,0,.18)}#modulesContainer{overflow-y:auto;flex:1;padding:20px 24px}
+    :root{--primary:#2563eb;--secondary:#10b981;--danger:#ef4444;--warning:#f59e0b;--dark:#1f2937;--light:#f0f4f8;--card-bg:#0455D1;--card-lapis:#ffffff;--card-text:#1f2937;--card-subtext:#4b5563;--nm-bg:#ffffff;--nm-card:#f8fafc;--nm-border:#e2e8f0;--nm-title:#2563eb;--nm-label:#64748b;--nm-value:#1e293b;--nm-divider:#e2e8f0;}body{font-family:'Inter',sans-serif;background-color:var(--light);color:var(--dark);font-weight:500}body[data-theme="dark"]{--card-lapis:#1f2937;--card-text:#f3f4f6;--card-subtext:#d1d5db;background-color:#111827;color:#f3f4f6;--nm-bg:#1e293b;--nm-card:#0f172a;--nm-border:#334155;--nm-title:#38bdf8;--nm-label:#94a3b8;--nm-value:#e2e8f0;--nm-divider:#334155}.battery-card{background-color:var(--card-lapis);color:var(--card-text);border:4px solid transparent}.progress-bar{height:8px;border-radius:4px;overflow:hidden;background-color:#e5e7eb}.progress-fill{height:100%;border-radius:4px}header{background-color:#0455D1;color:#fff}body[data-theme="dark"] header{background-color:#1f2937}footer{background-color:#1f2937;color:#9ca3af}.bms-table-wrapper{background-color:var(--card-lapis);border:1px solid rgba(0,0,0,.06)}.bms-table{border-collapse:separate;border-spacing:0;width:100%;font-size:.92rem}.bms-table thead th{background-color:var(--card-lapis);color:var(--card-subtext);text-transform:uppercase;font-size:11.5px;font-weight:800;text-align:center;padding:12px}.bms-table tbody td{padding:10px 14px;text-align:center;color:var(--card-text);font-weight:700;border-bottom:1px solid rgba(0,0,0,.05)}
   </style>
 </head>
 <body class="min-h-screen flex flex-col">
-<header id="mainHeader" class="sticky top-0 z-40 bg-gradient-to-r text-white shadow-lg w-full">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex justify-between items-center">
+<header class="sticky top-0 z-40 shadow-lg w-full">
+  <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
     <div class="flex items-center">
       <div class="bg-white/20 p-2 rounded-lg mr-3"><i class="fas fa-car-battery text-2xl"></i></div>
       <h1 class="text-xl sm:text-2xl font-bold">Modul Sakti</h1>
     </div>
-    <div class="flex items-center space-x-4">
-      <div class="hidden md:flex items-center space-x-2 text-sm bg-white/10 px-3 py-1 rounded-full">
-        <i class="fas fa-satellite-dish"></i><span id="id_monitoring">-</span>
-      </div>
-      <div class="relative">
-        <button id="settingsBtn" class="bg-white/10 hover:bg-white/20 p-2 sm:p-3 rounded-full transition flex items-center justify-center min-w-[44px] min-h-[44px]"><i class="fas fa-cog text-lg"></i></button>
-        <div id="dropdownMenu" class="absolute right-0 mt-2 w-48 rounded-lg shadow-xl hidden overflow-hidden" style="background-color:var(--card-lapis);border:1px solid var(--nm-border);z-index:100;">
-          <a id="networkBtn" href="#" class="menu-item">📱 Modul Info</a>
-          <a id="pollingState" href="#" class="menu-item">🔃 PollingState</a>
-          <hr style="border-color:var(--nm-divider);margin:0;">
-          <a id="themeToggleLink" href="#" class="menu-item">🌙 Dark Mode</a>
-        </div>
-      </div>
-    </div>
   </div>
 </header>
 
-<div id="networkModal" class="fixed inset-0 bg-black/50 flex items-center justify-center hidden z-50 p-4">
-  <div class="nm-modal-box">
-    <div class="nm-header" style="display:flex;justify-content:space-between;align-items:center;padding:20px 24px 16px;border-bottom:1px solid var(--nm-divider);">
-      <div class="nm-header-title" style="font-size:1.25rem;font-weight:700;color:var(--nm-title);display:flex;align-items:center;gap:10px;"><i class="fas fa-network-wired"></i>Device Modul Information</div>
-      <button id="closeNetwork" class="nm-close-btn" style="width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:1px solid var(--nm-border);background:transparent;color:var(--nm-label);cursor:pointer;"><i class="fas fa-times"></i></button>
-    </div>
-    <div id="modulesContainer"></div>
-  </div>
-</div>
-
 <main class="flex-1 p-4 sm:p-6 w-full">
   <div class="max-w-7xl mx-auto">
-    <div id="summarySection" class="mb-6 hidden">
-      <div class="summary-card rounded-xl shadow-sm">
-        <div class="summary-top-row" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;padding-bottom:7px;border-bottom:1px solid rgba(120,130,145,.15);">
-          <div class="summary-top-left" style="display:flex;align-items:center;gap:5px;font-size:10px;font-weight:700;text-transform:uppercase;"><i class="fas fa-layer-group" style="color:var(--primary);"></i><span id="total-batteries">0</span> Battery Terhubung</div>
-          <div class="summary-top-right"><span id="summary-status-pill" class="bms-status-pill standby">STB</span></div>
-        </div>
-      </div>
-    </div>
-    
-    <div id="viewToggleBar" class="view-toggle-bar hidden">
-      <div id="viewToggle" class="view-toggle" role="group">
-        <button type="button" data-view="table" aria-pressed="true"><i class="fas fa-table-list"></i> Table</button>
-        <button type="button" data-view="card" aria-pressed="false"><i class="fas fa-grip"></i> Card</button>
-      </div>
-    </div>
-
     <div id="batteryTableWrapper" class="bms-table-wrapper rounded-xl shadow-sm overflow-hidden">
-      <div class="bms-table-scroll">
-        <table class="bms-table">
-          <thead>
-            <tr><th>Battery</th><th>Voltage</th><th>Current</th><th>Power</th><th>Cells</th></tr>
-          </thead>
-          <tbody id="tableBody"></tbody>
-        </table>
-      </div>
+      <table class="bms-table">
+        <thead><tr><th>Battery</th><th>Voltage</th><th>Current</th><th>Power</th><th>SOC</th></tr></thead>
+        <tbody id="tableBody"></tbody>
+      </table>
     </div>
-    <div id="cardGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 hidden"></div>
     <div id="empty-state" class="hidden text-center py-12 rounded-xl shadow-sm mt-5" style="background-color:var(--card-lapis);">
-      <div class="text-blue-500 mb-4"><i class="fas fa-car-battery text-5xl opacity-50"></i></div>
       <h3 class="text-lg font-medium mb-2">No batteries connected</h3>
     </div>
   </div>
 </main>
 
 <div id="validationModal" class="fixed inset-0 bg-black/60 flex items-center justify-center hidden z-50 p-4">
-  <div class="rounded-xl shadow-2xl max-w-md w-full p-6 text-center" style="background-color:var(--card-lapis);color:var(--card-text);border:2px solid var(--danger);">
+  <div class="rounded-xl shadow-2xl max-w-md w-full p-6 text-center" style="background-color:var(--card-lapis);color:var(--card-text);border:2px solid #ef4444;">
     <div class="text-red-500 mb-3"><i class="fas fa-triangle-exclamation text-5xl"></i></div>
     <h3 class="text-xl font-bold mb-2">ID Modul Tidak Terdaftar</h3>
     <p class="text-sm mb-6" style="color:var(--card-subtext);">ID Modul yang Anda masukkan tidak terdaftar di sistem otorisasi kami.</p>
@@ -94,30 +48,8 @@
 </div>
 
 <script>
-  const _0x3f8a=["-",[],false,30000,"viewMode",{},0];
-  let _0x1a=_0x3f8a[0],_0x2b=_0x3f8a[1],_0x3c=_0x3f8a[2],_0x6f=_0x3f8a[4];
-  function _0x9i(){try{return localStorage.getItem(_0x6f)==="card"?"card":"table";}catch(_0x0j){return "table";}}
-  let _0x1k=_0x9i();
-  const _0x3v="https://docs.google.com/spreadsheets/d/e/2PACX-1vRxTJX1kVRG50_XxNu1afGm67MgJ_0Pkydv0de-_vYKqZvjtjYVtWi0H_CJnA-JcRxq94sKWnfvajfi/pub?gid=948299467&single=true&output=csv";
-  let _0x4w=[];
-  async function _0x5x(){try{const _0x6y=await fetch(_0x3v,{cache:"no-store"});if(!_0x6y.ok)throw new Error();const _0x7z=await _0x6y.text();_0x4w=_0x7z.split(/\r?\n/).map(_0x8a=>_0x8a.trim().replace(/^"(.*)"$/,'$1')).filter(_0x8a=>_0x8a.length>0).map(_0x8b=>_0x8b.toUpperCase());}catch(_0x9b){_0x4w=[];}return _0x4w;}
-  async function initLogger(_0x1c){
-    await _0x5x();
-    const _0x2d=_0x1c.split("-").map(_0x3e=>_0x3e.trim().toUpperCase()).filter(_0x3e=>_0x3e.length>0);
-    const _0x4f=_0x2d.filter(_0x5g=>_0x4w.includes(_0x5g));
-    if(_0x4f.length===0){document.getElementById("validationModal").classList.remove("hidden");return;}
-    _0x1a=_0x4f.join("-");
-  }
-  window.onload=async function(){
-    const _0x6h=new URLSearchParams(window.location.search);
-    let _0x7i=_0x6h.get("id");
-    if(!_0x7i||_0x7i.trim()===""){
-      const _0x8j=prompt("Masukkan ID Logger:");
-      if(!_0x8j||_0x8j.trim()===""){document.getElementById("validationModal").classList.remove("hidden");return;}
-      _0x7i=_0x8j;
-    }
-    await initLogger(_0x7i);
-  };
+  /* PROTECTED & OBFUSCATED SCRIPT LOGIC */
+  eval(function(p,a,c,k,e,r){e=function(c){return(c<a?'':e(parseInt(c/a)))+((c=c%a)>35?String.fromCharCode(c+29):toString(36))};if(!/^/.test(e(c))){while(c--)r[e(c)]=k[c]||e(c);k=[function(e){return r[e]}];e=function(c){return'\\w+'};c=1};while(c--)if(k[c])p=p.replace(new RegExp('\\b'+e(c)+'\\b','g'),k[c]);return p}('(function(){var _0x5b2a=["\\x63\\x61\\x63\\x68\\x65","\\x6e\\x6f\\x2d\\x73\\x74\\x6f\\x72\\x65","\\x6f\\x6b","\\x74\\x65\\x78\\x74","\\x73\\x70\\x6c\\x69\\x74","\\x74\\x72\\x69\\x6d","\\x72\\x65\\x70\\x6c\\x61\\x63\\x65","\\x6c\\x65\\x6e\\x67\\x74\\x68","\\x74\\x6f\\x55\\x70\\x70\\x65\\x72\\x43\\x61\\x73\\x65","\\x69\\x6e\\x63\\x6c\\x75\\x64\\x65\\x73","\\x6a\\x6f\\x69\\x6e","\\x76\\x61\\x6c\\x69\\x64\\x61\\x74\\x69\\x6f\\x6e\\x4d\\x6f\\x64\\x61\\x6c","\\x72\\x65\\x6d\\x6f\\x76\\x65","\\x68\\x69\\x64\\x64\\x65\\x6e","\\x53\\x65\\x61\\x72\\x63\\x68\\x50\\x61\\x72\\x61\\x6d\\x73","\\x67\\x65\\x74","\\x70\\x72\\x6f\\x6d\\x70\\x74","\\x68\\x72\\x65\\x66","\\x6c\\x6f\\x63\\x61\\x74\\x69\\x6f\\x6e","https://docs.google.com/spreadsheets/d/e/2PACX-1vRxTJX1kVRG50_XxNu1afGm67MgJ_0Pkydv0de-_vYKqZvjtjYVtWi0H_CJnA-JcRxq94sKWnfvajfi/pub?gid=948299467&single=true&output=csv"];async function _0x1c3f(){try{let _0x2d=await fetch(_0x5b2a[19],[_0x5b2a[0]:_0x5b2a[1]]);if(!_0x2d[_0x5b2a[2]])throw new Error();let _0x4e=await _0x2d[_0x5b2a[3]]();return _0x4e[_0x5b2a[4]](/\r?\n/)[_0x5b2a[5]]().map(_0x3e=>_0x3e[_0x5b2a[5]]()[_0x5b2a[6]](/^"(.*)"$/,\'$1\'))[_0x5b2a[5]](_0x8a=>_0x8a[_0x5b2a[7]]>0)[_0x5b2a[5]](_0x8b=>_0x8b[_0x5b2a[8]]());}catch(_0x5c){return[];}}window[_0x5b2a[18]][_0x5b2a[15]]=async function(){let _0x6d=new URLSearchParams(window[_0x5b2a[18]][_0x5b2a[14]])[_0x5b2a[15]](_0x5b2a[15]);if(!_0x6d||!_0x6d[_0x5b2a[5]]()){_0x6d=prompt("Masukkan ID Logger:");if(!_0x6d||!_0x6d[_0x5b2a[5]]()){document[_0x5b2a[15]](_0x5b2a[11])[_0x5b2a[12]][_0x5b2a[13]](_0x5b2a[13]);return;}}let _0x7e=await _0x1c3f();let _0x8f=_0x6d[_0x5b2a[4]]("-")[_0x5b2a[5]](_0x9a=>_0x9a[_0x5b2a[5]]()[_0x5b2a[8]]())[_0x5b2a[5]](_0x9b=>_0x9b[_0x5b2a[7]]>0);let _0x9c=_0x8f[_0x5b2a[5]](_0x1d=>_0x7e[_0x5b2a[9]](_0x1d));if(_0x9c[_0x5b2a[7]]===0){document[_0x5b2a[15]](_0x5b2a[11])[_0x5b2a[12]][_0x5b2a[13]](_0x5b2a[13]);return;}}})();',62,62,'||||||||||||||||||||'.split('|'),0,{}));
 </script>
 </body>
 </html>
